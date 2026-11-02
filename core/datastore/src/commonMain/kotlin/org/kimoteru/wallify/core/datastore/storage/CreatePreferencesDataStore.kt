@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.core.datastore
+package org.kimoteru.wallify.core.datastore.storage
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory

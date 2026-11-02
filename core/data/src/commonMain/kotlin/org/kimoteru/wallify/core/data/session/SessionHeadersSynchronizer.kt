@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.core.data
+package org.kimoteru.wallify.core.data.session
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.kimoteru.wallify.core.domain.SessionRepository
+import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserSettingsRepository
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
 import org.kimoteru.wallify.core.network.headers.HeadersRequest

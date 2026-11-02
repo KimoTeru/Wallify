@@ -1,7 +1,7 @@
-package org.kimoteru.wallify.core.data
+package org.kimoteru.wallify.core.data.repository
 
 import kotlinx.coroutines.flow.StateFlow
-import org.kimoteru.wallify.core.domain.ConnectivityRepository
+import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
 import org.kimoteru.wallify.core.network.monitor.NetworkMonitor
 import org.koin.core.annotation.Singleton
 

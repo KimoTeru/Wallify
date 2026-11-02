@@ -17,12 +17,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.flow.MutableStateEventFlowWithContent
-import org.kimoteru.wallify.core.common.flow.asStateEventWithContentFlow
+import org.kimoteru.wallify.core.common.flow.StateEventFlowWithContent
 import org.kimoteru.wallify.core.presentation.base.navigation.ScreenBackResult
 import org.kimoteru.wallify.core.presentation.extensions.collectAsEffect
 import org.koin.core.component.KoinComponent
@@ -65,8 +64,8 @@ abstract class BaseDefaultComponentCore<
     protected val dispatchers by inject<AppDispatchers>()
     protected val coroutineScope = coroutineScope(SupervisorJob() + dispatchers.main)
 
-    private val _componentEvents = MutableStateEventFlowWithContent<ComponentEvent>()
-    val componentEvents = _componentEvents.asStateEventWithContentFlow()
+    val componentEvents: StateEventFlowWithContent<ComponentEvent>
+        field = MutableStateEventFlowWithContent()
 
     init {
         coroutineScope.launch {
@@ -95,7 +94,7 @@ abstract class BaseDefaultComponentCore<
 
             launch {
                 logic.componentEvents.collectLatest { event ->
-                    _componentEvents.trigger(event)
+                    componentEvents.trigger(event)
                 }
             }
         }
@@ -141,17 +140,17 @@ abstract class BaseLogicCore<
     protected val dispatchers by inject<AppDispatchers>()
     protected val coroutineScope = CoroutineScope(SupervisorJob() + dispatchers.main)
 
-    protected val _navigateBack = MutableStateEventFlowWithContent<ScreenBackResult?>()
-    val navigateBack = _navigateBack.asStateEventWithContentFlow()
+    val navigateBack: StateEventFlowWithContent<ScreenBackResult?>
+        field = MutableStateEventFlowWithContent()
 
-    protected val _navigateEvent = MutableStateEventFlowWithContent<NavigateEvent>()
-    val navigateEvent = _navigateEvent.asStateEventWithContentFlow()
+    val navigateEvent: StateEventFlowWithContent<NavigateEvent>
+        field = MutableStateEventFlowWithContent()
 
-    private val _componentEvents = MutableStateEventFlowWithContent<ComponentEvent>()
-    val componentEvents = _componentEvents.asStateEventWithContentFlow()
+    val componentEvents: StateEventFlowWithContent<ComponentEvent>
+        field = MutableStateEventFlowWithContent()
 
-    private val _baseUiState = MutableStateFlow(BaseContract.BaseUiState())
-    val baseUiState: StateFlow<BaseContract.BaseUiState> = _baseUiState.asStateFlow()
+    val baseUiState: StateFlow<BaseContract.BaseUiState>
+        field = MutableStateFlow(BaseContract.BaseUiState())
 
     abstract val uiState: StateFlow<UiState>
 
@@ -165,15 +164,15 @@ abstract class BaseLogicCore<
     open fun onLifecycleDestroy() = Unit
 
     protected fun sendComponentEvent(event: ComponentEvent) {
-        _componentEvents.trigger(event)
+        componentEvents.trigger(event)
     }
 
     open fun navigateBack(result: ScreenBackResult? = null) {
-        _navigateBack.trigger(result ?: defaultBackResult)
+        navigateBack.trigger(result ?: defaultBackResult)
     }
 
     protected fun navigate(event: NavigateEvent) {
-        _navigateEvent.trigger(event)
+        navigateEvent.trigger(event)
     }
 
     open fun obtainBackNavigationResult(result: ScreenBackResult?) = Unit

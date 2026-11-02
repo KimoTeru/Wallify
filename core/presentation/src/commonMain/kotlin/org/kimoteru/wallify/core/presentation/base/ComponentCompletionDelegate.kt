@@ -2,18 +2,17 @@ package org.kimoteru.wallify.core.presentation.base
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class ComponentCompletionDelegate {
-    private val _isCompleted = MutableStateFlow(false)
-    val isCompleted: StateFlow<Boolean> = _isCompleted.asStateFlow()
+    val isCompleted: StateFlow<Boolean>
+        field = MutableStateFlow(false)
 
     fun complete() {
-        _isCompleted.update { true }
+        isCompleted.update { true }
     }
 
     fun reset() {
-        _isCompleted.update { false }
+        isCompleted.update { false }
     }
 }

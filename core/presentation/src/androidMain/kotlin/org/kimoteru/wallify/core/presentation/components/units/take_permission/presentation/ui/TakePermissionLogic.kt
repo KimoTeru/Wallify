@@ -5,7 +5,7 @@ import dev.icerock.moko.permissions.camera.CAMERA
 import dev.icerock.moko.permissions.notifications.REMOTE_NOTIFICATION
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -45,11 +45,11 @@ class TakePermissionLogic(
     private val intentNavigator: IntentNavigator
 ) : BaseComponentLogic<UiState, UiEvent, Nothing>() {
 
-    private val _isPermissionGranted = MutableStateFlow(false)
-    val isPermissionGranted = _isPermissionGranted.asStateFlow()
+    val isPermissionGranted: StateFlow<Boolean>
+        field = MutableStateFlow(false)
 
-    private val _uiState = MutableStateFlow(UiState(permission = args.permission))
-    override val uiState = _uiState.asStateFlow()
+    override val uiState: StateFlow<UiState>
+        field = MutableStateFlow(UiState(permission = args.permission))
 
     private var hasRequestedPermission = false
 
@@ -108,7 +108,7 @@ class TakePermissionLogic(
         }
 
         if (isInitialPermissionGranted.value == null) {
-            _isPermissionGranted.value = isGranted
+            isPermissionGranted.value = isGranted
             isInitialPermissionGranted.value = isGranted
             return
         }
@@ -119,7 +119,7 @@ class TakePermissionLogic(
         }
 
         updateIsVisibleDialog(false)
-        _isPermissionGranted.value = isGranted
+        isPermissionGranted.value = isGranted
 
         if (!isGranted && args.permission != Permission.CAMERA) {
             onDenyPermission()
@@ -127,10 +127,10 @@ class TakePermissionLogic(
     }
 
     private fun updateIsVisibleDialog(isVisible: Boolean) {
-        _uiState.update { it.copy(isVisibleDialog = isVisible) }
+        uiState.update { it.copy(isVisibleDialog = isVisible) }
     }
 
     private fun updateShouldRequestPermission(isRequest: Boolean) {
-        _uiState.update { it.copy(shouldRequestPermission = isRequest) }
+        uiState.update { it.copy(shouldRequestPermission = isRequest) }
     }
 }

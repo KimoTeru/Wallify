@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.core.domain
+package org.kimoteru.wallify.core.domain.repository
 
 import kotlinx.coroutines.flow.Flow
 

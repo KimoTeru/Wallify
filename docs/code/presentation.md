@@ -37,7 +37,8 @@ override val logic: XxxLogic = instanceKeeper.getOrCreate { get<XxxLogic>() }
 2. **Logic не знает про Compose.** Ни `@Composable`, ни `Color`, ни `Dp`, ни строк из ресурсов: в состоянии —
    данные и флаги, форматирование и тексты делает Ui.
 3. Состояние — один `UiState` (`data class`, неизменяемый), обновляется через `MutableStateFlow.update { it.copy(…) }`.
-   Для Compose помечаем `@Immutable`, если в нём есть нестабильные типы.
+   `MutableStateFlow` объявляется через `field` (`code/code-style.md` § Корутины и потоки), а не парой
+   `_uiState` / `uiState`. Для Compose помечаем `@Immutable`, если в нём есть нестабильные типы.
 4. Действия пользователя — `UiEvent` (`sealed interface`, `data object` / `data class`). Метод на каждое действие в
    Ui не заводим: один `obtainUiEvent`.
 5. Одноразовые эффекты: навигация — `navigate(NavigationEvent)` логики; сообщение пользователю — `NotifierManager`;

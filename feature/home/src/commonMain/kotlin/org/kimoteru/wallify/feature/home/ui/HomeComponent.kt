@@ -4,7 +4,6 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
@@ -29,8 +28,8 @@ class HomeDefaultComponent(
 @Factory
 class HomeLogic : BaseLogic<HomeContract.UiState, HomeContract.UiEvent, HomeNavigationEvent>() {
 
-    private val _uiState = MutableStateFlow(HomeContract.UiState())
-    override val uiState: StateFlow<HomeContract.UiState> = _uiState.asStateFlow()
+    override val uiState: StateFlow<HomeContract.UiState>
+        field = MutableStateFlow(HomeContract.UiState())
 
     override fun obtainUiEvent(event: HomeContract.UiEvent) = Unit
 }

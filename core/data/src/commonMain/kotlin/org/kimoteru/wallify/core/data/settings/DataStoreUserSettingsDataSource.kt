@@ -4,7 +4,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
-import org.kimoteru.wallify.core.datastore.DataStorePrefs
+import org.kimoteru.wallify.core.datastore.prefs.DataStorePrefs
 import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.koin.core.annotation.Singleton
 

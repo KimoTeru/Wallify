@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -29,8 +28,8 @@ class NotifierManagerLogic(
     @InjectedParam private val coroutineScope: CoroutineScope
 ) : BaseComponentLogic<UiState, UiEvent, Nothing>() {
 
-    private val _uiState = MutableStateFlow(UiState())
-    override val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+    override val uiState: StateFlow<UiState>
+        field = MutableStateFlow(UiState())
 
     init {
         coroutineScope.launch {
@@ -47,6 +46,6 @@ class NotifierManagerLogic(
     }
 
     private fun updateNotifierModel(notifierModel: NotifierModel?) {
-        _uiState.update { it.copy(notifierModel = notifierModel) }
+        uiState.update { it.copy(notifierModel = notifierModel) }
     }
 }

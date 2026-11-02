@@ -4,6 +4,8 @@ import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import org.kimoteru.wallify.core.database.dao.CacheEntryDao
+import org.kimoteru.wallify.core.database.entity.CacheEntryEntity
 
 @Database(entities = [CacheEntryEntity::class], version = 1, exportSchema = true)
 @ConstructedBy(AppDatabaseConstructor::class)

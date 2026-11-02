@@ -2,7 +2,6 @@ package org.kimoteru.wallify.core.presentation.components.description_clickable_
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import org.kimoteru.wallify.core.presentation.base.BaseComponentLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.components.description_clickable_text.presentation.ui.DescriptionClickableTextContract.UiEvent
@@ -20,8 +19,8 @@ fun KoinComponent.getDescriptionClickableTextLogic(): DescriptionClickableTextLo
 class DescriptionClickableTextLogic :
     BaseComponentLogic<UiState, UiEvent, DescriptionClickableTextNavigationEvent>() {
 
-    private val _uiState = MutableStateFlow(UiState())
-    override val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+    override val uiState: StateFlow<UiState>
+        field = MutableStateFlow(UiState())
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {

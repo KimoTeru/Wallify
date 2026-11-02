@@ -40,16 +40,19 @@ Ui (Compose)
 
 | Класс | Куда |
 |---|---|
-| Интерфейс репозитория | `core/domain/.../repository/` |
+| Интерфейс репозитория (любой, включая `SessionRepository`, `ConnectivityRepository`) | `core/domain/.../repository/` |
 | Use case | `core/domain/.../usecase/<область>/` |
-| Реализация репозитория, источник данных | `core/data/.../<область>/` |
+| Реализация репозитория (`XxxRepositoryImpl`) | `core/data/.../repository/` |
+| Источник данных | `core/data/.../<область>/` (например, `settings/`) |
+| Сервис данных без репозитория (синхронизация сессии, загрузка файлов) | `core/data/.../<область>/` (`session/`, `download/`) |
 | API-класс (запросы), DTO | `core/network` (или `core/data`, если DTO нужен только репозиторию) |
 | Модель предметной области | `core/model` |
-| Сущность и DAO Room | `core/database` |
+| Сущность и DAO Room | `core/database/.../entity/` и `core/database/.../dao/` (`AppDatabase` и `DatabaseModule` — в корне пакета) |
 | Менеджер платформы (буфер, язык, ссылки) | интерфейс в `core/platform/commonMain`, реализации в `androidMain` / `jvmMain` |
 | Общая логика с состоянием для нескольких экранов (уведомления, диалог ошибок) | `core/presentation/.../components/units/<name>/` |
 
 ## Пакеты внутри модуля
 
 `org.kimoteru.wallify.core.<module>` и `org.kimoteru.wallify.feature.<name>`; внутри — по области
-(`settings`, `config`, `download`), а не по типу класса. Имена — `code/code-style.md` § Имена.
+(`settings`, `config`, `download`, `session`); исключение — репозитории: интерфейсы лежат в `core/domain/.../repository/`,
+реализации в `core/data/.../repository/`. Имена — `code/code-style.md` § Имена.

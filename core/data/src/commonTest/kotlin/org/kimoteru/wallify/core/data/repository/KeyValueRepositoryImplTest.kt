@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.core.data
+package org.kimoteru.wallify.core.data.repository
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import org.kimoteru.wallify.core.cache.StringMemoryCache
-import org.kimoteru.wallify.core.database.CacheEntryDao
-import org.kimoteru.wallify.core.database.CacheEntryEntity
+import org.kimoteru.wallify.core.database.dao.CacheEntryDao
+import org.kimoteru.wallify.core.database.entity.CacheEntryEntity
 import org.kimoteru.wallify.core.platform.time.TimeProvider
 
 class KeyValueRepositoryImplTest {

@@ -1,9 +1,10 @@
-package org.kimoteru.wallify.core.database
+package org.kimoteru.wallify.core.database.dao
 
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
+import org.kimoteru.wallify.core.database.entity.CacheEntryEntity
 
 @Dao
 interface CacheEntryDao {

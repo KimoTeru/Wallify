@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.core.datastore
+package org.kimoteru.wallify.core.datastore.storage
 
 import java.io.File
 import org.koin.core.annotation.Singleton

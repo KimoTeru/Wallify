@@ -1,11 +1,11 @@
-package org.kimoteru.wallify.core.data
+package org.kimoteru.wallify.core.data.repository
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.kimoteru.wallify.core.cache.StringMemoryCache
-import org.kimoteru.wallify.core.database.CacheEntryDao
-import org.kimoteru.wallify.core.database.CacheEntryEntity
-import org.kimoteru.wallify.core.domain.KeyValueRepository
+import org.kimoteru.wallify.core.database.dao.CacheEntryDao
+import org.kimoteru.wallify.core.database.entity.CacheEntryEntity
+import org.kimoteru.wallify.core.domain.repository.KeyValueRepository
 import org.kimoteru.wallify.core.platform.time.TimeProvider
 import org.koin.core.annotation.Singleton
 

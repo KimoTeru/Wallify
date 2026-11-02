@@ -62,7 +62,18 @@ Related: `code/presentation.md`, `code/di.md`, `architecture/overview.md` § П�
   `CoroutineScope` из Koin.
 - В `catch (e: Exception)` внутри `suspend`-кода `CancellationException` пробрасывается (`responseOf`,
   `executeRequest` уже делают это).
-- Публичное состояние — `StateFlow` (читаемый), `MutableStateFlow` — приватный.
+- Публичное состояние — `StateFlow` (читаемый), `MutableStateFlow` — скрытый. Пару «приватный `_uiState` + публичный
+  `uiState = _uiState.asStateFlow()`» не пишем: используем explicit backing field через `field`:
+
+  ```kotlin
+  override val uiState: StateFlow<UiState>
+      field = MutableStateFlow(UiState())
+  ```
+
+  Снаружи свойство — `StateFlow`, внутри класса оно умное приводится к `MutableStateFlow`: `uiState.update { … }`,
+  `uiState.value = …`. Образец — `DecomposeLifecycle.lifecycleOwner()` в `core/presentation/.../ComponentContextExt.kt`.
+  Правило относится ко всем парам «изменяемый тип скрыт, читаемый открыт», где первый — подтип второго. Если
+  подтипа нет (читаемое значение строится преобразованием), оставляем пару.
 - Одноразовые события (навигация, снекбар) — `StateEventFlow` и `StateEventFlowWithContent` из `core:common`, не
   `StateFlow<Boolean>`.
 - Комбинация потоков в состояние — `combineState(scope, f1, f2, initialValue) { … }` из `core:common`.

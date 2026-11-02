@@ -3,7 +3,8 @@ package org.kimoteru.wallify.core.data
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
-import org.kimoteru.wallify.core.domain.SessionRepository
+import org.kimoteru.wallify.core.data.session.SessionHeadersSynchronizer
+import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserSettingsRepository
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.domain.usecase.settings.UpdateUserSettingsUseCase

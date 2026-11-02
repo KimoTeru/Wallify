@@ -5,15 +5,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.flow.MutableStateEventFlow
 import org.kimoteru.wallify.core.common.flow.MutableStateEventFlowWithContent
-import org.kimoteru.wallify.core.common.flow.asStateEventFlow
-import org.kimoteru.wallify.core.common.flow.asStateEventWithContentFlow
+import org.kimoteru.wallify.core.common.flow.StateEventFlow
+import org.kimoteru.wallify.core.common.flow.StateEventFlowWithContent
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -25,21 +24,21 @@ abstract class BaseComponentLogic<
 
     protected val dispatchers by inject<AppDispatchers>()
 
-    protected val _navigateBack = MutableStateEventFlow()
-    val navigateBack = _navigateBack.asStateEventFlow()
+    val navigateBack: StateEventFlow
+        field = MutableStateEventFlow()
 
-    protected val _navigateEvent = MutableStateEventFlowWithContent<NavigateEvent>()
-    val navigateEvent = _navigateEvent.asStateEventWithContentFlow()
+    val navigateEvent: StateEventFlowWithContent<NavigateEvent>
+        field = MutableStateEventFlowWithContent()
 
     abstract val uiState: StateFlow<UiState>
 
     protected fun navigate(event: NavigateEvent) {
-        _navigateEvent.trigger(event)
+        navigateEvent.trigger(event)
     }
 
     fun obtainBaseEvent(baseEvent: BaseContract.UiEvent) {
         when (baseEvent) {
-            is BaseContract.UiEvent.NavigateBack -> _navigateBack.trigger()
+            is BaseContract.UiEvent.NavigateBack -> navigateBack.trigger()
         }
     }
 
@@ -49,19 +48,19 @@ abstract class BaseComponentLogic<
 class LogicComponentHolder<T : BaseComponentLogic<UiState, *, *>, UiState : BaseContract.UiState>(
     private val scope: CoroutineScope
 ) {
-    private val _logic = MutableStateFlow<T?>(null)
-    val logic: StateFlow<T?> = _logic.asStateFlow()
+    val logic: StateFlow<T?>
+        field = MutableStateFlow<T?>(null)
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<UiState?> = _logic
+    val uiState: StateFlow<UiState?> = logic
         .flatMapLatest { it?.uiState ?: flowOf(null) }
         .stateIn(scope, SharingStarted.Eagerly, null)
 
     fun set(logic: T?) {
-        _logic.value = logic
+        this.logic.value = logic
     }
 
-    fun get(): T? = _logic.value
+    fun get(): T? = logic.value
 }
 
 class LogicComponentDelegate<T : BaseComponentLogic<UiState, *, *>, UiState : BaseContract.UiState>(

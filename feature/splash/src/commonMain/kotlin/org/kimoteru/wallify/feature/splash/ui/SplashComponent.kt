@@ -4,7 +4,6 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
@@ -35,8 +34,8 @@ class SplashDefaultComponent(
 @Factory
 class SplashLogic : BaseLogic<SplashContract.UiState, UiEvent, SplashNavigationEvent>() {
 
-    private val _uiState = MutableStateFlow(SplashContract.UiState())
-    override val uiState: StateFlow<SplashContract.UiState> = _uiState.asStateFlow()
+    override val uiState: StateFlow<SplashContract.UiState>
+        field = MutableStateFlow(SplashContract.UiState())
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {

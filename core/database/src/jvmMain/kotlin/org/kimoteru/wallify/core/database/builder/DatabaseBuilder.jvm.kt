@@ -1,8 +1,9 @@
-package org.kimoteru.wallify.core.database
+package org.kimoteru.wallify.core.database.builder
 
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import java.io.File
+import org.kimoteru.wallify.core.database.AppDatabase
 import org.koin.core.annotation.Singleton
 
 @Singleton

@@ -3,8 +3,8 @@ package org.kimoteru.wallify.feature.root.presentation.components
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.combineState
-import org.kimoteru.wallify.core.domain.ConnectivityRepository
-import org.kimoteru.wallify.core.domain.SessionRepository
+import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
+import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationComponentCore
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationLogicCore

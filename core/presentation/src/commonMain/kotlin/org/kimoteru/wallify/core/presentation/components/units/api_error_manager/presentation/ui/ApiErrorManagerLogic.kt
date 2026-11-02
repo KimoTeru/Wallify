@@ -2,7 +2,6 @@ package org.kimoteru.wallify.core.presentation.components.units.api_error_manage
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.components.units.api_error_manager.presentation.ui.ApiErrorManagerContract.UiEvent
@@ -19,8 +18,8 @@ fun KoinComponent.getApiErrorManagerLogic(): ApiErrorManagerLogic {
 @Factory
 class ApiErrorManagerLogic : BaseLogic<UiState, UiEvent, Nothing>() {
 
-    private val _uiState = MutableStateFlow(UiState())
-    override val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+    override val uiState: StateFlow<UiState>
+        field = MutableStateFlow(UiState())
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {
@@ -32,6 +31,6 @@ class ApiErrorManagerLogic : BaseLogic<UiState, UiEvent, Nothing>() {
     fun hideDialog() = updateIsVisibleDialog(false)
 
     private fun updateIsVisibleDialog(isVisible: Boolean) {
-        _uiState.update { it.copy(isVisibleDialog = isVisible) }
+        uiState.update { it.copy(isVisibleDialog = isVisible) }
     }
 }

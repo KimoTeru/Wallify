@@ -1,9 +1,9 @@
-package org.kimoteru.wallify.core.data
+package org.kimoteru.wallify.core.data.repository
 
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
-import org.kimoteru.wallify.core.datastore.DataStorePrefs
-import org.kimoteru.wallify.core.domain.SessionRepository
+import org.kimoteru.wallify.core.datastore.prefs.DataStorePrefs
+import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.koin.core.annotation.Singleton
 
 @Singleton

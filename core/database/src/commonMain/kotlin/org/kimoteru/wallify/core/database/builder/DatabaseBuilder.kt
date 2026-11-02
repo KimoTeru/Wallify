@@ -1,8 +1,9 @@
-package org.kimoteru.wallify.core.database
+package org.kimoteru.wallify.core.database.builder
 
 import androidx.room.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
+import org.kimoteru.wallify.core.database.AppDatabase
 
 expect class DatabaseBuilder {
     fun builder(): RoomDatabase.Builder<AppDatabase>
