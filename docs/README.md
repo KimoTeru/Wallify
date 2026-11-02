@@ -37,7 +37,7 @@ docs/
 │   ├── layers.md                 ← слои и кто кого может вызывать
 │   └── data.md                   ← Response, сеть, сессия, база, DataStore, кэш, загрузка файлов, пагинация
 ├── code/
-│   ├── code-style.md             ← форматирование, имена, корутины, время, expect/actual
+│   ├── code-style.md             ← стиль проекта, утилиты, форматирование, имена, корутины, время, expect/actual
 │   ├── di.md                     ← Koin Annotations: @Module, @Factory/@Singleton, как подключить фичу
 │   ├── navigation.md             ← Decompose: стек, Config, события навигации
 │   ├── presentation.md           ← Component / Logic / Contract / Ui, состояние, события
@@ -67,7 +67,7 @@ docs/
 | Цвета, шрифты, отступы, готовая кнопка / диалог / шиммер | `design/foundations.md` |
 | Адаптивность: планшет, окно десктопа, рейл вместо нижней панели | `design/foundations.md` § Адаптивность |
 | Блюр: диалог или шторка с размытым фоном вместо затемнения, `Haze` | `design/foundations.md` § Блюр |
-| Корутины, диспетчеры, время, имена, `expect`/`actual` | `code/code-style.md` |
+| Стиль проекта, готовые утилиты `core:common`, корутины, диспетчеры, время, имена, `expect`/`actual` | `code/code-style.md` |
 
 ## Жёсткое правило
 

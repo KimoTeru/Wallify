@@ -6,6 +6,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
+import org.kimoteru.wallify.core.common.extensions.nullIfBlank
 import org.kimoteru.wallify.core.common.extensions.SemicolonSpace
 import org.kimoteru.wallify.core.common.response.DetailedResponse
 import org.kimoteru.wallify.core.common.response.Response
@@ -27,7 +28,7 @@ suspend inline fun <reified T> executeRequest(
     throw cancellation
 } catch (exception: Exception) {
     Response.Error(
-        ResponseError(message = exception.message?.takeIf { it.isNotBlank() } ?: "Request failed")
+        ResponseError(message = exception.message?.nullIfBlank() ?: "Request failed")
     )
 }
 
@@ -52,11 +53,11 @@ suspend inline fun <reified T> HttpResponse.toResponse(): Response<T> {
         return Response.Success(bodyOrUnit<T>())
     }
 
-    val raw = runCatching { bodyAsText() }.getOrNull()?.takeIf { it.isNotBlank() }
+    val raw = runCatching { bodyAsText() }.getOrNull()?.nullIfBlank()
     val parsed = raw?.let(::decodeErrorBody)
     val message = parsed?.errors?.takeIf { it.isNotEmpty() }?.joinToString(String.SemicolonSpace)
-        ?: parsed?.message?.takeIf { it.isNotBlank() }
-        ?: parsed?.error?.takeIf { it.isNotBlank() }
+        ?: parsed?.message?.nullIfBlank()
+        ?: parsed?.error?.nullIfBlank()
         ?: raw
         ?: status.description
     return Response.Error(ResponseError(message = message, code = status.value))

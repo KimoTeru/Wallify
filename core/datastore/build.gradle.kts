@@ -8,6 +8,7 @@ kotlin {
         commonMain.dependencies {
             api(libs.datastore.preferences)
             api(libs.okio)
+            implementation(projects.core.common)
             implementation(libs.koin.core)
             implementation(libs.koin.annotations)
             implementation(libs.kotlinx.coroutines.core)

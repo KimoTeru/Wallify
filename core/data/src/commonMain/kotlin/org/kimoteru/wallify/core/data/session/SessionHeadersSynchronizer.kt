@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.kimoteru.wallify.core.common.extensions.nullIfBlank
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserSettingsRepository
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
@@ -34,7 +35,7 @@ class SessionHeadersSynchronizer(
             ) { token, languageTag ->
                 HeadersRequest(
                     languageTag = languageTag ?: systemLanguageTag(),
-                    authorization = token?.takeIf { it.isNotBlank() }?.let { "Bearer $it" }
+                    authorization = token?.nullIfBlank()?.let { "Bearer $it" }
                 )
             }
                 .distinctUntilChanged()

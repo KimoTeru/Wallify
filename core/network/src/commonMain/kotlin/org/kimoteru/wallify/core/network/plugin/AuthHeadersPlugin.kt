@@ -2,6 +2,7 @@ package org.kimoteru.wallify.core.network.plugin
 
 import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.http.HttpHeaders
+import org.kimoteru.wallify.core.common.extensions.nullIfBlank
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
 
 internal class AuthHeadersConfig {
@@ -19,10 +20,10 @@ internal val AuthHeadersPlugin = createClientPlugin("AuthHeaders", ::AuthHeaders
     onRequest { request, _ ->
         val headers = collector.headersFlow.value
         headers.authorization
-            ?.takeIf { it.isNotBlank() }
+            ?.nullIfBlank()
             ?.let { request.headers[HttpHeaders.Authorization] = it }
         headers.languageTag
-            ?.takeIf { it.isNotBlank() }
+            ?.nullIfBlank()
             ?.let { request.headers[HttpHeaders.AcceptLanguage] = it }
     }
 }

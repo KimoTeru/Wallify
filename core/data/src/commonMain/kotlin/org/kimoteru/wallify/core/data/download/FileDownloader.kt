@@ -13,6 +13,7 @@ import org.kimoteru.wallify.core.cache.CacheDirectoryProvider
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.extensions.Empty
 import org.kimoteru.wallify.core.common.extensions.formatFromUrl
+import org.kimoteru.wallify.core.common.extensions.nullIfBlank
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.common.response.responseOf
@@ -38,7 +39,7 @@ class FileDownloader(
 
     /** Returns the cached file for [url] or downloads it. [name] is the file name without extension. */
     suspend fun getOrDownload(url: String?, name: String): Response<Path> = withContext(dispatchers.io) {
-        val safeUrl = url?.takeIf { it.isNotBlank() }
+        val safeUrl = url?.nullIfBlank()
             ?: return@withContext Response.Error(ResponseError("Empty URL"))
 
         val target = directory() / "${name.toSafeFileName()}.${safeUrl.formatFromUrl()}"

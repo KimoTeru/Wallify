@@ -4,9 +4,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.koin.core.annotation.Singleton
 
 @Singleton
@@ -14,14 +13,10 @@ class DataStorePrefsImpl(
     private val dataStore: DataStore<Preferences>
 ) : DataStorePrefs {
     override fun <T> getFlow(key: Preferences.Key<T>, defValue: T): Flow<T> =
-        dataStore.data
-            .map { preferences -> preferences[key] ?: defValue }
-            .distinctUntilChanged()
+        dataStore.data.mapDistinctBy { preferences -> preferences[key] ?: defValue }
 
     override fun <T> getNullableFlow(key: Preferences.Key<T>): Flow<T?> =
-        dataStore.data
-            .map { preferences -> preferences[key] }
-            .distinctUntilChanged()
+        dataStore.data.mapDistinctBy { preferences -> preferences[key] }
 
     override suspend fun <T> get(key: Preferences.Key<T>, defValue: T): T =
         dataStore.data.first()[key] ?: defValue
