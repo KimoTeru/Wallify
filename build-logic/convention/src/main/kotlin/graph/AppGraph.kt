@@ -1,5 +1,10 @@
+package org.kimoteru.wallify.buildlogic.graph
+
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.dependencies
+import org.kimoteru.wallify.buildlogic.extension.implementation
+import org.kimoteru.wallify.buildlogic.extension.library
+import org.kimoteru.wallify.buildlogic.extension.libsPlugin
 
 /**
  * Gradle modules that declare Koin modules. The compiler plugin discovers the `@Module @Configuration` classes only

@@ -1,3 +1,5 @@
+package org.kimoteru.wallify.buildlogic.extension
+
 import java.io.StringReader
 import java.util.Properties
 import org.gradle.api.Project
@@ -5,6 +7,7 @@ import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.getByType
+import org.kimoteru.wallify.buildlogic.config.ProjectConfig
 
 internal val Project.catalog: VersionCatalog
     get() = extensions.getByType<VersionCatalogsExtension>().named("libs")

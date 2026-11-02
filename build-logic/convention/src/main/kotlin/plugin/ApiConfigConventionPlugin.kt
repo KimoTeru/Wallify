@@ -1,8 +1,14 @@
+package org.kimoteru.wallify.buildlogic.plugin
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.register
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.kimoteru.wallify.buildlogic.config.ProjectConfig
+import org.kimoteru.wallify.buildlogic.extension.libsPlugin
+import org.kimoteru.wallify.buildlogic.extension.localSecret
+import org.kimoteru.wallify.buildlogic.task.GenerateApiConfigTask
 
 /**
  * Gives a KMP module the backend address and key as generated constants (`ApiBuildConfig`) in `commonMain`.

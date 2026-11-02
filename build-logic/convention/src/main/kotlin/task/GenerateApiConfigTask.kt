@@ -1,3 +1,5 @@
+package org.kimoteru.wallify.buildlogic.task
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property

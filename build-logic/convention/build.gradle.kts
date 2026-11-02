@@ -21,31 +21,33 @@ dependencies {
     compileOnly(libs.compose.gradlePlugin)
 }
 
+val pluginPackage = "org.kimoteru.wallify.buildlogic.plugin"
+
 gradlePlugin {
     plugins {
         register("kmpLibrary") {
             id = "wallify.kmp.library"
-            implementationClass = "KmpLibraryConventionPlugin"
+            implementationClass = "$pluginPackage.KmpLibraryConventionPlugin"
         }
         register("compose") {
             id = "wallify.compose"
-            implementationClass = "ComposeConventionPlugin"
+            implementationClass = "$pluginPackage.ComposeConventionPlugin"
         }
         register("apiConfig") {
             id = "wallify.api.config"
-            implementationClass = "ApiConfigConventionPlugin"
+            implementationClass = "$pluginPackage.ApiConfigConventionPlugin"
         }
         register("feature") {
             id = "wallify.feature"
-            implementationClass = "FeatureConventionPlugin"
+            implementationClass = "$pluginPackage.FeatureConventionPlugin"
         }
         register("androidApplication") {
             id = "wallify.android.application"
-            implementationClass = "AndroidApplicationConventionPlugin"
+            implementationClass = "$pluginPackage.AndroidApplicationConventionPlugin"
         }
         register("desktopApplication") {
             id = "wallify.desktop.application"
-            implementationClass = "DesktopApplicationConventionPlugin"
+            implementationClass = "$pluginPackage.DesktopApplicationConventionPlugin"
         }
     }
 }

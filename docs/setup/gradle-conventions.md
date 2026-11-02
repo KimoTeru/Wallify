@@ -29,6 +29,18 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 Оба приложения получают граф Koin из `applyAppGraph()` (`build-logic/.../AppGraph.kt`): плагин компилятора, `koin-core`,
 `koin-annotations` и зависимости на все модули с привязками.
 
+Код `build-logic/convention/src/main/kotlin` разложен по пакетам `org.kimoteru.wallify.buildlogic.*`:
+
+| Папка | Что лежит |
+|---|---|
+| `plugin/` | Сами convention-плагины (`*ConventionPlugin`); их классы указаны в `convention/build.gradle.kts` |
+| `task/` | Gradle-задачи (`GenerateApiConfigTask`) |
+| `config/` | Константы сборки (`ProjectConfig`, `PluginIds`) |
+| `extension/` | Расширения над `Project` и `DependencyHandler` (каталог версий, `localSecret`, `implementation`) |
+| `graph/` | Граф модулей приложений (`AppGraph.kt`, `graphProjects`) |
+
+Новый плагин — в `plugin/`, регистрация в `gradlePlugin { … }` с полным именем класса.
+
 Сломанная в плагине зависимость ломает все модули сразу: правишь плагин — перечитай, кого он затрагивает.
 
 ## Новый модуль

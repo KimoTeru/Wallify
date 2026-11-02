@@ -1,9 +1,15 @@
+package org.kimoteru.wallify.buildlogic.plugin
+
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.kimoteru.wallify.buildlogic.config.ProjectConfig
+import org.kimoteru.wallify.buildlogic.extension.androidNamespace
+import org.kimoteru.wallify.buildlogic.extension.library
+import org.kimoteru.wallify.buildlogic.extension.libsPlugin
 
 class KmpLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {

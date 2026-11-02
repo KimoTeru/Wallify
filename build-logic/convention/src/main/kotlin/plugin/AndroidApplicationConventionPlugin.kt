@@ -1,9 +1,16 @@
+package org.kimoteru.wallify.buildlogic.plugin
+
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+import org.kimoteru.wallify.buildlogic.config.ProjectConfig
+import org.kimoteru.wallify.buildlogic.extension.implementation
+import org.kimoteru.wallify.buildlogic.extension.library
+import org.kimoteru.wallify.buildlogic.extension.libsPlugin
+import org.kimoteru.wallify.buildlogic.graph.applyAppGraph
 
 class AndroidApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {

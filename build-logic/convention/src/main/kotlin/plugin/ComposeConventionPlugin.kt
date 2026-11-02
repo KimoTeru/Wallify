@@ -1,8 +1,13 @@
+package org.kimoteru.wallify.buildlogic.plugin
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.kimoteru.wallify.buildlogic.extension.implementation
+import org.kimoteru.wallify.buildlogic.extension.library
+import org.kimoteru.wallify.buildlogic.extension.libsPlugin
 
 private val composeLibraries = listOf(
     "compose-runtime",
