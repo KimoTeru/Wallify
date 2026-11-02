@@ -1,19 +1,69 @@
-*.iml
-.kotlin
-.gradle
+# Gradle / Kotlin
+.gradle/
+.kotlin/
 **/build/
-xcuserdata
 !src/**/build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/**/build/
+out/
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+
+# Local configuration and secrets
 local.properties
-.idea
-.DS_Store
-captures
-.externalNativeBuild
-.cxx
+keystore.properties
+secrets.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+.env
+.env.*
+google-services.json
+GoogleService-Info.plist
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.fleet/
+.vscode/
+.cursor/
+
+# Android
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Desktop distributions
+*.dmg
+*.msi
+*.deb
+*.exe
+
+# iOS / Xcode (for a future iosApp)
+xcuserdata/
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
+Pods/
+DerivedData/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Misc
 node_modules/
+*.hprof

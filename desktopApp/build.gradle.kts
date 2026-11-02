@@ -1,28 +1,11 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-
 plugins {
-    alias(libs.plugins.kotlinJvm)
-    alias(libs.plugins.composeMultiplatform)
-    alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.wallify.desktop.application)
 }
 
 dependencies {
-    implementation(project(":shared"))
-
-    implementation(compose.desktop.currentOs)
-    implementation(libs.kotlinx.coroutinesSwing)
-
-    implementation(libs.compose.uiToolingPreview)
-}
-
-compose.desktop {
-    application {
-        mainClass = "org.kimoteru.wallify.MainKt"
-
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "org.kimoteru.wallify"
-            packageVersion = "1.0.0"
-        }
-    }
+    implementation(projects.core.designSystem)
+    implementation(libs.decompose)
+    implementation(libs.decompose.compose)
+    implementation(libs.essenty.lifecycle)
+    implementation(libs.essenty.lifecycle.coroutines)
 }

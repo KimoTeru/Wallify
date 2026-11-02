@@ -1,0 +1,193 @@
+package org.kimoteru.wallify.core.presentation.base
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.essenty.instancekeeper.InstanceKeeper
+import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import com.arkivanov.essenty.lifecycle.doOnCreate
+import com.arkivanov.essenty.lifecycle.doOnDestroy
+import com.arkivanov.essenty.lifecycle.doOnPause
+import com.arkivanov.essenty.lifecycle.doOnResume
+import com.arkivanov.essenty.lifecycle.doOnStart
+import com.arkivanov.essenty.lifecycle.doOnStop
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
+import org.kimoteru.wallify.core.common.flow.MutableStateEventFlowWithContent
+import org.kimoteru.wallify.core.common.flow.asStateEventWithContentFlow
+import org.kimoteru.wallify.core.presentation.base.navigation.ScreenBackResult
+import org.kimoteru.wallify.core.presentation.extensions.collectAsEffect
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+
+interface BaseComponentCore<
+    UiState : BaseContract.UiState,
+    UiEvent : BaseContract.UiEvent,
+    ComponentEvent : BaseContract.ComponentEvent
+> {
+    @Composable
+    fun getUiState(): UiState
+
+    @Composable
+    fun getBaseUiState(): BaseContract.BaseUiState = BaseContract.BaseUiState()
+
+    @Composable
+    fun collectComponentEvents(onEvent: (ComponentEvent) -> Unit) = Unit
+
+    fun obtainUiEvent(event: UiEvent) = Unit
+
+    fun obtainBaseEvent(baseEvent: BaseContract.UiEvent) = Unit
+}
+
+abstract class BaseDefaultComponentCore<
+    Logic : BaseLogicCore<UiState, UiEvent, NavigationEvent, ComponentEvent>,
+    UiState : BaseContract.UiState,
+    UiEvent : BaseContract.UiEvent,
+    NavigationEvent : BaseNavigationEvent,
+    ComponentEvent : BaseContract.ComponentEvent
+>(
+    componentContext: ComponentContext,
+    private val navigateBack: (() -> Unit)? = null
+) : ComponentContext by componentContext,
+    BaseComponentCore<UiState, UiEvent, ComponentEvent>,
+    KoinComponent {
+
+    protected abstract val logic: Logic
+
+    protected val dispatchers by inject<AppDispatchers>()
+    protected val coroutineScope = coroutineScope(SupervisorJob() + dispatchers.main)
+
+    private val _componentEvents = MutableStateEventFlowWithContent<ComponentEvent>()
+    val componentEvents = _componentEvents.asStateEventWithContentFlow()
+
+    init {
+        coroutineScope.launch {
+            logic.apply {
+                doOnCreate { onCreate() }
+                doOnStart { onStart() }
+                doOnResume { onResume() }
+                doOnPause { onPause() }
+                doOnStop { onStop() }
+                doOnDestroy { onLifecycleDestroy() }
+            }
+
+            navigateBack?.let { callback ->
+                launch {
+                    logic.navigateBack.collectLatest {
+                        callback()
+                    }
+                }
+            }
+
+            launch {
+                logic.navigateEvent.collectLatest { event ->
+                    obtainNavigateEvent(event)
+                }
+            }
+
+            launch {
+                logic.componentEvents.collectLatest { event ->
+                    _componentEvents.trigger(event)
+                }
+            }
+        }
+    }
+
+    fun navigateBack(result: ScreenBackResult? = null) {
+        navigateBack?.invoke()
+    }
+
+    @Composable
+    override fun getUiState(): UiState {
+        val uiState by logic.uiState.collectAsState()
+        return uiState
+    }
+
+    @Composable
+    override fun getBaseUiState(): BaseContract.BaseUiState {
+        val baseUiState by logic.baseUiState.collectAsState()
+        return baseUiState
+    }
+
+    protected open fun obtainNavigateEvent(event: NavigationEvent) = Unit
+
+    override fun obtainUiEvent(event: UiEvent) = logic.obtainUiEvent(event)
+
+    override fun obtainBaseEvent(baseEvent: BaseContract.UiEvent) = logic.obtainBaseEvent(baseEvent)
+
+    @Composable
+    override fun collectComponentEvents(onEvent: (ComponentEvent) -> Unit) {
+        componentEvents.collectAsEffect { event ->
+            onEvent(event)
+        }
+    }
+}
+
+abstract class BaseLogicCore<
+    UiState : BaseContract.UiState,
+    UiEvent : BaseContract.UiEvent,
+    NavigateEvent : BaseNavigationEvent,
+    ComponentEvent : BaseContract.ComponentEvent
+> : InstanceKeeper.Instance, KoinComponent {
+
+    protected val dispatchers by inject<AppDispatchers>()
+    protected val coroutineScope = CoroutineScope(SupervisorJob() + dispatchers.main)
+
+    protected val _navigateBack = MutableStateEventFlowWithContent<ScreenBackResult?>()
+    val navigateBack = _navigateBack.asStateEventWithContentFlow()
+
+    protected val _navigateEvent = MutableStateEventFlowWithContent<NavigateEvent>()
+    val navigateEvent = _navigateEvent.asStateEventWithContentFlow()
+
+    private val _componentEvents = MutableStateEventFlowWithContent<ComponentEvent>()
+    val componentEvents = _componentEvents.asStateEventWithContentFlow()
+
+    private val _baseUiState = MutableStateFlow(BaseContract.BaseUiState())
+    val baseUiState: StateFlow<BaseContract.BaseUiState> = _baseUiState.asStateFlow()
+
+    abstract val uiState: StateFlow<UiState>
+
+    protected open val defaultBackResult: ScreenBackResult? = null
+
+    open fun onCreate() = Unit
+    open fun onStart() = Unit
+    open fun onResume() = Unit
+    open fun onPause() = Unit
+    open fun onStop() = Unit
+    open fun onLifecycleDestroy() = Unit
+
+    protected fun sendComponentEvent(event: ComponentEvent) {
+        _componentEvents.trigger(event)
+    }
+
+    open fun navigateBack(result: ScreenBackResult? = null) {
+        _navigateBack.trigger(result ?: defaultBackResult)
+    }
+
+    protected fun navigate(event: NavigateEvent) {
+        _navigateEvent.trigger(event)
+    }
+
+    open fun obtainBackNavigationResult(result: ScreenBackResult?) = Unit
+
+    open fun obtainBaseEvent(baseEvent: BaseContract.UiEvent) {
+        when (baseEvent) {
+            is BaseContract.UiEvent.NavigateBack -> navigateBack(defaultBackResult)
+        }
+    }
+
+    open fun obtainUiEvent(event: UiEvent) = Unit
+
+    override fun onDestroy() {
+        coroutineScope.cancel()
+        super.onDestroy()
+    }
+}

@@ -1,6 +1,8 @@
 rootProject.name = "Wallify"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             mavenContent {
@@ -33,4 +35,19 @@ plugins {
 
 include(":androidApp")
 include(":desktopApp")
-include(":shared")
+
+include(":core:common")
+include(":core:platform")
+include(":core:presentation")
+include(":core:model")
+include(":core:domain")
+include(":core:data")
+include(":core:network")
+include(":core:design-system")
+include(":core:database")
+include(":core:datastore")
+include(":core:cache")
+
+include(":feature:root")
+include(":feature:splash")
+include(":feature:home")

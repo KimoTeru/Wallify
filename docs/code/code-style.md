@@ -1,0 +1,88 @@
+# Стиль кода
+
+Форматирование, имена, корутины, время, `expect`/`actual`. Относится ко всему Kotlin-коду.
+
+Related: `code/presentation.md`, `code/di.md`, `architecture/overview.md` § Платформы.
+
+## Форматирование
+
+Стиль проекта — привычный нам стиль экранов и компонентов: узнаваемая форма Ui, Contract, Logic и локальные алиасы
+токенов темы (`design/foundations.md`). Новый код пишем так же и подстраиваемся под соседние файлы.
+
+- Основа — официальный стиль Kotlin (`kotlin.code.style=official`), отступ 4 пробела, строка до 120 символов;
+  `.editorconfig` в корне задаёт то же самое для IDE.
+- **Конец файла.** Файл заканчивается сразу после последнего символа кода: ни пустых строк, ни отступа снизу.
+  Финальный перевод строки не добавляем (`insert_final_newline = false`). Это правило для каждого файла: Kotlin,
+  Gradle, Markdown, XML, TOML, JSON.
+- **Trailing comma.** Не ставим нигде (параметры, аргументы, `data class`, перечисления): так настроен форматтер IDE
+  в `.editorconfig`, и Reformat Code приводит весь код к этому виду.
+- **`when` по типам.** Если ветки — типы из `sealed`-иерархии (`class`, `data class`, `data object`), всегда пишем
+  `is`: `is UiEvent.Close -> …`, `is Child.Home -> …`. Без `is` — только значения: `enum` и константы
+  (`BlurLevel.Small -> …`).
+- **Пустые строки.** Между членами класса и блоками логики — одна пустая строка; подряд две не оставляем. В начале и
+  конце тела функции, лямбды и `when` пустых строк нет; после заголовка класса или интерфейса одна пустая строка
+  допустима.
+- **Импорты.** Один плоский список по алфавиту, без пустых строк между группами, без звёздочных импортов и без
+  неиспользуемых.
+- **Reformat Code.** Перед отдачей работы пользователь может прогнать в IDE Reformat Code с Optimize imports по
+  проекту: правила форматтера лежат в `.editorconfig` (включить «Enable EditorConfig support» в настройках Code
+  Style). Reformat не убирает финальный перевод строки: это правило файла (см. выше) выполняется при правке.
+- Токены темы в теле composable — только через локальные алиасы в начале функции: `val appColor = AppTheme.color`,
+  `val appPadding = AppTheme.padding`, `val appTypography = AppTheme.typography`, и дальше
+  `style = appTypography.h5.semiBold`. Прямой `AppTheme.typography` / `AppTheme.color` допустим лишь в значениях
+  параметров по умолчанию в сигнатуре и в `@Preview` (`design/foundations.md` § Правила).
+- Колбэк события компонента — локальный `val obtainEvent = component::obtainUiEvent`.
+- Строковые константы из одного-двух символов (`""`, `"/"`, `"_"`, `"; "`) берём из `String.Companion` в
+  `core:common/.../extensions/StringExt.kt`: `String.Empty`, `String.Slash`, `String.Underscore`,
+  `joinToString(String.SemicolonSpace)`. Нужной константы нет — добавляем её туда, а не пишем литерал.
+- Комментарий отвечает на «почему», а не пересказывает код. KDoc — на публичных классах и функциях, у которых
+  контракт неочевиден (что приходит, что возвращается, когда ошибка).
+- Закомментированный код и `TODO` без причины не оставляем.
+
+## Имена
+
+| Что | Как |
+|---|---|
+| Пакеты | `org.kimoteru.wallify.core.<module>`, `org.kimoteru.wallify.feature.<name>`; без дефисов и подчёркиваний |
+| Экран | `XxxComponent` (интерфейс), `XxxDefaultComponent`, `XxxLogic`, `XxxContract`, `XxxUi`, `XxxNavigationEvent` |
+| Репозиторий | интерфейс `XxxRepository` в `domain`, реализация `XxxRepositoryImpl` в `data` |
+| Use case | глагол + `UseCase`: `ObserveUserSettingsUseCase` |
+| Koin-модуль | корневой класс `XxxModule` модуля (`@Module @Configuration @ComponentScan`) |
+| Платформенные реализации | `AndroidXxx`, `JvmXxx`; файлы `Xxx.android.kt`, `Xxx.jvm.kt` |
+| Boolean | `isX`, `hasX`, `canX` |
+
+- Один файл — один основной класс; маленькие связанные типы (контракт, события) могут жить рядом.
+- Состояния и события — `sealed interface` / `data class`, не набор `Boolean`-флагов.
+
+## Корутины и потоки
+
+- Диспетчеры — только через `AppDispatchers` из `core:common`; `Dispatchers.IO`, `Dispatchers.Main` напрямую не
+  используем, чтобы код тестировался.
+- `GlobalScope` нет. Scope логики экрана — `coroutineScope` базового класса; фоновая работа приложения — общий
+  `CoroutineScope` из Koin.
+- В `catch (e: Exception)` внутри `suspend`-кода `CancellationException` пробрасывается (`responseOf`,
+  `executeRequest` уже делают это).
+- Публичное состояние — `StateFlow` (читаемый), `MutableStateFlow` — приватный.
+- Одноразовые события (навигация, снекбар) — `StateEventFlow` и `StateEventFlowWithContent` из `core:common`, не
+  `StateFlow<Boolean>`.
+- Комбинация потоков в состояние — `combineState(scope, f1, f2, initialValue) { … }` из `core:common`.
+
+## Время
+
+- «Сейчас» — `TimeProvider` из `core:platform` или `kotlin.time.Clock`; `System.currentTimeMillis()` в
+  `commonMain` нет.
+- Работа с датами и часовыми поясами — отдельная библиотека (сейчас в проекте её нет): подключается по просьбе, через
+  каталог версий.
+
+## expect / actual
+
+- `expect` — минимальный интерфейс платформенной возможности; логика над ним остаётся в `commonMain`.
+- Для сервисов предпочитаем интерфейс в `commonMain` + реализации в `androidMain`/`jvmMain`, помеченные
+  `@Singleton` (`code/di.md`); `expect class` — для провайдеров путей и построителей (БД, DataStore).
+- Платформенный код не тянет за собой UI: никаких `Context` и `Activity` в публичном API общего модуля.
+
+## Прочее
+
+- Публичный API модуля делаем минимальным: `internal` по умолчанию для деталей реализации.
+- Строковые константы в `object`/`private const val`, не «магические» строки в коде.
+- `@Suppress` — точечно и с причиной в комментарии.

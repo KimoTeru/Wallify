@@ -1,0 +1,40 @@
+package org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh
+
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import org.kimoteru.wallify.core.designsystem.theme.AppTheme
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DefaultPullToRefreshBox(
+    modifier: Modifier = Modifier,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val appColor = AppTheme.color
+    val state = rememberPullToRefreshState()
+
+    PullToRefreshBox(
+        modifier = modifier,
+        state = state,
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        indicator = {
+            Indicator(
+                modifier = Modifier.align(Alignment.TopCenter),
+                isRefreshing = isRefreshing,
+                containerColor = appColor.basic.background,
+                color = appColor.basic.primary,
+                state = state
+            )
+        },
+        content = content
+    )
+}
