@@ -13,6 +13,7 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 | `feature:splash`, `feature:home` | Экраны |
 | `core:presentation` | Базовые классы экрана, общие UI-блоки с логикой (шторка, диалог ошибок, уведомления, разрешения) |
 | `core:design-system` | Тема, токены, компоненты без бизнес-логики |
+| `core:resources` | Единственное место ресурсов: строки (по областям), шрифты, картинки; публичный `Res` |
 | `core:domain` | Интерфейсы репозиториев, use case'ы |
 | `core:data` | Реализации репозиториев, сессия, скачивание файлов |
 | `core:model` | Чистые `@Serializable` модели |
@@ -24,7 +25,8 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 ## Граф зависимостей
 
 Стрелка идёт от модуля к тому, от кого он зависит. Каждый `core`-модуль может зависеть от `core:common` (не нарисовано).
-Feature-модули получают `common`, `model`, `domain`, `presentation`, `design-system` от плагина `wallify.feature`.
+Feature-модули получают `common`, `model`, `domain`, `presentation`, `design-system`, `resources` от плагина
+`wallify.feature`.
 
 ```mermaid
 flowchart TB
@@ -42,6 +44,7 @@ flowchart TB
     subgraph ui["UI"]
         presentation["core:presentation"]
         designSystem["core:design-system"]
+        resources["core:resources"]
     end
 
     subgraph business["Бизнес"]
@@ -69,6 +72,8 @@ flowchart TB
     features --> presentation
     features --> domain
     presentation --> designSystem
+    presentation --> resources
+    features --> resources
     presentation --> platform
     domain --> model
     data --> domain
@@ -89,7 +94,7 @@ flowchart TB
 3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет.
 4. Feature-модули не зависят друг от друга, кроме `feature:root`, который собирает экраны в стек.
 5. Приложения зависят от всех модулей с Koin-привязками (список в `build-logic`, `applyAppGraph()`), чтобы собрать
-   граф; в коде приложения используют только `feature:root` и `design-system` (тема).
+   граф; в коде приложения используют только `feature:root`, `design-system` (тема) и `core:resources` (строки).
 6. Новая зависимость, которая добавляет стрелку против этого графа, — повод остановиться и спросить.
 
 ## Платформы

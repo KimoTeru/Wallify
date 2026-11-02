@@ -17,12 +17,20 @@ import dev.icerock.moko.permissions.compose.rememberPermissionsControllerFactory
 import dev.icerock.moko.permissions.notifications.REMOTE_NOTIFICATION
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.common.extensions.Empty
 import org.kimoteru.wallify.core.designsystem.ui.compose.LifecycleHandler
 import org.kimoteru.wallify.core.designsystem.ui.dialog.DefaultDescriptionDialog
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.components.units.take_permission.presentation.ui.TakePermissionContract.UiEvent
 import org.kimoteru.wallify.core.presentation.components.units.take_permission.presentation.ui.TakePermissionContract.UiState
+import org.kimoteru.wallify.core.resources.generated.resources.Res
+import org.kimoteru.wallify.core.resources.generated.resources.permission_allow_access
+import org.kimoteru.wallify.core.resources.generated.resources.permission_camera
+import org.kimoteru.wallify.core.resources.generated.resources.permission_camera_description
+import org.kimoteru.wallify.core.resources.generated.resources.permission_denied_title
+import org.kimoteru.wallify.core.resources.generated.resources.permission_notifications
+import org.kimoteru.wallify.core.resources.generated.resources.permission_notifications_description
 
 interface TakePermissionContract : BaseContract {
     data class UiState(
@@ -110,19 +118,19 @@ fun TakePermissionUi(
     if (uiState.isVisibleDialog) {
         uiState.permission?.let { permission ->
             val permissionLabel = when (permission) {
-                Permission.CAMERA -> "Camera"
-                Permission.REMOTE_NOTIFICATION -> "Notifications"
+                Permission.CAMERA -> stringResource(Res.string.permission_camera)
+                Permission.REMOTE_NOTIFICATION -> stringResource(Res.string.permission_notifications)
                 else -> String.Empty
             }
 
             DefaultDescriptionDialog(
-                title = "No access to $permissionLabel",
+                title = stringResource(Res.string.permission_denied_title, permissionLabel),
                 description = when (permission) {
-                    Permission.CAMERA -> "Please allow camera access to continue."
-                    Permission.REMOTE_NOTIFICATION -> "Please allow notification access to stay updated."
+                    Permission.CAMERA -> stringResource(Res.string.permission_camera_description)
+                    Permission.REMOTE_NOTIFICATION -> stringResource(Res.string.permission_notifications_description)
                     else -> String.Empty
                 },
-                primaryButtonText = "Allow access",
+                primaryButtonText = stringResource(Res.string.permission_allow_access),
                 onPrimaryClick = {
                     obtainUiEvent(UiEvent.RequestAppSettingsPermission)
                 },

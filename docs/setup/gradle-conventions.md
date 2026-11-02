@@ -21,7 +21,7 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 |---|---|
 | `wallify.kmp.library` | KMP-библиотека: таргеты Android (KMP-library) и JVM, `namespace` из пути модуля без дефисов (`:core:design-system` → `org.kimoteru.wallify.core.designsystem`), `commonTest` с `kotlin-test` |
 | `wallify.compose` | Compose Multiplatform и compiler plugin, базовые Compose-зависимости |
-| `wallify.feature` | `kmp.library` + `compose` + serialization + Decompose, Koin и его компиляторный плагин, `common`, `model`, `domain`, `design-system`, `presentation` |
+| `wallify.feature` | `kmp.library` + `compose` + serialization + Decompose, Koin и его компиляторный плагин, `common`, `model`, `domain`, `design-system`, `resources`, `presentation` |
 | `wallify.api.config` | Генерирует `ApiBuildConfig` (адрес и ключ бэкенда) из `local.properties` или окружения; подключён в `core:network` |
 | `wallify.android.application` | Android-приложение: SDK, Compose, граф Koin |
 | `wallify.desktop.application` | Desktop-приложение: JVM, окно, пакеты, граф Koin |
@@ -65,6 +65,13 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 
 ## Compose Resources
 
-- Ресурсы лежат в `src/commonMain/composeResources/` модуля. Если модуль генерирует публичный `Res`, класс задаётся в
-  `build.gradle.kts` блоком `compose.resources { publicResClass = true; packageOfResClass = "…" }`.
-- Модуль без ресурсов блок `compose.resources` не содержит (`code/resources.md`).
+- Все ресурсы лежат в одном модуле `core:resources`, в `src/commonMain/composeResources/`. Его `build.gradle.kts`
+  содержит `compose.resources { publicResClass = true }`, поэтому `Res` публичный.
+- В `core:resources` включено `kotlin { android { androidResources.enable = true } }`: без него плагин
+  `com.android.kotlin.multiplatform.library` не кладёт ресурсы Compose в приложение, и на Android первый же
+  `stringResource` падает с `MissingResourceException`. Это нужно каждому KMP-модулю, у которого есть
+  `composeResources` (у нас такой один).
+- Пакет класса `Res` задаёт плагин `wallify.compose`: `<namespace модуля>.generated.resources`, для `core:resources`
+  это `org.kimoteru.wallify.core.resources.generated.resources`. В других модулях блок `compose.resources` не нужен.
+- Модуль, которому нужны ресурсы, подключает `projects.core.resources`; фичи получают его от `wallify.feature`
+  (`code/resources.md`).

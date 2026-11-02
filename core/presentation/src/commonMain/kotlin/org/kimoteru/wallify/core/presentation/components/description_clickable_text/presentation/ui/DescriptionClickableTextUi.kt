@@ -18,10 +18,16 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.components.description_clickable_text.presentation.ui.DescriptionClickableTextContract.UiEvent
 import org.kimoteru.wallify.core.presentation.components.description_clickable_text.presentation.ui.DescriptionClickableTextContract.UiState
+import org.kimoteru.wallify.core.resources.generated.resources.Res
+import org.kimoteru.wallify.core.resources.generated.resources.legal_consent
+import org.kimoteru.wallify.core.resources.generated.resources.legal_privacy_policy
+import org.kimoteru.wallify.core.resources.generated.resources.legal_subscription_terms
+import org.kimoteru.wallify.core.resources.generated.resources.legal_terms_of_service
 
 interface DescriptionClickableTextContract : BaseContract {
     @Immutable
@@ -44,12 +50,16 @@ fun DescriptionClickableText(
     val appColor = AppTheme.color
     val appTypography = AppTheme.typography
 
-    val termsText = "Terms of Service"
-    val privacyPolicyText = "Privacy Policy"
-    val subscriptionPolicyText = "Subscription Terms"
+    val termsText = stringResource(Res.string.legal_terms_of_service)
+    val privacyPolicyText = stringResource(Res.string.legal_privacy_policy)
+    val subscriptionPolicyText = stringResource(Res.string.legal_subscription_terms)
 
-    val fullText =
-        "By continuing, you accept our $termsText, $privacyPolicyText and $subscriptionPolicyText."
+    val fullText = stringResource(
+        Res.string.legal_consent,
+        termsText,
+        privacyPolicyText,
+        subscriptionPolicyText
+    )
 
     val clickableLinks: Map<String, () -> Unit> = mapOf(
         termsText to { obtainEvent(UiEvent.NavigateOnTermsOfService) },

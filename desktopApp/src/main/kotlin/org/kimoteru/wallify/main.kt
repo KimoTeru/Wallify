@@ -7,7 +7,10 @@ import androidx.compose.ui.window.rememberWindowState
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
+import org.kimoteru.wallify.core.resources.generated.resources.Res
+import org.kimoteru.wallify.core.resources.generated.resources.app_name
 import org.kimoteru.wallify.feature.root.presentation.components.DefaultRootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphUi
 import org.koin.core.annotation.KoinApplication
@@ -41,7 +44,7 @@ fun main() {
         Window(
             onCloseRequest = ::exitApplication,
             state = windowState,
-            title = "Wallify"
+            title = stringResource(Res.string.app_name)
         ) {
             LifecycleController(
                 lifecycleRegistry = lifecycle,

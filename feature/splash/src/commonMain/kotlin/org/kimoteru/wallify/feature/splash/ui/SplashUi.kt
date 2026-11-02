@@ -11,8 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.resources.generated.resources.Res
+import org.kimoteru.wallify.core.resources.generated.resources.app_name
 
 private const val SPLASH_DURATION_MS = 1_500L
 
@@ -63,7 +66,7 @@ fun SplashUi(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Wallify",
+            text = stringResource(Res.string.app_name),
             style = appTypography.h1.bold,
             color = appColors.white
         )

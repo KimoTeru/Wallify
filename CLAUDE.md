@@ -34,7 +34,7 @@ Kotlin Multiplatform (Android + Desktop) приложение на Compose Multi
    головы в экранах нет. Прямой `AppTheme.…` — только в значениях параметров по умолчанию в сигнатуре; в теле
    composable — локальные `val appColor = AppTheme.color`, `val appTypography = AppTheme.typography` и
    `style = appTypography.h5.semiBold` (`design/foundations.md`).
-8. Строки интерфейса не хардкодим в новых экранах: Compose Resources в модуле экрана (`code/resources.md`).
+8. Строки интерфейса не хардкодим в новых экранах: Compose Resources в `core:resources` (`code/resources.md`).
 9. Конец файла: любой файл заканчивается сразу после последнего символа, без пустых строк и отступа снизу и без
    финального перевода строки. Стиль кода — как в соседних файлах проекта (`code/code-style.md` § Форматирование).
 10. Потоки и время: `AppDispatchers` вместо `Dispatchers.*`, `TimeProvider` или `kotlin.time.Clock` вместо

@@ -9,14 +9,15 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.resources.generated.resources.Res
+import org.kimoteru.wallify.core.resources.generated.resources.app_name
 
 object HomeContract {
     @Immutable
-    data class UiState(
-        val title: String = "Wallify"
-    ) : BaseContract.UiState
+    class UiState : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent
 }
@@ -40,8 +41,6 @@ fun HomeUi(
     modifier: Modifier = Modifier,
     component: HomeComponent
 ) {
-    val uiState = component.getUiState()
-
     val appColor = AppTheme.color
     val appTypography = AppTheme.typography
 
@@ -50,7 +49,7 @@ fun HomeUi(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = uiState.title,
+            text = stringResource(Res.string.app_name),
             style = appTypography.h1.bold,
             color = appColor.text.title
         )

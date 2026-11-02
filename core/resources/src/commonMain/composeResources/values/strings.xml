@@ -1,0 +1,35 @@
+<resources>
+    <!-- Name of the app, shown on the splash and home screens and in the desktop window title -->
+    <string name="app_name">Wallify</string>
+    <!-- Confirm button of informational dialogs -->
+    <string name="action_ok">OK</string>
+
+    <!-- Title of the dialog shown when a request fails -->
+    <string name="error_dialog_title">Something went wrong</string>
+    <!-- Description of the dialog shown when a request fails -->
+    <string name="error_dialog_description">Please try again later.</string>
+    <!-- Banner at the top of the screen while the device has no internet connection -->
+    <string name="error_no_internet">No internet connection</string>
+
+    <!-- Legal consent text; %1$s, %2$s and %3$s are the link names below, in this order -->
+    <string name="legal_consent">By continuing, you accept our %1$s, %2$s and %3$s.</string>
+    <!-- Link name inside the legal consent text -->
+    <string name="legal_terms_of_service">Terms of Service</string>
+    <!-- Link name inside the legal consent text -->
+    <string name="legal_privacy_policy">Privacy Policy</string>
+    <!-- Link name inside the legal consent text -->
+    <string name="legal_subscription_terms">Subscription Terms</string>
+
+    <!-- Permission name inside the denied-access dialog title -->
+    <string name="permission_camera">Camera</string>
+    <!-- Permission name inside the denied-access dialog title -->
+    <string name="permission_notifications">Notifications</string>
+    <!-- Title of the denied-access dialog; %1$s is the permission name -->
+    <string name="permission_denied_title">No access to %1$s</string>
+    <!-- Description of the denied camera access dialog -->
+    <string name="permission_camera_description">Please allow camera access to continue.</string>
+    <!-- Description of the denied notifications access dialog -->
+    <string name="permission_notifications_description">Please allow notification access to stay updated.</string>
+    <!-- Button of the denied-access dialog that opens the app settings -->
+    <string name="permission_allow_access">Allow access</string>
+</resources>

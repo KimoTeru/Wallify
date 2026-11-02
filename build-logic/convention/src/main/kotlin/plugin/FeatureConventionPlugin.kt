@@ -13,6 +13,7 @@ private val featureProjects = listOf(
     ":core:model",
     ":core:domain",
     ":core:design-system",
+    ":core:resources",
     ":core:presentation"
 )
 

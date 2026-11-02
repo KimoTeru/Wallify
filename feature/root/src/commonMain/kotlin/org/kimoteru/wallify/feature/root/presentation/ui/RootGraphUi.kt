@@ -19,6 +19,7 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.stack.animation.plus
 import com.arkivanov.decompose.extensions.compose.stack.animation.scale
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
+import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.blur.BlurHost
 import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
@@ -27,6 +28,8 @@ import org.kimoteru.wallify.core.presentation.components.units.api_error_manager
 import org.kimoteru.wallify.core.presentation.components.units.api_error_manager.presentation.ui.ApiErrorManagerUi
 import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerContract
 import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerUi
+import org.kimoteru.wallify.core.resources.generated.resources.Res
+import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet
 import org.kimoteru.wallify.feature.home.ui.HomeUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
@@ -88,7 +91,7 @@ fun RootGraphUi(
                     .background(appColor.basic.error)
                     .statusBarsPadding()
                     .padding(appPadding.small),
-                text = "No internet connection",
+                text = stringResource(Res.string.error_no_internet),
                 style = appTypography.h6.medium,
                 color = appColor.basic.white,
                 textAlign = TextAlign.Center

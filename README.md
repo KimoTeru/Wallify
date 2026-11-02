@@ -41,7 +41,8 @@ Wallify/
 │   ├── cache/           # Memory and disk cache
 │   ├── platform/        # expect/actual platform services
 │   ├── presentation/    # Base screen classes, shared UI blocks with logic
-│   └── design-system/   # Theme, tokens, UI components
+│   ├── design-system/   # Theme, tokens, UI components
+│   └── resources/       # All strings, fonts and images (public Res)
 ├── feature/
 │   ├── root/            # Navigation graph, error dialog, snackbars, offline banner
 │   ├── splash/
