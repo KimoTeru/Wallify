@@ -42,6 +42,10 @@ Related: `setup/gradle-conventions.md` § Compose Resources, `design/foundations
 - Шрифт приложения (Plus Jakarta Sans, четыре начертания) лежит в `composeResources/font`; в `FontFamily` его собирает
   `rememberAppFontFamily()` из `core:design-system`, экраны шрифт не выбирают.
 - Иконка, на которую нигде нет ссылки, не лежит в проекте.
+- Иконка приложения — не пункт `AppIcons`. Свой знак: белая W на чёрном скруглённом квадрате, с полями как у знака X. Крайние штрихи разрезаны каналом вдоль середины и не доходят до концов, внутренние целые.
+  На Android это адаптивные векторы `androidApp/.../res/drawable/ic_launcher_*`. На Desktop растр в
+  `desktopApp/src/main/resources/icons`: `icon.png` для окна и Dock, `icon.icns` и `icon.ico`
+  для собранного приложения. В заголовок своего окна её не кладём.
 
 ## Изображения
 

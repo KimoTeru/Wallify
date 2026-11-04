@@ -32,6 +32,15 @@ class DesktopApplicationConventionPlugin : Plugin<Project> {
                         modules("jdk.httpserver")
                         packageName = ProjectConfig.APPLICATION_ID
                         packageVersion = ProjectConfig.VERSION_NAME
+                        macOS {
+                            iconFile.set(layout.projectDirectory.file("src/main/resources/icons/icon.icns"))
+                        }
+                        windows {
+                            iconFile.set(layout.projectDirectory.file("src/main/resources/icons/icon.ico"))
+                        }
+                        linux {
+                            iconFile.set(layout.projectDirectory.file("src/main/resources/icons/icon.png"))
+                        }
                     }
                 }
             }
