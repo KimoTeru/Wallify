@@ -57,6 +57,7 @@ suspend inline fun <reified T> HttpResponse.toResponse(): Response<T> {
     val parsed = raw?.let(::decodeErrorBody)
     val message = parsed?.errors?.takeIf { it.isNotEmpty() }?.joinToString(String.SemicolonSpace)
         ?: parsed?.message?.nullIfBlank()
+        ?: parsed?.errorDescription?.nullIfBlank()
         ?: parsed?.error?.nullIfBlank()
         ?: raw
         ?: status.description

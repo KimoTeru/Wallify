@@ -21,7 +21,8 @@ private val graphProjects = listOf(
     ":core:presentation",
     ":feature:root",
     ":feature:splash",
-    ":feature:home"
+    ":feature:home",
+    ":feature:auth"
 )
 
 /** Connects an application module to the whole dependency graph and enables Koin compile-time checks. */

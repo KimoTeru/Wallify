@@ -11,7 +11,6 @@ internal object ProjectConfig {
     const val COMPILE_SDK = 37
     const val MIN_SDK = 24
     const val TARGET_SDK = 37
-    const val DEFAULT_API_BASE_URL = "https://example.invalid/"
     const val DESKTOP_MAIN_CLASS = "org.kimoteru.wallify.MainKt"
 
     val javaVersion: JavaVersion = JavaVersion.VERSION_11

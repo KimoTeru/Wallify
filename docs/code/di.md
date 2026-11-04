@@ -28,8 +28,8 @@ Related: `code/presentation.md`, `architecture/layers.md`, `setup/gradle-convent
    подставляются из графа. Use case'ы `core:domain` регистрируются так, в `DataModule`: `domain` и `common` про Koin не
    знают.
 5. Параметры, которые передаёт вызывающий (`parametersOf`), помечаем `@InjectedParam` в конструкторе.
-6. Значения из сборки и окружения (адрес и ключ бэкенда) в `startKoin` не передаём: они генерируются в константы
-   `ApiBuildConfig` модуля `core:network`, а `NetworkModule` сам собирает из них `NetworkConfig`
+6. Значения из сборки и окружения (ключи бэкенда) в `startKoin` не передаём: они генерируются в константы
+   `ApiBuildConfig` модуля `core:network`, а `NetworkModule` сам собирает из них `ApiCredentials` и `NetworkConfig`
    (`setup/config-and-secrets.md`). Тип, который приходит в граф снаружи как готовый объект, помечаем `@Provided` на
    параметре конструктора (узко: параметр, а не класс).
 7. Именованные привязки (`@Named`) не заводим без причины: если нужны два клиента одного типа, лучше обёртка-тип

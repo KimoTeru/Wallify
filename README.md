@@ -2,7 +2,7 @@
 
 Kotlin Multiplatform application built with Compose Multiplatform, targeting Android and Desktop (JVM).
 The project is an empty but fully configured base: modular architecture, networking, session handling, storage,
-design system and an app shell (root graph, splash, home). Feature code is added on top.
+design system and an app shell (root graph, splash, sign-in, home). Feature code is added on top.
 
 ## Tech Stack
 
@@ -13,6 +13,7 @@ design system and an app shell (root graph, splash, home). Feature code is added
 | DI | Koin Annotations (compiler plugin) |
 | Navigation | Decompose |
 | Networking | Ktor |
+| Backend | [Unsplash API](https://unsplash.com/documentation) (`https://api.unsplash.com/`) |
 | Database | Room (multiplatform) + bundled SQLite |
 | Settings | DataStore Preferences |
 | Images | Coil 3 |
@@ -46,7 +47,8 @@ Wallify/
 ├── feature/
 │   ├── root/            # Navigation graph, error dialog, snackbars, offline banner
 │   ├── splash/
-│   └── home/
+│   ├── home/
+│   └── auth/            # Sign-in screen, shown until the user has a session
 └── build-logic/         # Convention plugins
 ```
 
@@ -56,7 +58,8 @@ The module dependency graph and the rules behind it are in
 ## Getting Started
 
 1. Open the project in Android Studio or IntelliJ IDEA and let Gradle sync.
-2. Optionally configure the backend (see below). Without it the app runs, but requests fail.
+2. Configure the backend (see below). The access key and the secret key are required: without them the build fails
+   with a message naming the missing values.
 3. Run:
    - Android: `./gradlew :androidApp:assembleDebug`
    - Desktop: `./gradlew :desktopApp:run` (hot reload: `./gradlew :desktopApp:hotRun --auto`)
@@ -64,14 +67,19 @@ The module dependency graph and the rules behind it are in
 
 ### Backend configuration
 
-Credentials never go into version control. Put them in `local.properties` or the environment:
+The backend address is embedded in `core:network`. The keys of your Unsplash application (see
+[Registering your application](https://unsplash.com/documentation#registering-your-application)) never go into
+version control. Put them in `local.properties` or the environment:
 
 | Value | `local.properties` | Environment variable |
 |---|---|---|
-| Backend URL | `api.baseUrl` | `API_BASE_URL` |
-| Access key | `api.accessKey` | `API_ACCESS_KEY` |
+| Access key (required) | `api.accessKey` | `API_ACCESS_KEY` |
+| Secret key (required) | `api.secretKey` | `API_SECRET_KEY` |
 
 The build reads them and generates constants for `core:network` (Android and Desktop alike); rebuild after changing them.
+A new application is in demo mode: 50 requests per hour. Follow the
+[API guidelines](https://help.unsplash.com/en/articles/2511245-unsplash-api-guidelines): hotlinked image URLs,
+download tracking and attribution (`docs/architecture/data.md` § Бэкенд фото).
 
 ## Documentation for Contributors and AI Agents
 
@@ -84,5 +92,10 @@ The build reads them and generates constants for `core:network` (Android and Des
 ## Known Limitations
 
 - iOS targets are not enabled.
-- The repository contains only generic data infrastructure (settings, key-value cache, session); there are no API
-  repositories yet.
+- The API layer covers every documented endpoint: API classes and full response models (with their `toDomain()`
+  mappers) in `core:network`, remote data sources and repositories in `core:data`, trimmed domain models in
+  `core:model`. No screen uses it yet.
+- Signing in opens the system browser and needs two redirect URIs in the application on the backend
+  (`docs/setup/config-and-secrets.md` § Вход пользователя). Nothing is downloaded and no server of your own is needed.
+- The secret key is built into the application. For a public release move requests that need it behind your own proxy
+  (`docs/setup/config-and-secrets.md`).

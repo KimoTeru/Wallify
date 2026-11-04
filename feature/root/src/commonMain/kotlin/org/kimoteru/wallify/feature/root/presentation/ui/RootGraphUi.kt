@@ -30,6 +30,7 @@ import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.
 import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerUi
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet
+import org.kimoteru.wallify.feature.auth.ui.AuthUi
 import org.kimoteru.wallify.feature.home.ui.HomeUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
@@ -76,6 +77,7 @@ fun RootGraphUi(
             when (val instance = child.instance) {
                 is Child.Splash -> SplashUi(component = instance.component)
                 is Child.Home -> HomeUi(component = instance.component)
+                is Child.Auth -> AuthUi(component = instance.component)
             }
         }
 

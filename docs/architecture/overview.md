@@ -10,14 +10,14 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 |---|---|
 | `androidApp`, `desktopApp` | Точки входа платформ: окно или `Application`, старт Koin (`@KoinApplication`), создание корневого компонента. Список модулей графа им даёт `applyAppGraph()` в `build-logic` |
 | `feature:root` | Корневой граф навигации, диалог ошибок, снекбары, баннер отсутствия сети; `RootGraphUi(component)` — корневой экран, тему вокруг него задают приложения |
-| `feature:splash`, `feature:home` | Экраны |
+| `feature:splash`, `feature:home`, `feature:auth` | Экраны; `feature:auth` — экран входа, показывается, пока нет сессии |
 | `core:presentation` | Базовые классы экрана, общие UI-блоки с логикой (шторка, диалог ошибок, уведомления, разрешения) |
 | `core:design-system` | Тема, токены, компоненты без бизнес-логики |
 | `core:resources` | Единственное место ресурсов: строки (по областям), шрифты, картинки; публичный `Res` |
 | `core:domain` | Интерфейсы репозиториев, use case'ы |
 | `core:data` | Реализации репозиториев, сессия, скачивание файлов |
 | `core:model` | Чистые `@Serializable` модели |
-| `core:network` | Ktor-клиент, `Response`-обёртка запросов, мониторинг сети |
+| `core:network` | Ktor-клиент, `Response`-обёртка запросов, API-классы, модели запросов и ответов с мапперами в доменные модели, мониторинг сети |
 | `core:database`, `core:datastore`, `core:cache` | Room, DataStore, кэш на диске и в памяти |
 | `core:platform` | `expect`/`actual`: диспетчеры, время, язык, буфер обмена, переходы по системным ссылкам |
 | `core:common` | Без зависимостей на другие `core`: `Response`, `AppDispatchers`, пагинация, расширения, flow-утилиты |
@@ -39,6 +39,7 @@ flowchart TB
         root["feature:root"]
         splash["feature:splash"]
         home["feature:home"]
+        auth["feature:auth"]
     end
 
     subgraph ui["UI"]
@@ -69,6 +70,7 @@ flowchart TB
     apps --> presentation
     root --> splash
     root --> home
+    root --> auth
     features --> presentation
     features --> domain
     presentation --> designSystem
@@ -78,6 +80,7 @@ flowchart TB
     domain --> model
     data --> domain
     data --> network
+    network --> model
     data --> database
     data --> datastore
     data --> cache
@@ -92,6 +95,8 @@ flowchart TB
 1. `core:common`, `core:model` ни от чего не зависят (кроме библиотек). `core:model` — только данные, без логики и UI.
 2. `core:domain` зависит от `core:model` и `core:common`, не знает про `core:data`, сеть, базу и UI.
 3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет.
+   `core:network` зависит от `core:model`: модель ответа API мапится в доменную рядом с собой (`toDomain()`),
+   `core:model` про сеть не знает.
 4. Feature-модули не зависят друг от друга, кроме `feature:root`, который собирает экраны в стек.
 5. Приложения зависят от всех модулей с Koin-привязками (список в `build-logic`, `applyAppGraph()`), чтобы собрать
    граф; в коде приложения используют только `feature:root`, `design-system` (тема) и `core:resources` (строки).
