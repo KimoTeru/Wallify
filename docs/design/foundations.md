@@ -11,8 +11,8 @@ Related: `code/presentation.md`, `code/resources.md`.
 
 | Токен | Что |
 |---|---|
-| `AppTheme.color` | Цвета: `basic` (primary, background, error, white, black, dark, transparent, card, button), `text` (title, subtitle, common, fieldType, fieldHint, reversed, onReversed), `icons` (care, nav) |
-| `AppTheme.typography` | Стили `h1`…`h8`, у каждого `regular`, `medium`, `semiBold`, `bold` |
+| `AppTheme.color` | Цвета: `basic` (primary, background, error, white, black, dark, transparent, card, button), `text` (title, subtitle, common, fieldType, fieldHint, reversed, onReversed), `icons` (care, nav), `glass` (слои стекла) |
+| `AppTheme.typography` | Стили `h1`…`h8` и `caps` (микро-подписи, текст пишем `.uppercase()`), у каждого `regular`, `medium`, `semiBold`, `bold`; шрифт — Plus Jakarta Sans из `core:resources` |
 | `AppTheme.padding`, `corner`, `alpha`, `borderWidth`, `elevation`, `blur`, `scale`, `durationAnim`, `zIndex` | Универсальные шкалы: отступы, скругления, прозрачности, обводки, тени, размытие, масштабы, длительности анимаций, слои |
 | `AppTheme.size` | Размеры: шкала иконок и размеры конкретных компонентов (переключатель, чекбокс, разделитель, индикаторы, шторка) |
 | `AppTheme.gradient` | Градиенты общего назначения (затемнение под текстом) |
@@ -42,10 +42,82 @@ AsyncImage(
 
 ## Выбор темы
 
-Платформенные приложения оборачивают `RootGraphUi` в `AppTheme { … }`; тема следует за системной. Выбор темы
-пользователем пока не хранится. Когда он понадобится, поле добавляется в `UserSettings` (`core:model`), подписка на
-него — в `RootGraphLogic`, а приложения берут значение из состояния корневого компонента и передают `isDarkTheme` в
-`AppTheme`.
+Тема — «Ночь» и «День» палитры Crystalline; пользователь выбирает `ThemeMode` (`System` / `Night` / `Day`) в
+настройках, значение лежит в `UserSettings.themeMode`. `RootGraphLogic` подписан на него и кладёт в состояние корня;
+платформенные приложения оборачивают `RootGraphUi` в `AppTheme(isDarkTheme = rootComponent.isDarkTheme())`
+(`RootGraphTheme.kt` в `feature:root`), сами `ThemeMode` не знают. Android-приложение дополнительно переключает цвет
+значков системных панелей (`enableEdgeToEdge` в `MainActivity`), потому что тема приложения может отличаться от
+системной.
+
+## Нет сети
+
+Отсутствие сети — состояние, а не событие, поэтому его не показываем модальным окном (так в Material и в гайдах по
+офлайну): баннер сверху (`error_no_internet`) показывает корень, а у экрана с неудавшейся загрузкой — инлайн-ошибка с
+«повторить».
+
+1. Текст ошибки списка или экрана берём из `networkErrorTitle()` / `networkErrorDescription()`: без сети это «нет
+   интернета» и обещание, что загрузится само, иначе общий сбой. Корень кладёт состояние сети в `LocalIsOnline`.
+2. Экран, который читает данные, подключает `RetryOnReconnect(isFailed) { retry }`: загрузка повторяется сама, когда
+   сеть вернулась, и только тогда (сбой при сети в цикле не повторяем). Запись (скачать, добавить в коллекцию) так не
+   повторяем: неизвестно, дошёл ли первый запрос, повтор остаётся за пользователем.
+3. Диалог, который открыла неудавшаяся запись без сети, говорит про интернет (`ApiErrorManagerUi(isOffline)`) и
+   закрывается сам, когда связь вернулась (`RootGraphLogic`).
+
+## Заголовок окна Desktop
+
+Заголовок окна красим под тему, а не оставляем системно-серым. На macOS заголовок прозрачный
+(`apple.awt.transparentTitleBar`, `apple.awt.fullWindowContent`), приложение рисуется под ним и начинается с отступа
+`AppTheme.size.window.titleBarHeight`; светлые или тёмные кнопки окна задаёт `apple.awt.windowAppearance` по схеме
+темы. На Windows и Linux окно без системной рамки (`undecorated`): `WindowFrame` в `desktopApp` рисует свой заголовок
+с кнопками (свернуть, развернуть или восстановить, закрыть), перетаскивание и разворот двойным кликом, а края и углы
+окна для изменения размера (`resizeEdge`, `resizeCorner`) рисуют невидимые полосы, потому что у окна без рамки своих
+краёв нет. Размеры берём из `AppTheme.size.window`, платформу определяет `desktopApp/main.kt`.
+
+## Стекло
+
+Вид интерфейса — «кристаллическое стекло»: полупрозрачные слои на глубоком фоне, волосяная рамка со светлым верхом,
+крупные скругления. Цвета слоёв — `AppTheme.color.glass`. Скругление, которого нет шагом шкалы, складываем из
+`AppTheme.corner`: карточки — `large + smallSpecial`, шторки — `large + small`, диалоги — `large + medium`, поля —
+`medium`; капсулы — `CircleShape`.
+
+| Что | Как |
+|---|---|
+| Поверхность | `Modifier.glassSurface(level, shape)`; `GlassLevel`: `Sub` (утопленные панели), `Standard` (карточки), `Elevated` (приподнятые элементы), `Floating` (панели поверх фото: док, строка поиска), `Solid` (шторки и диалоги, непрозрачные). Контейнер с содержимым — `GlassCard` |
+| Кнопки | `GlassButton` (`Glass`, `Solid` для главного действия, `Ghost`), `GlassIconButton` |
+| Выбор | `GlassChip` (выбранный — залитый), `GlassSegmentedControl` |
+| Поиск | `GlassSearchField`: отправка клавишей поиска, крестик очистки |
+| Навигация | `GlassDock` (телефон), `GlassRail` (планшет), `GlassDrawer` (большое окно); пункты — `GlassNavItem` |
+| Шторка / диалог | `GlassOverlay(isSheet, onDismiss) { close -> … }`: шторка на `Compact`, диалог на остальных. Экран вкладки кладёт её в `ScreenOverlay { … }`: навигация рисует её над доком и размывает всё под ней |
+| Прячущиеся панели | `LocalNavigationVisibility` + `rememberHideOnScrollConnection`: список вешает на себя `nestedScroll`, док и верхняя панель экрана скрываются при прокрутке вниз и возвращаются при прокрутке вверх |
+| Цифры | `GlassStat` (значение и подпись), `Sparkline` (график ряда без осей) |
+| Фото | `PhotoCard` (карточка с автором), `PhotoGridLayout` (колонки по ширине окна), `PagingPhotoGrid<T>` (постраничная сетка со всеми состояниями), `UserAvatar`; компоновку (`PhotoGridMode`: мозаика, сетка, список) и число колонок берут из `LocalPhotoGridMode` и `LocalPhotoGridColumns`, их задаёт корень по настройкам пользователя — экран их не выбирает; выбор компоновки рисует `PhotoLayoutCard` (миниатюра раскладки вместо текстового переключателя). Выбор пользователя действует на ленту; «Кураторские», «Случайные» и профиль всегда показывают сетку одинаковых карточек (`LocalPhotoGridMode provides PhotoGridMode.Grid` в самом экране) |
+
+Правила:
+
+1. Док, рейл и drawer рисует только навигация корня (`feature:root/main`). Она кладёт в `LocalNavigationPadding`
+   место, занятое плавающим элементом; экран берёт отступы через `rememberScreenPadding()` (`header`, `list(gap)`,
+   `full`), чтобы список уходил под док, а не заканчивался над ним, и не считает системные панели сам.
+2. Панели и кнопки поверх списка или фото (док, рейл, поиск, чипы и кнопки верхней панели, «назад» на фото) —
+   `GlassLevel.Floating` (у `GlassButton`, `GlassChip`, `GlassIconButton` это параметр `level`): матовое стекло, `frostedBackdrop` размывает то,
+   что под ними, на непрозрачной подложке цвета фона (иначе резкий контент просвечивает и панель выглядит просто
+   полупрозрачной). Источник размытия — сам список (`PhotoGridLayout` сам помечает себя `blurSource`), а панель — его
+   сосед в `Box`, не потомок: внутри источника эффект его не видит (§ Блюр). Экран без сетки (настройки) помечает
+   свою прокручиваемую колонку `blurSource(BlurSourceZIndex.Screen)` сам. Тон панели (`glass.dock`) плотный, чтобы
+   содержимое под ней не читалось, даже если блюр слабый.
+   Шапки и формы на широком окне не растягиваем: ограничиваем `AppTheme.size.panel.contentMaxWidth` и центрируем
+   (образец — `ProfileHeader`).
+   Список, над которым плавает панель (заголовок, чипы, поиск), начинается под ней и уходит под неё при прокрутке:
+   такой экран собираем через `FloatingBarScreen(bar) { topPadding -> … }` — он сам меряет панель, прячет её и док
+   при прокрутке вниз и рисует под панелью градиент для читаемости. Экран, у которого заголовок едет вместе со
+   списком (профиль, настройки), только вешает на прокрутку `rememberHideOnScrollConnection`, чтобы пряталась
+   навигация.
+3. Цвет основной кнопки и текст на ней — `basic.button.primary` и `text.reversed`: на ночной схеме кнопка белая, на дневной
+   тёмная, поэтому белый или чёрный текст на ней не пишем.
+4. Диалог и шторка не растягиваем на всё окно: диалог — не шире `AppTheme.size.panel.dialogMaxWidth` (560 dp), шторка —
+   `sheetMaxWidth` (640 dp), на широком окне они по центру (так в Material 3). Новый диалог или шторка берут эти
+   токены, а не `fillMaxWidth()`.
+5. Цвет, которого нет в токенах (например, цвет фильтра по цвету фото), экран сам не вводит: нет токена — нет цветового
+   пятна, используем текст.
 
 ## Адаптивность
 
@@ -60,7 +132,14 @@ JetBrains для Compose Multiplatform. Они подключены в `core:des
 | `adaptive-navigation` | Навигатор по панелям для этих раскладок |
 | `material3-adaptive-navigation-suite` | `NavigationSuiteScaffold`: нижняя панель, рейл или drawer по размеру окна |
 
-Для простого ветвления есть `rememberWindowType()` (`Compact` / `Medium` / `Expanded`) из `ui/adaptive`. Сырые
+Для простого ветвления есть `rememberWindowType()` (`Compact` / `Medium` / `Expanded`) из `ui/adaptive`. Пользователь
+может принудительно выбрать компоновку экрана в настройках (`ScreenLayout`): корень кладёт её в
+`LocalWindowTypeOverride`, а `rememberWindowType()` её учитывает — поэтому ветвим только через него, не читая размер
+окна напрямую. Окно Desktop при смене выбора (но не при запуске) само принимает типичную ширину этой компоновки
+(`AppTheme.size.window`): корень отдаёт приложению `requestedWindowType()` и `isSettingsLoaded()`. Там же
+минимальные ширина и высота окна (`minWidth`, `minHeight`): окно Desktop нельзя ужать меньше. При принудительных
+Medium и Expanded минимальная ширина растёт до `mediumMinWidth` и `expandedMinWidth`: навигации (рейлу, drawer) нужно
+место, иначе содержимое экранов сжимается до нескольких символов в строке. Сырые
 `WindowSizeClass` и числа ширины в экранах не пишем: нужна новая граница — расширяем `WindowType`.
 
 ## Блюр
@@ -88,7 +167,11 @@ JetBrains для Compose Multiplatform. Они подключены в `core:des
    `ui/blur`.
 5. Без `BlurHost` (превью, тесты) и там, где платформа не умеет блюр (Android 11 и ниже), `blurBackdrop` сам рисует
    полупрозрачный тёмный скрим.
-6. Блюр дорогой: размываем только оверлеи, а не каждый элемент списка.
+6. Стиль блюра задаётся только в `blurBackdrop`: непрозрачная подложка цвета фона (`backgroundColor`), без шума
+   (`noiseFactor(0f)`) и с тоном фона поверх. Подложка нужна, потому что источник блюра лежит над фоном экрана:
+   без неё размытая копия полупрозрачна, а резкий контент просвечивает «призраком».
+7. Блюр дорогой: размываем оверлеи и несколько плавающих панелей (`frostedBackdrop`), а не каждый элемент списка;
+   плашка автора на карточке фото лежит внутри источника и потому остаётся плотной тёмной, без блюра.
 
 Пример диалога внутри экрана:
 
@@ -112,7 +195,8 @@ BlurLayout(
 
 1. В экранах нет `Color(0x…)`, `TextStyle(fontSize = …)`, `FontWeight`, голых `N.dp` и `N.sp`. Нужного значения нет в
    токенах — добавляем токен в `design-system/.../theme/compositions` (одно место для всех экранов), а не локальную
-   константу.
+   константу. Скругление, которое складывается из шагов `AppTheme.corner`, новым именем не заводим: пишем сумму
+   (`large + small`).
 2. **Прямой `AppTheme.…` — только в значениях параметров по умолчанию в сигнатуре composable** (там локальных
    переменных ещё нет): `titleStyle: TextStyle = AppTheme.typography.h5.semiBold`. В теле composable токены берём
    полным вариантом через локальные `val` в начале функции и пишем по ним:
@@ -146,6 +230,8 @@ BlurLayout(
 Что искать в `core:design-system/.../ui/`, прежде чем верстать своё:
 
 - блюр фона для оверлеев (`blur`: `BlurHost`, `blurSource`, `blurBackdrop`, `BlurLayout`);
+- стеклянные компоненты (`glass`: поверхности, кнопки, чипы, поиск, док / рейл / drawer, оверлей, `GlassStat`,
+  `ScreenPadding`), карточка фото и сетка (`photo`), аватар (`avatar`), график (`chart`);
 - кнопки (`button`), поля ввода (`edit_text`), переключатели и чекбоксы (`switch`, `checkbox`), табы (`tab_row`),
   выбор значения (`selection`);
 - карточки (`card`), разделители (`divider`), бейдж (`badge`), нижняя панель (`bottom_bar`), верхняя панель
@@ -163,5 +249,8 @@ BlurLayout(
   нужный индекс — `PagingListInsert` / `PagingStaggeredInsert`.
 - Состояния списка — расширения `LazyPagingItems`: `isRefreshing`, `isAppending`, `refreshError`, `appendError`,
   `isEmpty`; повтор после ошибки — `paging.retry()`.
+- Список фото — `PagingPhotoGrid` (все состояния внутри); если сетке нужен свой заголовок или смешанные элементы,
+  берём `PhotoGridLayout` и добавляем `item(span = StaggeredGridItemSpan.FullLine)` (образец — `feature:profile`).
+  Текст из ресурсов (`stringResource`) вычисляем до лямбды `LazyStaggeredGridScope`: она не composable.
 - Пока список грузится, показываем `ShimmerBox`, а не пустой экран.
 - Системные отступы и клавиатура — `WindowInsets`, а не константы.

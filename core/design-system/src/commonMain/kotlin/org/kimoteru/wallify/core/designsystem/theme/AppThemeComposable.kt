@@ -34,8 +34,10 @@ fun AppTheme(
         if (animEnabled) AppDurationAnim() else AppDurationAnim.AnimOff
     }
 
-    val typography = remember(colors) {
-        AppTypography(colors.text.title)
+    val fontFamily = rememberAppFontFamily()
+
+    val typography = remember(colors, fontFamily) {
+        AppTypography(colors.text.title, fontFamily)
     }
 
     CompositionLocalProvider(

@@ -9,8 +9,10 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 | Модуль | Роль |
 |---|---|
 | `androidApp`, `desktopApp` | Точки входа платформ: окно или `Application`, старт Koin (`@KoinApplication`), создание корневого компонента. Список модулей графа им даёт `applyAppGraph()` в `build-logic` |
-| `feature:root` | Корневой граф навигации, диалог ошибок, снекбары, баннер отсутствия сети; `RootGraphUi(component)` — корневой экран, тему вокруг него задают приложения |
-| `feature:splash`, `feature:home`, `feature:auth` | Экраны; `feature:auth` — экран входа, показывается, пока нет сессии |
+| `feature:root` | Корневой граф навигации, граф вкладок (`main`), диалог ошибок, снекбары, баннер отсутствия сети; `RootGraphUi(component)` — корневой экран, тему вокруг него задают приложения |
+| `feature:splash`, `feature:auth` | Экраны; `feature:auth` — экран входа, показывается, пока нет сессии |
+| `feature:feed`, `feature:topics`, `feature:random`, `feature:profile`, `feature:settings` | Вкладки основной навигации; `feature:profile` также открывается над навигацией как чужой профиль |
+| `feature:photo` | Детали фото: EXIF, статистика, коллекции пользователя, скачивание |
 | `core:presentation` | Базовые классы экрана, общие UI-блоки с логикой (шторка, диалог ошибок, уведомления, разрешения) |
 | `core:design-system` | Тема, токены, компоненты без бизнес-логики |
 | `core:resources` | Единственное место ресурсов: строки (по областям), шрифты, картинки; публичный `Res` |
@@ -38,8 +40,8 @@ flowchart TB
     subgraph features["Фичи"]
         root["feature:root"]
         splash["feature:splash"]
-        home["feature:home"]
         auth["feature:auth"]
+        screens["feature:feed, topics, random,<br/>photo, profile, settings"]
     end
 
     subgraph ui["UI"]
@@ -69,12 +71,13 @@ flowchart TB
     apps --> platform
     apps --> presentation
     root --> splash
-    root --> home
     root --> auth
+    root --> screens
     features --> presentation
     features --> domain
     presentation --> designSystem
     presentation --> resources
+    designSystem --> resources
     features --> resources
     presentation --> platform
     domain --> model
@@ -97,7 +100,9 @@ flowchart TB
 3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет.
    `core:network` зависит от `core:model`: модель ответа API мапится в доменную рядом с собой (`toDomain()`),
    `core:model` про сеть не знает.
-4. Feature-модули не зависят друг от друга, кроме `feature:root`, который собирает экраны в стек.
+4. Feature-модули не зависят друг от друга, кроме `feature:root`, который собирает экраны в стек и вкладки.
+   `core:design-system` берёт из `core:resources` шрифт темы и общие тексты своих компонентов (состояния списка
+   фото); обратной зависимости нет.
 5. Приложения зависят от всех модулей с Koin-привязками (список в `build-logic`, `applyAppGraph()`), чтобы собрать
    граф; в коде приложения используют только `feature:root`, `design-system` (тема) и `core:resources` (строки).
 6. Новая зависимость, которая добавляет стрелку против этого графа, — повод остановиться и спросить.

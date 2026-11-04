@@ -210,6 +210,8 @@ private class FakeUserRepository(vararg results: Response<User>) : UserRepositor
 
     override fun getUserCollectionsFlow(username: String): Flow<PagingData<PhotoCollection>> = unused()
 
+    override suspend fun getUserCollections(username: String): Response<List<PhotoCollection>> = unused()
+
     override suspend fun getUserStatistics(username: String, quantity: Int?): Response<Statistics> = unused()
 
     private fun unused(): Nothing = error("Not used by the synchronizer")

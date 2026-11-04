@@ -38,6 +38,9 @@ interface UserRepository {
 
     fun getUserCollectionsFlow(username: String): Flow<PagingData<PhotoCollection>>
 
+    /** The first page of the user's collections (up to 30), for pickers that do not page. */
+    suspend fun getUserCollections(username: String): Response<List<PhotoCollection>>
+
     /** [quantity] is the number of days, 1..30; `null` means the backend default. */
     suspend fun getUserStatistics(username: String, quantity: Int? = null): Response<Statistics>
 }

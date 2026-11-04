@@ -37,10 +37,23 @@ class ResponseMappersTest {
         assertEquals("man drinking coffee", photo.description)
         assertEquals("Montreal, Canada", photo.location)
         assertEquals(listOf("man", "coffee"), photo.tags)
-        assertEquals("page", photo.htmlUrl)
+        assertEquals("page?utm_source=Wallify&utm_medium=referral", photo.htmlUrl)
         assertEquals("track", photo.downloadLocation)
         assertNull(photo.downloads)
+        assertNull(photo.exif)
+        assertEquals(emptyList(), photo.currentUserCollectionIds)
         assertNull(photo.user)
+    }
+
+    @Test
+    fun referralIsAppendedToLinksThatAlreadyHaveAQuery() {
+        val photo = PhotoResponse(
+            id = "p2",
+            urls = PhotoUrlsResponse(raw = "raw"),
+            links = PhotoLinksResponse(html = "page?a=b")
+        ).toDomain()
+
+        assertEquals("page?a=b&utm_source=Wallify&utm_medium=referral", photo.htmlUrl)
     }
 
     @Test

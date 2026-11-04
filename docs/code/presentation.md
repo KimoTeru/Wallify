@@ -1,6 +1,7 @@
 # Экран: Component / Logic / Contract / Ui
 
-Форма экрана и правила состояния. Образцы — `feature/splash` (простой экран), `feature/home` (экран с состоянием),
+Форма экрана и правила состояния. Образцы — `feature/splash` (простой экран), `feature/random` (экран с
+состоянием), `feature/feed` (постраничный список), `feature/photo` (аргумент экрана и `ComponentEvent`),
 `feature/root` (граф с состоянием).
 
 Related: `code/navigation.md`, `code/di.md`, `design/foundations.md`, `architecture/layers.md`.
@@ -46,7 +47,10 @@ override val logic: XxxLogic = instanceKeeper.getOrCreate { get<XxxLogic>() }
 4. Действия пользователя — `UiEvent` (`sealed interface`, `data object` / `data class`). Метод на каждое действие в
    Ui не заводим: один `obtainUiEvent`.
 5. Одноразовые эффекты: навигация — `navigate(NavigationEvent)` логики; сообщение пользователю — `NotifierManager`;
-   ошибка запроса — `ApiErrorManager`. Не `StateFlow<Boolean>` с ручным сбросом.
+   ошибка запроса — `ApiErrorManager`; действие, которое выполняет сам экран (открыть адрес в браузере через
+   `LocalUriHandler`), — `ComponentEvent`: логика шлёт `sendComponentEvent(…)`, Ui ловит
+   `component.collectComponentEvents { … }` (для него нужны `…Core`-типы с явным `ComponentEvent`). Не
+   `StateFlow<Boolean>` с ручным сбросом.
 6. Данные приходят из use case'ов и репозиториев `core:domain` (`architecture/layers.md`). Ошибки — `Response`; логика
    решает, что показать (`handleResponse`), а не бросает исключения в Ui.
 7. Работа с данными — на `dispatchers.io` внутри use case'а или репозитория; `Logic` лишь запускает её в
@@ -56,7 +60,10 @@ override val logic: XxxLogic = instanceKeeper.getOrCreate { get<XxxLogic>() }
 9. Базовые алиасы (`BaseDefaultComponent`, `BaseLogic`, `BaseComponent`) подходят, когда у графа или экрана нет
    `ComponentEvent` и своего состояния; иначе берём `…Core` с явными типами (как `feature:root`).
 10. Для списка с подгрузкой `Logic` держит `Flow<PagingData<T>>.cachedIn(coroutineScope)`
-    (`architecture/data.md` § Пагинация).
+    (`architecture/data.md` § Пагинация). Поток отдаёт Ui интерфейс компонента (`val photos: Flow<PagingData<Photo>>`),
+    а не `UiState`; запрос, от которого зависит список, берём из состояния:
+    `uiState.mapDistinctBy { … }.flatMapLatest { … }.cachedIn(…)`. Если у экрана несколько списков (вкладки),
+    `collectAsLazyPagingItems()` вызываем внутри composable своей вкладки, чтобы невидимые списки не грузились.
 
 ## Каркас Ui
 

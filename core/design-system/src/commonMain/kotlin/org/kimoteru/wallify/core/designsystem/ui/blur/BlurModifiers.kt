@@ -27,6 +27,42 @@ fun Modifier.blurSource(zIndex: Float = BlurSourceZIndex.Root): Modifier {
 }
 
 /**
+ * Frosted glass for a bar that floats over scrolling content (dock, rail, search): the content under it, blurred.
+ * The blur lies on an opaque base color, otherwise the sharp content shows through the blurred copy and the bar
+ * only looks translucent instead of matte. The surface puts its own tint over it.
+ *
+ * It sees the content marked with [blurSource] that is not a parent of the bar: the bar and the list are siblings.
+ * Without a [BlurHost] it draws nothing, and the surface stays plain translucent.
+ */
+@Composable
+fun Modifier.frostedBackdrop(level: BlurLevel = BlurLevel.Large): Modifier {
+    val appBlur = AppTheme.blur
+    val appColor = AppTheme.color
+
+    val hazeState = LocalHazeState.current ?: return this
+
+    val radius = when (level) {
+        BlurLevel.Small -> appBlur.small
+        BlurLevel.Medium -> appBlur.medium
+        BlurLevel.Large -> appBlur.large
+    }
+    val base = appColor.basic.background
+
+    val style = remember(radius, base) {
+        HazeBlurStyle {
+            blurRadius(radius)
+            noiseFactor(0f)
+            backgroundColor(base)
+        }
+    }
+
+    return this.hazeBlur(
+        input = HazeInput.Backdrop(hazeState),
+        style = style
+    )
+}
+
+/**
  * Draws a blurred copy of the content behind this surface instead of a dim scrim.
  * [alpha] fades the effect in and out (0f is invisible, 1f is fully applied), so dialogs and sheets can animate it.
  *
@@ -49,16 +85,23 @@ fun Modifier.blurBackdrop(
         BlurLevel.Medium -> appBlur.medium
         BlurLevel.Large -> appBlur.large
     }
-    val tint = appColor.basic.dark.copy(alpha = appAlpha.small)
+    // The screen background lies under the blur source, so the blurred copy is translucent where the screen
+    // draws nothing, and the sharp content shows through it as a ghost. An opaque base color behind the blur
+    // closes that, the scrim then dims it evenly (dark on the day scheme too, or a white dialog would not stand out),
+    // and no noise keeps it clean.
+    val base = appColor.basic.background
+    val tint = appColor.glass.scrim
     val scrim = appColor.basic.black.copy(alpha = appAlpha.largeSpecial)
 
     if (hazeState == null) {
         return this.background(scrim.copy(alpha = scrim.alpha * alpha))
     }
 
-    val style = remember(radius, tint, scrim) {
+    val style = remember(radius, base, tint, scrim) {
         HazeBlurStyle {
             blurRadius(radius)
+            noiseFactor(0f)
+            backgroundColor(base)
             colorEffects(listOf(HazeColorEffect.tint(tint)))
             fallbackColorEffect(HazeColorEffect.tint(scrim))
             alpha(currentAlpha.value)

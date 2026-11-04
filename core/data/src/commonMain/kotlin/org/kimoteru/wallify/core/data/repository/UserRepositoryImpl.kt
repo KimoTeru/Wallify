@@ -4,6 +4,8 @@ import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import org.kimoteru.wallify.core.common.paging.DEFAULT_PAGE_SIZE
+import org.kimoteru.wallify.core.common.paging.FIRST_PAGE
 import org.kimoteru.wallify.core.common.paging.createPager
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.onSuccess
@@ -64,6 +66,14 @@ class UserRepositoryImpl(
         return createPager { page, loadSize ->
             userRemoteDataSource.getUserCollections(username = username, page = page, size = loadSize)
         }
+    }
+
+    override suspend fun getUserCollections(username: String): Response<List<PhotoCollection>> {
+        return userRemoteDataSource.getUserCollections(
+            username = username,
+            page = FIRST_PAGE,
+            size = DEFAULT_PAGE_SIZE
+        )
     }
 
     override suspend fun getUserStatistics(username: String, quantity: Int?): Response<Statistics> {

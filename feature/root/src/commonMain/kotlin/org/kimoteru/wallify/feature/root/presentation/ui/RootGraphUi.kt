@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,8 +22,15 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.scale
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
+import org.kimoteru.wallify.core.designsystem.ui.adaptive.LocalWindowTypeOverride
 import org.kimoteru.wallify.core.designsystem.ui.blur.BlurHost
 import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
+import org.kimoteru.wallify.core.designsystem.ui.network.LocalIsOnline
+import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridColumns
+import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
+import org.kimoteru.wallify.core.model.settings.PhotoLayout
+import org.kimoteru.wallify.core.model.settings.ScreenLayout
+import org.kimoteru.wallify.core.model.settings.ThemeMode
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.components.units.api_error_manager.presentation.ui.ApiErrorManagerContract
 import org.kimoteru.wallify.core.presentation.components.units.api_error_manager.presentation.ui.ApiErrorManagerUi
@@ -31,7 +39,9 @@ import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet
 import org.kimoteru.wallify.feature.auth.ui.AuthUi
-import org.kimoteru.wallify.feature.home.ui.HomeUi
+import org.kimoteru.wallify.feature.photo.ui.PhotoUi
+import org.kimoteru.wallify.feature.profile.ui.ProfileUi
+import org.kimoteru.wallify.feature.root.main.MainGraphUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
 import org.kimoteru.wallify.feature.splash.ui.SplashUi
@@ -41,7 +51,14 @@ object RootGraphContract {
     data class UiState(
         val apiErrorManagerState: ApiErrorManagerContract.UiState = ApiErrorManagerContract.UiState(),
         val notifierManagerState: NotifierManagerContract.UiState = NotifierManagerContract.UiState(),
-        val isOnline: Boolean = true
+        val isOnline: Boolean = true,
+        val themeMode: ThemeMode = ThemeMode.System,
+        val photoLayout: PhotoLayout = PhotoLayout.Masonry,
+        val photoColumns: Int? = null,
+        val screenLayout: ScreenLayout = ScreenLayout.Auto,
+
+        /** `false` until the saved settings are read; the values above are defaults until then. */
+        val isSettingsLoaded: Boolean = false
     ) : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent {
@@ -74,10 +91,19 @@ fun RootGraphUi(
                 .blurSource(),
             animation = stackAnimation { fade() + scale() }
         ) { child ->
-            when (val instance = child.instance) {
-                is Child.Splash -> SplashUi(component = instance.component)
-                is Child.Home -> HomeUi(component = instance.component)
-                is Child.Auth -> AuthUi(component = instance.component)
+            CompositionLocalProvider(
+                LocalPhotoGridMode provides uiState.photoLayout.toGridMode(),
+                LocalPhotoGridColumns provides uiState.photoColumns,
+                LocalWindowTypeOverride provides uiState.screenLayout.toWindowType(),
+                LocalIsOnline provides uiState.isOnline
+            ) {
+                when (val instance = child.instance) {
+                    is Child.Splash -> SplashUi(component = instance.component)
+                    is Child.Main -> MainGraphUi(component = instance.component)
+                    is Child.Photo -> PhotoUi(component = instance.component)
+                    is Child.Profile -> ProfileUi(component = instance.component)
+                    is Child.Auth -> AuthUi(component = instance.component)
+                }
             }
         }
 
@@ -95,13 +121,14 @@ fun RootGraphUi(
                     .padding(appPadding.small),
                 text = stringResource(Res.string.error_no_internet),
                 style = appTypography.h6.medium,
-                color = appColor.basic.white,
+                color = appColor.text.reversed,
                 textAlign = TextAlign.Center
             )
         }
 
         ApiErrorManagerUi(
             uiState = uiState.apiErrorManagerState,
+            isOffline = !uiState.isOnline,
             obtainUiEvent = { obtainUiEvent(RootGraphContract.UiEvent.ApiErrorManagerEvent(it)) }
         )
 

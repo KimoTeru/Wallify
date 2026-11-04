@@ -9,7 +9,7 @@ data class AppCorners(
     val small: Dp = 8.dp,
     val mediumSpecial: Dp = 12.dp,
     val medium: Dp = 16.dp,
-    val specialLarge: Dp = 22.dp,
+    val largeSpecial: Dp = 22.dp,
     val large: Dp = 24.dp
 )
 

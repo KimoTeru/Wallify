@@ -1,15 +1,25 @@
 <resources>
-    <!-- Name of the app, shown on the splash and home screens and in the desktop window title -->
+    <!-- Name of the app, shown on the splash and navigation screens and in the desktop window title -->
     <string name="app_name">Wallify</string>
     <!-- Confirm button of informational dialogs -->
     <string name="action_ok">OK</string>
+    <!-- Button that repeats a failed request, shown under an error message -->
+    <string name="common_retry">Try again</string>
+    <!-- Button of a filter dialog that applies the chosen values -->
+    <string name="common_apply">Apply</string>
+    <!-- Button of a filter dialog that clears the chosen values -->
+    <string name="common_reset">Reset</string>
+    <!-- Message of a photo list that has nothing to show -->
+    <string name="common_photos_empty">No photos here yet</string>
 
     <!-- Title of the dialog shown when a request fails -->
     <string name="error_dialog_title">Something went wrong</string>
     <!-- Description of the dialog shown when a request fails -->
     <string name="error_dialog_description">Please try again later.</string>
-    <!-- Banner at the top of the screen while the device has no internet connection -->
+    <!-- Banner at the top of the screen while the device has no internet connection; also the title of an error state -->
     <string name="error_no_internet">No internet connection</string>
+    <!-- Description of an error state shown while the device is offline -->
+    <string name="error_no_internet_description">Check your connection. The content loads again as soon as you are back online.</string>
 
     <!-- Legal consent text; %1$s, %2$s and %3$s are the link names below, in this order -->
     <string name="legal_consent">By continuing, you accept our %1$s, %2$s and %3$s.</string>
@@ -39,13 +49,188 @@
     <string name="auth_description">Sign in with your Unsplash account to browse wallpapers, collect your favorites and download photos.</string>
     <!-- Button of the sign-in screen that opens the sign-in page of the photo service in the browser -->
     <string name="auth_sign_in">Sign in with Unsplash</string>
-    <!-- Button of the home screen that signs the user out -->
+    <!-- Button of the settings screen that signs the user out -->
     <string name="auth_sign_out">Sign out</string>
     <!-- Sign-in screen text while the sign-in page is open in the browser and the app waits for the user -->
     <string name="auth_waiting_for_browser">Finish signing in in your browser</string>
     <!-- Button of the sign-in screen that stops waiting for the sign-in in the browser -->
     <string name="auth_cancel">Cancel</string>
 
-    <!-- Home screen line under the app name; %1$s is the name of the signed-in user -->
-    <string name="home_signed_in_as">Signed in as %1$s</string>
+    <!-- Main navigation: the editorial photo feed with search; also the title of that screen -->
+    <string name="nav_feed">All photos</string>
+    <!-- Main navigation: photos grouped by topic; also the title of that screen -->
+    <string name="nav_topics">Curated</string>
+    <!-- Main navigation: random photos; also the title of that screen -->
+    <string name="nav_random">Random</string>
+    <!-- Main navigation: the profile of the signed-in user -->
+    <string name="nav_studio">Studio</string>
+    <!-- Main navigation: the settings screen; also the title of that screen -->
+    <string name="nav_settings">Settings</string>
+
+    <!-- Hint of the search field above the photo feed -->
+    <string name="feed_search_hint">Search photos</string>
+    <!-- Title of the search filters sheet and dialog -->
+    <string name="feed_filters_title">Search filters</string>
+    <!-- Note under the title of the search filters: they work only together with a search text -->
+    <string name="feed_filters_note">Filters apply to search results.</string>
+    <!-- Section of the search filters: orientation of the photo -->
+    <string name="feed_filter_orientation">Orientation</string>
+    <!-- Section of the search filters: dominant color of the photo -->
+    <string name="feed_filter_color">Color</string>
+    <!-- Section of the search filters: order of the results -->
+    <string name="feed_filter_order">Sort by</string>
+    <!-- Section of the search filters: filter of content unsuitable for younger audiences -->
+    <string name="feed_filter_content">Content filter</string>
+    <!-- Photo orientation -->
+    <string name="orientation_landscape">Landscape</string>
+    <!-- Photo orientation -->
+    <string name="orientation_portrait">Portrait</string>
+    <!-- Photo orientation: width equals height -->
+    <string name="orientation_squarish">Squarish</string>
+    <!-- Photo color filter value -->
+    <string name="color_black_and_white">Black and white</string>
+    <!-- Photo color filter value -->
+    <string name="color_black">Black</string>
+    <!-- Photo color filter value -->
+    <string name="color_white">White</string>
+    <!-- Photo color filter value -->
+    <string name="color_yellow">Yellow</string>
+    <!-- Photo color filter value -->
+    <string name="color_orange">Orange</string>
+    <!-- Photo color filter value -->
+    <string name="color_red">Red</string>
+    <!-- Photo color filter value -->
+    <string name="color_purple">Purple</string>
+    <!-- Photo color filter value -->
+    <string name="color_magenta">Magenta</string>
+    <!-- Photo color filter value -->
+    <string name="color_green">Green</string>
+    <!-- Photo color filter value -->
+    <string name="color_teal">Teal</string>
+    <!-- Photo color filter value -->
+    <string name="color_blue">Blue</string>
+    <!-- Order of search results: the best match first -->
+    <string name="order_relevant">Relevant</string>
+    <!-- Order of search results: the newest first -->
+    <string name="order_latest">Latest</string>
+    <!-- Content filter value: the backend default -->
+    <string name="content_filter_low">Standard</string>
+    <!-- Content filter value: removes content that may be unsuitable for younger audiences -->
+    <string name="content_filter_high">Strict</string>
+
+    <!-- Button of the random photos screen that loads another set of photos -->
+    <string name="random_shuffle">Shuffle</string>
+
+    <!-- Attribution under the photo; %1$s is the name of the photographer, who is a link to the profile -->
+    <string name="photo_attribution">Photo by %1$s on Unsplash</string>
+    <!-- Button that opens the photo page of the photo service in the browser -->
+    <string name="photo_open_source">Open on Unsplash</string>
+    <!-- Button that downloads the photo through the browser -->
+    <string name="photo_download">Download</string>
+    <!-- Size of a photo in pixels; %1$d is the width, %2$d is the height -->
+    <string name="photo_dimensions">%1$d × %2$d px</string>
+    <!-- Section title: camera data of a photo -->
+    <string name="photo_exif_title">Camera data</string>
+    <!-- Label of the camera of a photo -->
+    <string name="photo_exif_camera">Camera</string>
+    <!-- Label of the aperture of a photo -->
+    <string name="photo_exif_aperture">Aperture</string>
+    <!-- Label of the shutter speed of a photo -->
+    <string name="photo_exif_exposure">Shutter</string>
+    <!-- Label of the ISO sensitivity of a photo -->
+    <string name="photo_exif_iso">ISO</string>
+    <!-- Label of the focal length of a photo -->
+    <string name="photo_exif_focal">Focal length</string>
+    <!-- Aperture value; %1$s is the f-number, e.g. 1.8 -->
+    <string name="photo_exif_aperture_value">ƒ/%1$s</string>
+    <!-- Shutter speed value; %1$s is the exposure time in seconds, e.g. 1/2000 -->
+    <string name="photo_exif_exposure_value">%1$s s</string>
+    <!-- Focal length value; %1$s is the length in millimeters -->
+    <string name="photo_exif_focal_value">%1$s mm</string>
+    <!-- Message when the photographer shared no camera data -->
+    <string name="photo_exif_empty">The photographer did not share camera data.</string>
+    <!-- Section title: tags of a photo -->
+    <string name="photo_tags">Tags</string>
+    <!-- Section title: views and downloads of a photo for the last days -->
+    <string name="photo_stats_title">Last 30 days</string>
+    <!-- Caption of the number of views -->
+    <string name="photo_stats_views">Views</string>
+    <!-- Caption of the number of downloads -->
+    <string name="photo_stats_downloads">Downloads</string>
+    <!-- Section title: collections of the signed-in user, where the photo can be added or removed -->
+    <string name="photo_collections_title">Your collections</string>
+    <!-- Message when the signed-in user has no collections -->
+    <string name="photo_collections_empty">You have no collections yet.</string>
+
+    <!-- Tab of the profile: photos of the user -->
+    <string name="profile_tab_photos">Photos</string>
+    <!-- Tab of the profile: collections of the user -->
+    <string name="profile_tab_collections">Collections</string>
+    <!-- Caption of the number of photos of the user -->
+    <string name="profile_stat_photos">Photos</string>
+    <!-- Caption of the number of collections of the user -->
+    <string name="profile_stat_collections">Collections</string>
+    <!-- Caption of the number of downloads of the user's photos -->
+    <string name="profile_stat_downloads">Downloads</string>
+    <!-- Message when the user has no collections -->
+    <string name="profile_collections_empty">No collections yet</string>
+    <!-- Number of photos of a collection; %1$d is the number -->
+    <string name="profile_collection_photos">%1$d photos</string>
+    <!-- Button that leaves the photos of a collection and returns to the list of collections -->
+    <string name="profile_collection_back">All collections</string>
+
+    <!-- Section title of the settings: the signed-in account -->
+    <string name="settings_account">Account</string>
+    <!-- Section title of the settings: look of the app -->
+    <string name="settings_appearance">Appearance</string>
+    <!-- Choice of the color scheme: follows the device -->
+    <string name="settings_theme_system">System</string>
+    <!-- Choice of the color scheme: dark -->
+    <string name="settings_theme_night">Night</string>
+    <!-- Choice of the color scheme: light -->
+    <string name="settings_theme_day">Day</string>
+    <!-- Section title of the settings: arrangement of the whole screen (navigation, panels, columns) -->
+    <string name="settings_screen_layout">Screen layout</string>
+    <!-- Choice of the screen layout: follows the window size -->
+    <string name="settings_screen_layout_auto">Auto</string>
+    <!-- Choice of the screen layout: the phone arrangement with the bottom dock -->
+    <string name="settings_screen_layout_compact">Compact</string>
+    <!-- Choice of the screen layout: the tablet arrangement with the side rail -->
+    <string name="settings_screen_layout_medium">Medium</string>
+    <!-- Choice of the screen layout: the desktop arrangement with the permanent drawer -->
+    <string name="settings_screen_layout_expanded">Expanded</string>
+    <!-- Note under the screen layout choice -->
+    <string name="settings_screen_layout_description">Compact is the phone layout, Medium the tablet one, Expanded the desktop one. Auto follows the window size.</string>
+    <!-- Section title of the settings: default layout of the photo lists -->
+    <string name="settings_layout">Photo layout</string>
+    <!-- Choice of the photo layout: cards keep the proportions of their photos -->
+    <string name="settings_layout_masonry">Masonry</string>
+    <!-- Choice of the photo layout: all cards have the same size -->
+    <string name="settings_layout_grid">Grid</string>
+    <!-- Choice of the photo layout: large cards in one column -->
+    <string name="settings_layout_list">List</string>
+    <!-- Label of the choice of the number of photo columns -->
+    <string name="settings_columns">Columns</string>
+    <!-- Choice of the number of photo columns: the window width decides -->
+    <string name="settings_columns_auto">Auto</string>
+    <!-- Note under the photo layout choice: where it applies -->
+    <string name="settings_layout_description">Applies to the photo feed. Curated, random photos and profiles always use a grid of equal cards.</string>
+    <!-- Section title of the settings: numbers of the whole photo service -->
+    <string name="settings_service_title">Unsplash in numbers</string>
+    <!-- Caption of the total number of photos of the service -->
+    <string name="settings_stat_photos">Photos</string>
+    <!-- Caption of the total number of downloads of the service -->
+    <string name="settings_stat_downloads">Downloads</string>
+    <!-- Caption of the total number of views of the service -->
+    <string name="settings_stat_views">Views</string>
+    <!-- Caption of the number of photographers of the service -->
+    <string name="settings_stat_photographers">Photographers</string>
+    <!-- Caption of the number of photos added in the last 30 days -->
+    <string name="settings_stat_new_photos">New photos, 30 days</string>
+    <!-- Caption of the number of photographers who joined in the last 30 days -->
+    <string name="settings_stat_new_photographers">New photographers, 30 days</string>
+    <!-- Section title of the settings: about the photo source -->
+    <string name="settings_about">About</string>
+    <!-- Text of the about section: all photos come from the photo service -->
+    <string name="settings_about_description">All photos are provided by Unsplash and belong to their photographers.</string>
 </resources>

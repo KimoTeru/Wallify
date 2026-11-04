@@ -14,6 +14,8 @@ import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.action_ok
 import org.kimoteru.wallify.core.resources.generated.resources.error_dialog_description
 import org.kimoteru.wallify.core.resources.generated.resources.error_dialog_title
+import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet
+import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet_description
 
 interface ApiErrorManagerContract {
     @Immutable
@@ -30,6 +32,7 @@ interface ApiErrorManagerContract {
 fun ApiErrorManagerUi(
     modifier: Modifier = Modifier,
     uiState: UiState,
+    isOffline: Boolean = false,
     obtainUiEvent: (UiEvent) -> Unit
 ) {
     val appColor = AppTheme.color
@@ -41,9 +44,11 @@ fun ApiErrorManagerUi(
             onDismiss = {
                 obtainUiEvent(UiEvent.HideDialog)
             },
-            title = stringResource(Res.string.error_dialog_title),
+            title = stringResource(if (isOffline) Res.string.error_no_internet else Res.string.error_dialog_title),
             titleStyle = appTypography.h4.bold.withColor(appColor.basic.error),
-            description = stringResource(Res.string.error_dialog_description),
+            description = stringResource(
+                if (isOffline) Res.string.error_no_internet_description else Res.string.error_dialog_description
+            ),
             primaryButtonText = stringResource(Res.string.action_ok),
             primaryButtonColor = appColor.basic.error,
             onPrimaryClick = {

@@ -22,4 +22,22 @@ fun Long.toTimeString(): String {
     }
 }
 
+/** Short counter: 1_234 is `1.2k`, 3_400_000 is `3.4M`; numbers below a thousand stay as they are. */
+fun Long.toCompactString(): String = when {
+    this >= BILLION -> toCompactString(unit = BILLION, suffix = "B")
+    this >= MILLION -> toCompactString(unit = MILLION, suffix = "M")
+    this >= THOUSAND -> toCompactString(unit = THOUSAND, suffix = "k")
+    else -> toString()
+}
+
+private const val THOUSAND = 1_000L
+private const val MILLION = 1_000_000L
+private const val BILLION = 1_000_000_000L
+
+private fun Long.toCompactString(unit: Long, suffix: String): String {
+    val tenths = this * 10 / unit
+    val fraction = tenths % 10
+    return if (fraction == 0L) "${tenths / 10}$suffix" else "${tenths / 10}.$fraction$suffix"
+}
+
 private fun Long.twoDigits(): String = toString().padStart(2, '0')
