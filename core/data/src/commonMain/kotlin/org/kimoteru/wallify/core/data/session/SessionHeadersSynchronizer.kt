@@ -11,8 +11,6 @@ import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserSettingsRepository
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
 import org.kimoteru.wallify.core.network.headers.HeadersRequest
-import org.kimoteru.wallify.core.platform.systemLanguageTag
-
 /**
  * Keeps [HeadersCollectorRepository] in sync with the session and settings, so the HTTP client
  * always sends the current user token (`Bearer <token>`) and `Accept-Language`.
@@ -34,7 +32,7 @@ class SessionHeadersSynchronizer(
                 settings.observe().map { it.languageTag }
             ) { token, languageTag ->
                 HeadersRequest(
-                    languageTag = languageTag ?: systemLanguageTag(),
+                    languageTag = languageTag,
                     authorization = token?.nullIfBlank()?.let { "Bearer $it" }
                 )
             }

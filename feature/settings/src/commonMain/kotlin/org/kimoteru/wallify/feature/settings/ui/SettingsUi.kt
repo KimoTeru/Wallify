@@ -58,7 +58,6 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_columns
 import org.kimoteru.wallify.core.resources.generated.resources.settings_columns_auto
 import org.kimoteru.wallify.core.resources.generated.resources.settings_language
 import org.kimoteru.wallify.core.resources.generated.resources.settings_language_description
-import org.kimoteru.wallify.core.resources.generated.resources.settings_language_system
 import org.kimoteru.wallify.core.resources.generated.resources.settings_layout
 import org.kimoteru.wallify.core.resources.generated.resources.settings_layout_description
 import org.kimoteru.wallify.core.resources.generated.resources.settings_layout_grid
@@ -90,8 +89,7 @@ object SettingsContract {
         val photoColumns: Int? = null,
         val screenLayout: ScreenLayout = ScreenLayout.Auto,
 
-        /** Language of the app and of photo search; `null` follows the device. */
-        val languageTag: String? = null,
+        val languageTag: String = SupportedLanguages.first().tag,
         val totalStats: TotalStats? = null,
         val monthStats: MonthStats? = null
     ) : BaseContract.UiState
@@ -105,8 +103,7 @@ object SettingsContract {
 
         data class SelectScreenLayout(val screenLayout: ScreenLayout) : UiEvent
 
-        /** `null` follows the device language. */
-        data class SelectLanguage(val languageTag: String?) : UiEvent
+        data class SelectLanguage(val languageTag: String) : UiEvent
 
         data object SignOut : UiEvent
     }
@@ -223,11 +220,10 @@ fun SettingsUi(
             SettingsSection(title = stringResource(Res.string.settings_language)) {
                 GlassSegmentedControl(
                     modifier = Modifier.fillMaxWidth(),
-                    options = listOf(stringResource(Res.string.settings_language_system)) +
-                        languages.map { language -> language.name },
-                    selectedIndex = languages.indexOfFirst { language -> language.tag == uiState.languageTag } + 1,
+                    options = languages.map { language -> language.name },
+                    selectedIndex = languages.indexOfFirst { language -> language.tag == uiState.languageTag },
                     onSelect = { index ->
-                        obtainEvent(SettingsContract.UiEvent.SelectLanguage(languages.getOrNull(index - 1)?.tag))
+                        obtainEvent(SettingsContract.UiEvent.SelectLanguage(languages[index].tag))
                     }
                 )
 

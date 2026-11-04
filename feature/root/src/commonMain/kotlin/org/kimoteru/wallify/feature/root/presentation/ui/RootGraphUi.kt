@@ -22,6 +22,7 @@ import org.kimoteru.wallify.core.designsystem.ui.blur.BlurHost
 import org.kimoteru.wallify.core.designsystem.ui.image.ClearImageCacheEffect
 import org.kimoteru.wallify.core.model.settings.PhotoLayout
 import org.kimoteru.wallify.core.model.settings.ScreenLayout
+import org.kimoteru.wallify.core.model.settings.SupportedLanguages
 import org.kimoteru.wallify.core.model.settings.ThemeMode
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.components.units.api_error_manager.presentation.ui.ApiErrorManagerContract
@@ -44,8 +45,8 @@ object RootGraphContract {
         val photoColumns: Int? = null,
         val screenLayout: ScreenLayout = ScreenLayout.Auto,
 
-        /** Language of the app; `null` follows the device. */
-        val languageTag: String? = null,
+        /** Language of the app, one of [SupportedLanguages]. */
+        val languageTag: String = SupportedLanguages.first().tag,
 
         /** `false` until the saved settings are read; the values above are defaults until then. */
         val isSettingsLoaded: Boolean = false

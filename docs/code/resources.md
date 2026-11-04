@@ -27,7 +27,7 @@ Related: `setup/gradle-conventions.md` § Compose Resources, `design/foundations
 9. Новый язык: папка `values-<код>/` рядом с `values/` (`values-ru/strings.xml`, `values-de/strings.xml`) с тем же
    набором ключей, в том же порядке и с теми же разделами; комментарии-контексты переносим как есть. Ключа нет в
    переводе — используется английский. Добавили строку в `values/strings.xml` — добавьте её во все языки.
-   Региональные варианты — `values-pt-rBR/`. Язык интерфейса выбирает пользователь или система (раздел «Язык» ниже).
+   Региональные варианты — `values-pt-rBR/`. Язык интерфейса выбирает пользователь (раздел «Язык» ниже).
 
 ## Иконки
 
@@ -48,10 +48,10 @@ Related: `setup/gradle-conventions.md` § Compose Resources, `design/foundations
 
 ## Язык
 
-Языки приложения — `SupportedLanguages` (`core:model`): английский и русский. Пользователь выбирает язык в настройках
-(«Системный» или один из списка); выбор лежит в `UserSettings.languageTag`, `null` — язык системы
-(`systemLanguageTag()` в `core:platform`). Корень отдаёт приложениям `languageTag()`, они оборачивают `RootGraphUi` в
-`ProvideAppLocale(languageTag)` (`core:design-system`, `ui/locale`): строки читаются на выбранном языке и сразу
-меняются. Выбранный язык уходит и в заголовок `Accept-Language`, и в параметр `lang` поиска фото (английский не
-отправляем). Названия языков — данные списка (`AppLanguage.name`, на самом языке), в `strings.xml` их нет.
-Новый язык — запись в `SupportedLanguages` и `values-<код>/strings.xml` (правило 9).
+Языки приложения — `SupportedLanguages` (`core:model`): английский и русский. Пользователь выбирает один из них в
+настройках; выбор лежит в `UserSettings.languageTag` (по умолчанию английский, варианта «язык системы» нет). Корень
+отдаёт приложениям `languageTag()`, они оборачивают `RootGraphUi` в `ProvideAppLocale(languageTag)`
+(`core:design-system`, `ui/locale`): строки читаются на выбранном языке и сразу меняются. Выбранный язык уходит и в
+заголовок `Accept-Language`, и в параметр `lang` поиска фото (английский не отправляем). Названия языков — данные
+списка (`AppLanguage.name`, на самом языке), в `strings.xml` их нет. Новый язык — запись в `SupportedLanguages` и
+`values-<код>/strings.xml` (правило 9).

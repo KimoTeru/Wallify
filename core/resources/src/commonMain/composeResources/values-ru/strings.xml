@@ -243,8 +243,6 @@
     <string name="settings_layout_description">Действует для ленты фото. Подборки, случайные фото и профили всегда показываются сеткой одинаковых карточек.</string>
     <!-- Section title of the settings: language of the app -->
     <string name="settings_language">Язык</string>
-    <!-- Choice of the language: the language of the device -->
-    <string name="settings_language_system">Системный</string>
     <!-- Note under the language choice: what the language changes -->
     <string name="settings_language_description">Язык приложения и поисковых запросов. Поиск не на английском — бета-функция сервиса фото, и она может работать не для всех приложений.</string>
     <!-- Section title of the settings: numbers of the whole photo service -->

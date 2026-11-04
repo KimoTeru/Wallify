@@ -131,7 +131,7 @@ class SettingsLogic(
         }
     }
 
-    private fun selectLanguage(languageTag: String?) {
+    private fun selectLanguage(languageTag: String) {
         coroutineScope.launch {
             updateUserSettings(settings.value.copy(languageTag = languageTag))
         }
