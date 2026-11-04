@@ -50,6 +50,7 @@ include(":core:datastore")
 include(":core:cache")
 
 include(":feature:root")
+include(":feature:main")
 include(":feature:splash")
 include(":feature:auth")
 include(":feature:feed")

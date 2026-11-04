@@ -55,7 +55,7 @@ Related: `code/presentation.md`, `architecture/layers.md`, `setup/gradle-convent
 
 ## Фичи
 
-Образец — `feature/splash`:
+Образец — `feature/splash` (`presentation/components` для логики, `XxxModule` в корне пакета):
 
 ```kotlin
 @Module

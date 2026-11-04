@@ -20,6 +20,7 @@ private val graphProjects = listOf(
     ":core:data",
     ":core:presentation",
     ":feature:root",
+    ":feature:main",
     ":feature:splash",
     ":feature:auth",
     ":feature:feed",

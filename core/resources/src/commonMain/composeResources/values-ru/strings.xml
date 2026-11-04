@@ -119,7 +119,7 @@
     <string name="content_filter_high">Строгий</string>
 
     <!-- Button of the random photos screen that loads another set of photos -->
-    <string name="random_shuffle">Перемешать</string>
+    <string name="random_shuffle">Обновить</string>
 
     <!-- Attribution under the photo; %1$s is the name of the photographer, who is a link to the profile -->
     <string name="photo_attribution">Фото: %1$s, Unsplash</string>
@@ -203,7 +203,7 @@
     <!-- Button of the profile form: saves the changes -->
     <string name="profile_edit_save">Сохранить</string>
     <!-- Message in the profile form when the changes were not saved -->
-    <string name="profile_edit_error">Не удалось сохранить профиль. Проверьте поля и попробуйте ещё раз.</string>
+    <string name="profile_edit_error">Не удалось сохранить профиль.\nПроверьте поля и попробуйте ещё раз.</string>
 
     <!-- Section title of the settings: the signed-in account -->
     <string name="settings_account">Аккаунт</string>

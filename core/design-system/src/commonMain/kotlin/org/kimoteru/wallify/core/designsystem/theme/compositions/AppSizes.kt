@@ -72,7 +72,6 @@ data class NavigationSize(
     val dockItemSize: Dp = 48.dp,
     val dockInset: Dp = 20.dp,
     val railWidth: Dp = 64.dp,
-    val railItemSize: Dp = 48.dp,
     val drawerWidth: Dp = 220.dp
 )
 
@@ -90,8 +89,8 @@ data class ControlSize(
 )
 
 /**
- * Columns of the photo grid per window width and the gap between its cells; the list layout has its own, fewer
- * columns ([listColumns] on a phone, [listWideColumns] on wider windows).
+ * Columns of the photo grid per window width. The list layout has its own, fewer columns ([listColumns] on a phone,
+ * [listWideColumns] on wider windows). [spacing] is the vertical gap; the horizontal gap is the screen gutter.
  */
 data class PhotoGridSize(
     val compactColumns: Int = 2,

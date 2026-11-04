@@ -1,14 +1,9 @@
 package org.kimoteru.wallify.core.designsystem.ui.glass
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,30 +11,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
-import org.kimoteru.wallify.core.designsystem.theme.withAlpha
 
 /**
- * Screen with a list that scrolls under a bar (title, chips, search) floating over its top edge. The bar fades into
- * the list through a scrim, hides while the list scrolls down and returns at the first scroll up, together with the
- * navigation dock ([LocalNavigationVisibility]).
+ * The top bar of a scrolling screen: [bar] stays pinned, its background is [ScrollBlurBar] (transparent until
+ * [scrolledPx] grows, then the same frosted glass as the dock). The feed, settings, the photo, topics and random use it;
+ * a screen only fills [bar] and passes how far its list has scrolled.
  *
- * [bar] must bring its own top margin (status bar included, see [rememberScreenPadding]). [content] gets the height
- * the list has to keep free above its first item as `topPadding`.
+ * [bar] brings its own top margin (status bar included, see [rememberScreenPadding]). [content] gets the height the
+ * list keeps free above its first item as `topPadding`. The navigation dock still hides on scroll down.
  */
 @Composable
 fun FloatingBarScreen(
     modifier: Modifier = Modifier,
+    scrolledPx: Int,
     bar: @Composable () -> Unit,
     content: @Composable (topPadding: Dp) -> Unit
 ) {
-    val appAlpha = AppTheme.alpha
-    val appColor = AppTheme.color
     val appPadding = AppTheme.padding
 
     val density = LocalDensity.current
@@ -53,27 +45,22 @@ fun FloatingBarScreen(
     ) {
         content(barHeight + appPadding.medium)
 
-        AnimatedVisibility(
-            modifier = Modifier.align(Alignment.TopCenter),
-            visible = visibility.isVisible,
-            enter = slideInVertically { -it } + fadeIn(),
-            exit = slideOutVertically { -it } + fadeOut()
+        ScrollBlurBar(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .onSizeChanged { size -> barHeight = with(density) { size.height.toDp() } },
+            scrolledPx = scrolledPx
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                appColor.basic.background.withAlpha(appAlpha.largeExtra),
-                                appColor.basic.transparent
-                            )
-                        )
-                    )
-                    .onSizeChanged { size -> barHeight = with(density) { size.height.toDp() } }
-            ) {
+            Box(modifier = Modifier.padding(bottom = appPadding.medium)) {
                 bar()
             }
         }
     }
 }
+
+/**
+ * How far a staggered grid has scrolled. Once the first item has left, the exact distance is gone, and the bar only
+ * needs to know that the blur is complete.
+ */
+fun LazyStaggeredGridState.scrolledPx(): Int =
+    if (firstVisibleItemIndex > 0) Int.MAX_VALUE else firstVisibleItemScrollOffset

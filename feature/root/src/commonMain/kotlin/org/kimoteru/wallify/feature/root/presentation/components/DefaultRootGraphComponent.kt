@@ -7,13 +7,13 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.serialization.Serializable
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationDefaultComponentCore
-import org.kimoteru.wallify.feature.auth.ui.AuthDefaultComponent
-import org.kimoteru.wallify.feature.photo.ui.PhotoDefaultComponent
-import org.kimoteru.wallify.feature.profile.ui.ProfileDefaultComponent
-import org.kimoteru.wallify.feature.profile.ui.ProfileTarget
-import org.kimoteru.wallify.feature.root.main.DefaultMainGraphComponent
+import org.kimoteru.wallify.feature.auth.presentation.components.DefaultAuthComponent
+import org.kimoteru.wallify.feature.photo.presentation.components.DefaultPhotoComponent
+import org.kimoteru.wallify.feature.profile.presentation.components.DefaultProfileComponent
+import org.kimoteru.wallify.feature.profile.presentation.components.ProfileTarget
+import org.kimoteru.wallify.feature.main.presentation.components.DefaultMainGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract
-import org.kimoteru.wallify.feature.splash.ui.SplashDefaultComponent
+import org.kimoteru.wallify.feature.splash.presentation.components.DefaultSplashComponent
 import org.koin.core.component.get
 
 class DefaultRootGraphComponent(
@@ -65,7 +65,7 @@ class DefaultRootGraphComponent(
     ): RootGraphComponent.Child {
         return when (config) {
             is Config.Splash -> RootGraphComponent.Child.Splash(
-                SplashDefaultComponent(
+                DefaultSplashComponent(
                     componentContext = componentContext,
                     navigateNext = { logic.onSplashFinished() }
                 )
@@ -79,7 +79,7 @@ class DefaultRootGraphComponent(
             )
 
             is Config.Photo -> RootGraphComponent.Child.Photo(
-                PhotoDefaultComponent(
+                DefaultPhotoComponent(
                     componentContext = componentContext,
                     photoId = config.photoId,
                     navigateBack = { onBackClicked() },
@@ -88,7 +88,7 @@ class DefaultRootGraphComponent(
             )
 
             is Config.Profile -> RootGraphComponent.Child.Profile(
-                ProfileDefaultComponent(
+                DefaultProfileComponent(
                     componentContext = componentContext,
                     target = ProfileTarget.Username(config.username),
                     navigateBack = { onBackClicked() },
@@ -97,7 +97,7 @@ class DefaultRootGraphComponent(
             )
 
             is Config.Auth -> RootGraphComponent.Child.Auth(
-                AuthDefaultComponent(componentContext = componentContext)
+                DefaultAuthComponent(componentContext = componentContext)
             )
         }
     }

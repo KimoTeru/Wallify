@@ -15,13 +15,13 @@ import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
 import org.kimoteru.wallify.core.designsystem.ui.network.LocalIsOnline
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridColumns
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
-import org.kimoteru.wallify.feature.auth.ui.AuthUi
-import org.kimoteru.wallify.feature.photo.ui.PhotoUi
-import org.kimoteru.wallify.feature.profile.ui.ProfileUi
-import org.kimoteru.wallify.feature.root.main.MainGraphUi
+import org.kimoteru.wallify.feature.auth.presentation.ui.AuthUi
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoUi
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileUi
+import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
-import org.kimoteru.wallify.feature.splash.ui.SplashUi
+import org.kimoteru.wallify.feature.splash.presentation.ui.SplashUi
 
 /**
  * The root screens with the transition between them. The user's choices that every screen reads (photo layout,
@@ -39,9 +39,9 @@ internal fun RootGraphStack(
     uiState: RootGraphContract.UiState
 ) {
     CompositionLocalProvider(
-        LocalPhotoGridMode provides uiState.photoLayout.toGridMode(),
+        LocalPhotoGridMode provides uiState.photoLayout.gridMode,
         LocalPhotoGridColumns provides uiState.photoColumns,
-        LocalWindowTypeOverride provides uiState.screenLayout.toWindowType(),
+        LocalWindowTypeOverride provides uiState.screenLayout.windowType,
         LocalIsOnline provides uiState.isOnline
     ) {
         Children(

@@ -41,9 +41,9 @@ class NotifierManagerLogic(
         }
     }
 
-    fun show(notifierModel: NotifierModel) {
-        updateNotifierModel(notifierModel)
-    }
+    fun show(notifierModel: NotifierModel) = updateNotifierModel(notifierModel)
+
+    fun dismiss() = updateNotifierModel(null)
 
     private fun updateNotifierModel(notifierModel: NotifierModel?) {
         uiState.update { it.copy(notifierModel = notifierModel) }

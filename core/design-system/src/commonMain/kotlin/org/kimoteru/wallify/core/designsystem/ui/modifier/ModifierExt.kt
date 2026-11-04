@@ -47,6 +47,13 @@ fun Modifier.applyIfNotNullComposable(block: @Composable Modifier.() -> Modifier
     return then(Modifier.block() ?: Modifier)
 }
 
+/** Picks exactly one modifier for [value], so a chain of checks of the same value is one call. */
+@Composable
+inline fun <T> Modifier.applyIf(
+    value: T,
+    block: @Composable Modifier.(T) -> Modifier
+): Modifier = block(value)
+
 fun Modifier.fadingEdge(brush: Brush) = this
     .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
     .drawWithContent {
