@@ -5,6 +5,7 @@ import androidx.paging.cachedIn
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,8 +16,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
-import org.kimoteru.wallify.core.common.response.handleResponse
-import org.kimoteru.wallify.core.common.response.onSuccess
+import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
@@ -112,6 +112,8 @@ class ProfileLogic(
         }
         .cachedIn(coroutineScope)
 
+    private var loadJob: Job? = null
+
     override fun onCreate() = load()
 
     override fun obtainUiEvent(event: UiEvent) {
@@ -124,21 +126,33 @@ class ProfileLogic(
         }
     }
 
+    /** Follows the user and the statistics in the database: the saved ones first, then the backend's answer. */
     private fun load() {
-        coroutineScope.launch {
+        loadJob?.cancel()
+        loadJob = coroutineScope.launch {
             updateIsLoading(true)
 
             val login = username.first()
 
-            userRepository.getUser(login).handleResponse(
-                onSuccess = { user -> showUser(user) },
-                onError = { updateHasError(true) }
-            )
+            launch {
+                userRepository.getUserStatisticsFlow(login).collect { resource ->
+                    if (resource is Resource.Success) updateStatistics(resource.data)
+                }
+            }
 
-            updateIsLoading(false)
-
-            userRepository.getUserStatistics(login)
-                .onSuccess { statistics -> updateStatistics(statistics) }
+            userRepository.getUserFlow(login).collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> updateIsLoading(true)
+                    is Resource.Success -> {
+                        showUser(resource.data)
+                        updateIsLoading(false)
+                    }
+                    is Resource.Error -> {
+                        updateHasError(true)
+                        updateIsLoading(false)
+                    }
+                }
+            }
         }
     }
 

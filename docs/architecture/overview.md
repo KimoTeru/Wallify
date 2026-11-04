@@ -20,7 +20,7 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 | `core:data` | Реализации репозиториев, сессия, скачивание файлов |
 | `core:model` | Чистые `@Serializable` модели |
 | `core:network` | Ktor-клиент, `Response`-обёртка запросов, API-классы, модели запросов и ответов с мапперами в доменные модели, мониторинг сети |
-| `core:database`, `core:datastore`, `core:cache` | Room, DataStore, кэш на диске и в памяти |
+| `core:database`, `core:datastore`, `core:cache` | Room (кэш данных), DataStore, каталог для скачанных файлов |
 | `core:platform` | `expect`/`actual`: диспетчеры, время, язык, буфер обмена, переходы по системным ссылкам |
 | `core:common` | Без зависимостей на другие `core`: `Response`, `AppDispatchers`, пагинация, расширения, flow-утилиты |
 
@@ -84,6 +84,7 @@ flowchart TB
     data --> domain
     data --> network
     network --> model
+    database --> model
     data --> database
     data --> datastore
     data --> cache
@@ -99,7 +100,8 @@ flowchart TB
 2. `core:domain` зависит от `core:model` и `core:common`, не знает про `core:data`, сеть, базу и UI.
 3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет.
    `core:network` зависит от `core:model`: модель ответа API мапится в доменную рядом с собой (`toDomain()`),
-   `core:model` про сеть не знает.
+   `core:model` про сеть не знает. Так же `core:database` зависит от `core:model`: сущность Room мапится в доменную
+   модель и обратно рядом с собой (`toEntity()` / `toDomain()`), `core:model` про базу не знает.
 4. Feature-модули не зависят друг от друга, кроме `feature:root`, который собирает экраны в стек и вкладки.
    `core:design-system` берёт из `core:resources` шрифт темы и общие тексты своих компонентов (состояния списка
    фото); обратной зависимости нет.

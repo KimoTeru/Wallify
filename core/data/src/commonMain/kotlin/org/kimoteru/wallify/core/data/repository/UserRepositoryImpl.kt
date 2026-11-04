@@ -1,15 +1,32 @@
 package org.kimoteru.wallify.core.data.repository
 
 import androidx.paging.PagingData
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.paging.DEFAULT_PAGE_SIZE
 import org.kimoteru.wallify.core.common.paging.FIRST_PAGE
-import org.kimoteru.wallify.core.common.paging.createPager
+import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.onSuccess
+import org.kimoteru.wallify.core.data.cache.CacheLoader
+import org.kimoteru.wallify.core.data.cache.CacheStore
+import org.kimoteru.wallify.core.data.cache.CacheTtl
+import org.kimoteru.wallify.core.data.cache.ListKeys
+import org.kimoteru.wallify.core.data.cache.StatisticsKeys
+import org.kimoteru.wallify.core.data.cache.pager
+import org.kimoteru.wallify.core.data.cache.refreshableFlow
+import org.kimoteru.wallify.core.data.cache.refreshableListFlow
 import org.kimoteru.wallify.core.data.remote.UserRemoteDataSource
+import org.kimoteru.wallify.core.database.dao.CollectionDao
+import org.kimoteru.wallify.core.database.dao.PhotoDao
+import org.kimoteru.wallify.core.database.dao.StatsDao
+import org.kimoteru.wallify.core.database.dao.UserDao
+import org.kimoteru.wallify.core.database.entity.toDomain
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
@@ -22,28 +39,43 @@ import org.koin.core.annotation.Singleton
 
 @Singleton
 class UserRepositoryImpl(
-    private val userRemoteDataSource: UserRemoteDataSource
+    private val userRemoteDataSource: UserRemoteDataSource,
+    private val userDao: UserDao,
+    private val photoDao: PhotoDao,
+    private val collectionDao: CollectionDao,
+    private val statsDao: StatsDao,
+    private val cacheLoader: CacheLoader,
+    private val cacheStore: CacheStore,
+    private val scope: CoroutineScope
 ) : UserRepository {
 
-    override val currentUser: StateFlow<User?>
-        field = MutableStateFlow<User?>(null)
+    /** The signed-in user comes from the database, so the app opens with the user it saw last, even offline. */
+    override val currentUser: StateFlow<User?> = userDao.observeCurrent()
+        .map { entity -> entity?.toDomain() }
+        .stateIn(scope = scope, started = SharingStarted.Eagerly, initialValue = null)
 
+    /** Writes the answer into the database; [currentUser] follows from there. */
     override suspend fun refreshCurrentUser(): Response<User> {
         return userRemoteDataSource.getCurrentUser()
-            .onSuccess { user -> currentUser.value = user }
+            .onSuccess { user -> cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) } }
     }
 
     override fun clearCurrentUser() {
-        currentUser.value = null
+        scope.launch { userDao.deleteCurrent() }
     }
 
     override suspend fun updateCurrentUser(params: UpdateUserParams): Response<User> {
         return userRemoteDataSource.updateCurrentUser(params = params)
-            .onSuccess { user -> currentUser.value = user }
+            .onSuccess { user -> cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) } }
     }
 
-    override suspend fun getUser(username: String): Response<User> {
-        return userRemoteDataSource.getUser(username = username)
+    override fun getUserFlow(username: String): Flow<Resource<User>> {
+        return refreshableFlow(
+            roomFlow = { userDao.observeByUsername(username) },
+            remoteCall = { userRemoteDataSource.getUser(username = username) },
+            save = cacheStore::saveUser,
+            toDomain = { entity -> entity.toDomain() }
+        )
     }
 
     override fun getUserPhotosFlow(
@@ -51,32 +83,68 @@ class UserRepositoryImpl(
         order: UserPhotosOrder?,
         orientation: PhotoOrientation?
     ): Flow<PagingData<Photo>> {
-        return createPager { page, loadSize ->
-            userRemoteDataSource.getUserPhotos(
-                username = username,
-                page = page,
-                size = loadSize,
-                order = order,
-                orientation = orientation
-            )
-        }
-    }
+        val listKey = ListKeys.userPhotos(username, order, orientation)
 
-    override fun getUserCollectionsFlow(username: String): Flow<PagingData<PhotoCollection>> {
-        return createPager { page, loadSize ->
-            userRemoteDataSource.getUserCollections(username = username, page = page, size = loadSize)
-        }
-    }
-
-    override suspend fun getUserCollections(username: String): Response<List<PhotoCollection>> {
-        return userRemoteDataSource.getUserCollections(
-            username = username,
-            page = FIRST_PAGE,
-            size = DEFAULT_PAGE_SIZE
+        return cacheLoader.pager(
+            listKey = listKey,
+            ttl = CacheTtl.Feed,
+            pagingSource = { photoDao.pagingSource(listKey) },
+            toDomain = { entity -> entity.toDomain() },
+            itemId = { photo -> photo.id },
+            fetch = { page, size ->
+                userRemoteDataSource.getUserPhotos(
+                    username = username,
+                    page = page,
+                    size = size,
+                    order = order,
+                    orientation = orientation
+                )
+            },
+            saveItems = cacheStore::savePhotoSummaries
         )
     }
 
-    override suspend fun getUserStatistics(username: String, quantity: Int?): Response<Statistics> {
-        return userRemoteDataSource.getUserStatistics(username = username, quantity = quantity)
+    override fun getUserCollectionsFlow(username: String): Flow<PagingData<PhotoCollection>> {
+        val listKey = ListKeys.userCollections(username)
+
+        return cacheLoader.pager(
+            listKey = listKey,
+            ttl = CacheTtl.Feed,
+            pagingSource = { collectionDao.pagingSource(listKey) },
+            toDomain = { entity -> entity.toDomain() },
+            itemId = { collection -> collection.id.toString() },
+            fetch = { page, size ->
+                userRemoteDataSource.getUserCollections(username = username, page = page, size = size)
+            },
+            saveItems = cacheStore::saveCollections
+        )
+    }
+
+    override fun getUserCollectionListFlow(username: String): Flow<Resource<List<PhotoCollection>>> {
+        val listKey = ListKeys.userCollections(username)
+
+        return refreshableListFlow(
+            roomFlow = { collectionDao.observeList(listKey = listKey, limit = DEFAULT_PAGE_SIZE) },
+            remoteCall = {
+                userRemoteDataSource.getUserCollections(
+                    username = username,
+                    page = FIRST_PAGE,
+                    size = DEFAULT_PAGE_SIZE
+                )
+            },
+            save = { collections -> cacheStore.saveCollectionList(listKey, collections) },
+            toDomain = { entity -> entity.toDomain() }
+        )
+    }
+
+    override fun getUserStatisticsFlow(username: String, quantity: Int?): Flow<Resource<Statistics>> {
+        val key = StatisticsKeys.user(username, quantity)
+        
+        return refreshableFlow(
+            roomFlow = { statsDao.observeStatistics(key) },
+            remoteCall = { userRemoteDataSource.getUserStatistics(username = username, quantity = quantity) },
+            save = { statistics -> cacheStore.saveStatistics(key, statistics) },
+            toDomain = { entity -> entity.toDomain() }
+        )
     }
 }

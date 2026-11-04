@@ -9,11 +9,15 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(libs.androidx.room.runtime)
+            api(libs.androidx.room.paging)
+            api(libs.androidx.paging.common)
+            api(projects.core.model)
             implementation(projects.core.common)
             implementation(libs.androidx.sqlite.bundled)
             implementation(libs.koin.core)
             implementation(libs.koin.annotations)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization)
         }
     }
 }

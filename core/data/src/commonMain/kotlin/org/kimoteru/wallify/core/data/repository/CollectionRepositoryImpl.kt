@@ -2,9 +2,21 @@ package org.kimoteru.wallify.core.data.repository
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
-import org.kimoteru.wallify.core.common.paging.createPager
+import org.kimoteru.wallify.core.common.paging.DEFAULT_PAGE_SIZE
+import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
+import org.kimoteru.wallify.core.common.response.onSuccess
+import org.kimoteru.wallify.core.data.cache.CacheLoader
+import org.kimoteru.wallify.core.data.cache.CacheStore
+import org.kimoteru.wallify.core.data.cache.CacheTtl
+import org.kimoteru.wallify.core.data.cache.ListKeys
+import org.kimoteru.wallify.core.data.cache.pager
+import org.kimoteru.wallify.core.data.cache.refreshableFlow
+import org.kimoteru.wallify.core.data.cache.refreshableListFlow
 import org.kimoteru.wallify.core.data.remote.CollectionRemoteDataSource
+import org.kimoteru.wallify.core.database.dao.CollectionDao
+import org.kimoteru.wallify.core.database.dao.PhotoDao
+import org.kimoteru.wallify.core.database.entity.toDomain
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.model.collection.CollectionPhotoChange
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
@@ -15,17 +27,32 @@ import org.koin.core.annotation.Singleton
 
 @Singleton
 class CollectionRepositoryImpl(
-    private val collectionRemoteDataSource: CollectionRemoteDataSource
+    private val collectionRemoteDataSource: CollectionRemoteDataSource,
+    private val collectionDao: CollectionDao,
+    private val photoDao: PhotoDao,
+    private val cacheLoader: CacheLoader,
+    private val cacheStore: CacheStore
 ) : CollectionRepository {
 
     override fun getCollectionsFlow(): Flow<PagingData<PhotoCollection>> {
-        return createPager { page, loadSize ->
-            collectionRemoteDataSource.getCollections(page = page, size = loadSize)
-        }
+        return cacheLoader.pager(
+            listKey = ListKeys.COLLECTIONS_FEED,
+            ttl = CacheTtl.Feed,
+            pagingSource = { collectionDao.pagingSource(ListKeys.COLLECTIONS_FEED) },
+            toDomain = { entity -> entity.toDomain() },
+            itemId = { collection -> collection.id.toString() },
+            fetch = { page, size -> collectionRemoteDataSource.getCollections(page = page, size = size) },
+            saveItems = cacheStore::saveCollections
+        )
     }
 
-    override suspend fun getCollection(id: Int): Response<PhotoCollection> {
-        return collectionRemoteDataSource.getCollection(id = id)
+    override fun getCollectionFlow(id: Int): Flow<Resource<PhotoCollection>> {
+        return refreshableFlow(
+            roomFlow = { collectionDao.observe(id) },
+            remoteCall = { collectionRemoteDataSource.getCollection(id = id) },
+            save = cacheStore::saveCollection,
+            toDomain = { entity -> entity.toDomain() }
+        )
     }
 
     override fun getCollectionPhotosFlow(
@@ -33,19 +60,34 @@ class CollectionRepositoryImpl(
         orientation: PhotoOrientation?,
         order: PhotosOrder?
     ): Flow<PagingData<Photo>> {
-        return createPager { page, loadSize ->
-            collectionRemoteDataSource.getCollectionPhotos(
-                id = id,
-                page = page,
-                size = loadSize,
-                orientation = orientation,
-                order = order
-            )
-        }
+        val listKey = ListKeys.collectionPhotos(id, orientation, order)
+        return cacheLoader.pager(
+            listKey = listKey,
+            ttl = CacheTtl.Feed,
+            pagingSource = { photoDao.pagingSource(listKey) },
+            toDomain = { entity -> entity.toDomain() },
+            itemId = { photo -> photo.id },
+            fetch = { page, size ->
+                collectionRemoteDataSource.getCollectionPhotos(
+                    id = id,
+                    page = page,
+                    size = size,
+                    orientation = orientation,
+                    order = order
+                )
+            },
+            saveItems = cacheStore::savePhotoSummaries
+        )
     }
 
-    override suspend fun getRelatedCollections(id: Int): Response<List<PhotoCollection>> {
-        return collectionRemoteDataSource.getRelatedCollections(id = id)
+    override fun getRelatedCollectionsFlow(id: Int): Flow<Resource<List<PhotoCollection>>> {
+        val listKey = ListKeys.relatedCollections(id)
+        return refreshableListFlow(
+            roomFlow = { collectionDao.observeList(listKey = listKey, limit = DEFAULT_PAGE_SIZE) },
+            remoteCall = { collectionRemoteDataSource.getRelatedCollections(id = id) },
+            save = { collections -> cacheStore.saveCollectionList(listKey, collections) },
+            toDomain = { entity -> entity.toDomain() }
+        )
     }
 
     override suspend fun createCollection(
@@ -57,7 +99,7 @@ class CollectionRepositoryImpl(
             title = title,
             description = description,
             isPrivate = isPrivate
-        )
+        ).onSuccess { collection -> saveChanged(collection) }
     }
 
     override suspend fun updateCollection(
@@ -71,15 +113,22 @@ class CollectionRepositoryImpl(
             title = title,
             description = description,
             isPrivate = isPrivate
-        )
+        ).onSuccess { collection -> saveChanged(collection) }
     }
 
     override suspend fun deleteCollection(id: Int): Response<Unit> {
         return collectionRemoteDataSource.deleteCollection(id = id)
+            .onSuccess {
+                cacheLoader.saveQuietly {
+                    collectionDao.delete(id)
+                    cacheStore.invalidateLists(ListKeys.COLLECTIONS_PREFIX)
+                }
+            }
     }
 
     override suspend fun addPhotoToCollection(collectionId: Int, photoId: String): Response<CollectionPhotoChange> {
         return collectionRemoteDataSource.addPhotoToCollection(collectionId = collectionId, photoId = photoId)
+            .onSuccess { change -> saveChangedMembership(change, photoId, isMember = true) }
     }
 
     override suspend fun removePhotoFromCollection(
@@ -87,5 +136,30 @@ class CollectionRepositoryImpl(
         photoId: String
     ): Response<CollectionPhotoChange> {
         return collectionRemoteDataSource.removePhotoFromCollection(collectionId = collectionId, photoId = photoId)
+            .onSuccess { change -> saveChangedMembership(change, photoId, isMember = false) }
+    }
+
+    /**
+     * The collection changed on the backend: its row is replaced by the answer, so every screen showing it updates,
+     * and every list of collections is loaded again the next time it opens (titles and counters changed), while the
+     * saved lists stay on screen.
+     */
+    private suspend fun saveChanged(collection: PhotoCollection) {
+        cacheLoader.saveQuietly {
+            cacheStore.saveCollection(collection)
+            cacheStore.invalidateLists(ListKeys.COLLECTIONS_PREFIX)
+        }
+    }
+
+    /** Besides the collection, the photo itself changed: it carries the ids of the user's collections that hold it. */
+    private suspend fun saveChangedMembership(change: CollectionPhotoChange, photoId: String, isMember: Boolean) {
+        saveChanged(change.collection)
+        cacheLoader.saveQuietly {
+            cacheStore.changePhotoMembership(
+                photoId = photoId,
+                collectionId = change.collection.id,
+                isMember = isMember
+            )
+        }
     }
 }

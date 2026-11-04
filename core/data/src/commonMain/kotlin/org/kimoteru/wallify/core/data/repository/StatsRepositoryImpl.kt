@@ -1,7 +1,12 @@
 package org.kimoteru.wallify.core.data.repository
 
-import org.kimoteru.wallify.core.common.response.Response
+import kotlinx.coroutines.flow.Flow
+import org.kimoteru.wallify.core.common.response.Resource
+import org.kimoteru.wallify.core.data.cache.CacheStore
+import org.kimoteru.wallify.core.data.cache.refreshableFlow
 import org.kimoteru.wallify.core.data.remote.StatsRemoteDataSource
+import org.kimoteru.wallify.core.database.dao.StatsDao
+import org.kimoteru.wallify.core.database.entity.toDomain
 import org.kimoteru.wallify.core.domain.repository.StatsRepository
 import org.kimoteru.wallify.core.model.stats.MonthStats
 import org.kimoteru.wallify.core.model.stats.TotalStats
@@ -9,14 +14,26 @@ import org.koin.core.annotation.Singleton
 
 @Singleton
 class StatsRepositoryImpl(
-    private val statsRemoteDataSource: StatsRemoteDataSource
+    private val statsRemoteDataSource: StatsRemoteDataSource,
+    private val statsDao: StatsDao,
+    private val cacheStore: CacheStore
 ) : StatsRepository {
 
-    override suspend fun getTotalStats(): Response<TotalStats> {
-        return statsRemoteDataSource.getTotalStats()
+    override fun getTotalStatsFlow(): Flow<Resource<TotalStats>> {
+        return refreshableFlow(
+            roomFlow = { statsDao.observeTotal() },
+            remoteCall = { statsRemoteDataSource.getTotalStats() },
+            save = cacheStore::saveTotalStats,
+            toDomain = { entity -> entity.toDomain() }
+        )
     }
 
-    override suspend fun getMonthStats(): Response<MonthStats> {
-        return statsRemoteDataSource.getMonthStats()
+    override fun getMonthStatsFlow(): Flow<Resource<MonthStats>> {
+        return refreshableFlow(
+            roomFlow = { statsDao.observeMonth() },
+            remoteCall = { statsRemoteDataSource.getMonthStats() },
+            save = cacheStore::saveMonthStats,
+            toDomain = { entity -> entity.toDomain() }
+        )
     }
 }

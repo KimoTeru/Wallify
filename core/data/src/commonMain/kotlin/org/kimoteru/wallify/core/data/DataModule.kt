@@ -3,6 +3,9 @@ package org.kimoteru.wallify.core.data
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
+import org.kimoteru.wallify.core.data.cache.CacheDatabaseCleaner
+import org.kimoteru.wallify.core.data.download.FileDownloader
+import org.kimoteru.wallify.core.data.session.SessionDataCleaner
 import org.kimoteru.wallify.core.data.session.SessionHeadersSynchronizer
 import org.kimoteru.wallify.core.data.session.UserSessionSynchronizer
 import org.kimoteru.wallify.core.domain.manager.UserSessionManager
@@ -59,6 +62,21 @@ class DataModule {
         userRepository = userRepository,
         session = session,
         connectivityRepository = connectivityRepository,
+        scope = scope
+    ).also { it.start() }
+
+    @Singleton(createdAtStart = true)
+    fun sessionDataCleaner(
+        session: SessionRepository,
+        databaseCleaner: CacheDatabaseCleaner,
+        fileDownloader: FileDownloader,
+        userRepository: UserRepository,
+        scope: CoroutineScope
+    ): SessionDataCleaner = SessionDataCleaner(
+        session = session,
+        databaseCleaner = databaseCleaner,
+        fileDownloader = fileDownloader,
+        userRepository = userRepository,
         scope = scope
     ).also { it.start() }
 
