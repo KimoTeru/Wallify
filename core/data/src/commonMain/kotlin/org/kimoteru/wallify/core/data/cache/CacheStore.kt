@@ -7,6 +7,7 @@ import org.kimoteru.wallify.core.database.dao.StatsDao
 import org.kimoteru.wallify.core.database.dao.TopicDao
 import org.kimoteru.wallify.core.database.dao.UserDao
 import org.kimoteru.wallify.core.database.entity.ListStateEntity
+import org.kimoteru.wallify.core.database.entity.PhotoEntity
 import org.kimoteru.wallify.core.database.entity.toEntity
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
@@ -41,7 +42,7 @@ class CacheStore(
         photoDao.upsertAll(
             photos.map { photo ->
                 val old = saved[photo.id]
-                val summary = photo.toEntity(isDetailed = false)
+                val summary = photo.toEntity(isDetailed = false).keepingUrlsOf(old)
                 if (old != null && old.isDetailed) {
                     summary.copy(
                         tags = old.tags,
@@ -70,8 +71,27 @@ class CacheStore(
     }
 
     suspend fun savePhoto(photo: Photo) {
-        photoDao.upsertAll(listOf(photo.toEntity(isDetailed = true)))
+        val old = photoDao.get(photo.id)
+        photoDao.upsertAll(listOf(photo.toEntity(isDetailed = true).keepingUrlsOf(old)))
     }
+
+    /**
+     * Every endpoint sends its own copy of the image links (the tracking `ixid` differs), and a changed link makes
+     * the image loader fetch the picture again: the photo on screen would blink and the loader's disk cache would miss.
+     * So the links saved first stay.
+     */
+    private fun PhotoEntity.keepingUrlsOf(old: PhotoEntity?): PhotoEntity =
+        if (old == null) {
+            this
+        } else {
+            copy(
+                urlRaw = old.urlRaw,
+                urlFull = old.urlFull,
+                urlRegular = old.urlRegular,
+                urlSmall = old.urlSmall,
+                urlThumb = old.urlThumb
+            )
+        }
 
     /** The photo joined or left the collection: its saved list of the user's collections follows. */
     suspend fun changePhotoMembership(photoId: String, collectionId: Int, isMember: Boolean) {
