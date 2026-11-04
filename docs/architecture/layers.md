@@ -32,7 +32,7 @@ Ui (Compose)
                       │    └─ Api  Ktor, ответ → Response              (core:network)
                       ├─ Dao        Room                        (core:database)
                       ├─ Prefs      DataStore                   (core:datastore)
-                      └─ Cache      память и диск               (core:cache)
+                      └─ Files      каталог скачанных файлов    (core:cache)
 ```
 
 Стрелки только вниз; никто не знает про слой выше себя.
@@ -50,7 +50,8 @@ Ui (Compose)
 | Сервис данных без репозитория (синхронизация сессии, загрузка файлов) | `core/data/.../<область>/` (`session/`, `download/`) |
 | API-класс (запросы), `XxxRequest`, `XxxResponse` | `core/network/.../api/`, `.../model/request/`, `.../model/response/<область>/` |
 | Модель предметной области | `core/model` |
-| Сущность и DAO Room | `core/database/.../entity/` и `core/database/.../dao/` (`AppDatabase` и `DatabaseModule` — в корне пакета) |
+| Сущность и DAO Room (мапперы `toEntity()` / `toDomain()` — в файле сущности) | `core/database/.../entity/` и `core/database/.../dao/` (`AppDatabase` и `DatabaseModule` — в корне пакета; конвертеры — `converter/`) |
+| Загрузка с кэшем в Room: `CacheLoader` (постраничные списки), `ListRemoteMediator`, `refreshableFlow`, `CacheStore`, ключи списков, очистка базы | `core/data/.../cache/` |
 | Менеджер платформы (буфер, язык, ссылки) | интерфейс в `core/platform/commonMain`, реализации в `androidMain` / `jvmMain` |
 | Общая логика с состоянием для нескольких экранов (уведомления, диалог ошибок) | `core/presentation/.../components/units/<name>/` |
 

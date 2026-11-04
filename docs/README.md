@@ -57,7 +57,8 @@ docs/
 | Где что лежит, какой модуль от какого зависит, платформенный код | `architecture/overview.md` |
 | Куда положить класс: репозиторий, use case, модель; кто кого может вызывать | `architecture/layers.md` |
 | Запрос к API, ошибка запроса, `Response`, заголовки, токен пользователя | `architecture/data.md` § Response, § Сеть, § Сессия |
-| Room, DataStore, кэш на диске | `architecture/data.md` § Хранилища |
+| Room, DataStore, каталог для скачанных файлов | `architecture/data.md` § Хранилища |
+| Кэш данных бэкенда, офлайн, очистка данных при выходе, новая таблица Room | `architecture/data.md` § Кэш |
 | Скачивание файла по ссылке | `architecture/data.md` § Загрузка файлов |
 | Постраничный список, `LazyColumn` / сетка с подгрузкой | `architecture/data.md` § Пагинация, `design/foundations.md` § Списки |
 | Новый экран или фича | `code/presentation.md`, `code/navigation.md`, `code/di.md`, `design/foundations.md` |

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
@@ -200,7 +201,7 @@ private class FakeUserRepository(vararg results: Response<User>) : UserRepositor
 
     override suspend fun updateCurrentUser(params: UpdateUserParams): Response<User> = unused()
 
-    override suspend fun getUser(username: String): Response<User> = unused()
+    override fun getUserFlow(username: String): Flow<Resource<User>> = unused()
 
     override fun getUserPhotosFlow(
         username: String,
@@ -210,9 +211,9 @@ private class FakeUserRepository(vararg results: Response<User>) : UserRepositor
 
     override fun getUserCollectionsFlow(username: String): Flow<PagingData<PhotoCollection>> = unused()
 
-    override suspend fun getUserCollections(username: String): Response<List<PhotoCollection>> = unused()
+    override fun getUserCollectionListFlow(username: String): Flow<Resource<List<PhotoCollection>>> = unused()
 
-    override suspend fun getUserStatistics(username: String, quantity: Int?): Response<Statistics> = unused()
+    override fun getUserStatisticsFlow(username: String, quantity: Int?): Flow<Resource<Statistics>> = unused()
 
     private fun unused(): Nothing = error("Not used by the synchronizer")
 }

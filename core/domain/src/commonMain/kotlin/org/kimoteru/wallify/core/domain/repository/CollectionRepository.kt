@@ -2,6 +2,7 @@ package org.kimoteru.wallify.core.domain.repository
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
+import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.model.collection.CollectionPhotoChange
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
@@ -14,7 +15,8 @@ interface CollectionRepository {
 
     fun getCollectionsFlow(): Flow<PagingData<PhotoCollection>>
 
-    suspend fun getCollection(id: Int): Response<PhotoCollection>
+    /** Behaves like `PhotoRepository.getPhotoFlow`: the database first, refreshed from the backend. */
+    fun getCollectionFlow(id: Int): Flow<Resource<PhotoCollection>>
 
     fun getCollectionPhotosFlow(
         id: Int,
@@ -22,7 +24,8 @@ interface CollectionRepository {
         order: PhotosOrder? = null
     ): Flow<PagingData<Photo>>
 
-    suspend fun getRelatedCollections(id: Int): Response<List<PhotoCollection>>
+    /** Behaves like [getCollectionFlow]. */
+    fun getRelatedCollectionsFlow(id: Int): Flow<Resource<List<PhotoCollection>>>
 
     suspend fun createCollection(
         title: String,

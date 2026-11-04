@@ -60,6 +60,16 @@ class FileDownloader(
         }
     }
 
+    /** Deletes every downloaded file. */
+    suspend fun clear(): Response<Unit> = withContext(dispatchers.io) {
+        locksGuard.withLock {
+            responseOf {
+                val folder = directory()
+                if (fileSystem.exists(folder)) fileSystem.deleteRecursively(folder)
+            }
+        }
+    }
+
     private suspend fun download(url: String, target: Path): Response<Path> {
         val response = try {
             client.client.get(url)

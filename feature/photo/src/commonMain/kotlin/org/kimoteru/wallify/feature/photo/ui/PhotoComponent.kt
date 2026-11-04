@@ -2,12 +2,14 @@ package org.kimoteru.wallify.feature.photo.ui
 
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.getOrCreate
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.handleResponse
-import org.kimoteru.wallify.core.common.response.onSuccess
+import org.kimoteru.wallify.core.common.response.onError
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
@@ -69,6 +71,8 @@ class PhotoLogic(
     override val uiState: StateFlow<UiState>
         field = MutableStateFlow(UiState())
 
+    private var photoJob: Job? = null
+
     override fun onCreate() {
         loadPhoto()
         loadStatistics()
@@ -89,23 +93,34 @@ class PhotoLogic(
         }
     }
 
+    /** Follows the photo in the database: the saved one first, then the one the backend answered with. */
     private fun loadPhoto() {
-        coroutineScope.launch {
-            updateIsLoading(true)
-
-            photoRepository.getPhoto(photoId).handleResponse(
-                onSuccess = { photo -> showPhoto(photo) },
-                onError = { updateHasError(true) }
-            )
-
-            updateIsLoading(false)
+        photoJob?.cancel()
+        photoJob = coroutineScope.launch {
+            photoRepository.getPhotoFlow(photoId).collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> {
+                        updateHasError(false)
+                        updateIsLoading(true)
+                    }
+                    is Resource.Success -> {
+                        showPhoto(resource.data)
+                        updateIsLoading(false)
+                    }
+                    is Resource.Error -> {
+                        updateHasError(true)
+                        updateIsLoading(false)
+                    }
+                }
+            }
         }
     }
 
     private fun loadStatistics() {
         coroutineScope.launch {
-            photoRepository.getPhotoStatistics(photoId, STATISTICS_DAYS)
-                .onSuccess { statistics -> updateStatistics(statistics) }
+            photoRepository.getPhotoStatisticsFlow(photoId, STATISTICS_DAYS).collect { resource ->
+                if (resource is Resource.Success) updateStatistics(resource.data)
+            }
         }
     }
 
@@ -113,8 +128,9 @@ class PhotoLogic(
         val username = userRepository.currentUser.value?.username ?: return
 
         coroutineScope.launch {
-            userRepository.getUserCollections(username)
-                .onSuccess { collections -> updateCollections(collections) }
+            userRepository.getUserCollectionListFlow(username).collect { resource ->
+                if (resource is Resource.Success) updateCollections(resource.data)
+            }
         }
     }
 
@@ -148,10 +164,8 @@ class PhotoLogic(
                 collectionRepository.addPhotoToCollection(collectionId, photoId)
             }
 
-            response.handleResponse(
-                onSuccess = { updateMembership(collectionId, isMember = !isMember) },
-                onError = { apiErrorManager.emitEvent(ApiErrorManagerEvent.ShowDialog) }
-            )
+            // On success the repository writes the change into the database and the photo flow delivers it.
+            response.onError { apiErrorManager.emitEvent(ApiErrorManagerEvent.ShowDialog) }
 
             removePendingCollection(collectionId)
         }
@@ -194,18 +208,6 @@ class PhotoLogic(
 
     private fun removePendingCollection(collectionId: Int) {
         uiState.update { it.copy(pendingCollectionIds = it.pendingCollectionIds - collectionId) }
-    }
-
-    private fun updateMembership(collectionId: Int, isMember: Boolean) {
-        uiState.update {
-            it.copy(
-                memberCollectionIds = if (isMember) {
-                    it.memberCollectionIds + collectionId
-                } else {
-                    it.memberCollectionIds - collectionId
-                }
-            )
-        }
     }
 }
 

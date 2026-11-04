@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -20,11 +21,13 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.stack.animation.plus
 import com.arkivanov.decompose.extensions.compose.stack.animation.scale
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
+import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.LocalWindowTypeOverride
 import org.kimoteru.wallify.core.designsystem.ui.blur.BlurHost
 import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
+import org.kimoteru.wallify.core.designsystem.ui.image.ClearImageCacheEffect
 import org.kimoteru.wallify.core.designsystem.ui.network.LocalIsOnline
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridColumns
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
@@ -78,6 +81,11 @@ fun RootGraphUi(
     val appColor = AppTheme.color
     val appPadding = AppTheme.padding
     val appTypography = AppTheme.typography
+
+    val stack by component.stack.subscribeAsState()
+
+    // The sign-in screen means there is no session: the images of the last user go with the rest of the data.
+    ClearImageCacheEffect(isCleared = stack.active.instance is Child.Auth)
 
     BlurHost(
         modifier = modifier

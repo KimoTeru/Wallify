@@ -3,6 +3,7 @@ package org.kimoteru.wallify.core.domain.repository
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
@@ -28,7 +29,8 @@ interface UserRepository {
     /** Needs the user token with the write scope. Publishes the changed user to [currentUser]. */
     suspend fun updateCurrentUser(params: UpdateUserParams): Response<User>
 
-    suspend fun getUser(username: String): Response<User>
+    /** Behaves like `PhotoRepository.getPhotoFlow`: the database first, refreshed from the backend. */
+    fun getUserFlow(username: String): Flow<Resource<User>>
 
     fun getUserPhotosFlow(
         username: String,
@@ -38,9 +40,12 @@ interface UserRepository {
 
     fun getUserCollectionsFlow(username: String): Flow<PagingData<PhotoCollection>>
 
-    /** The first page of the user's collections (up to 30), for pickers that do not page. */
-    suspend fun getUserCollections(username: String): Response<List<PhotoCollection>>
+    /**
+     * The first page of the user's collections (up to 30), for pickers that do not page. It is the head of the list
+     * that [getUserCollectionsFlow] shows, so both follow the same saved collections.
+     */
+    fun getUserCollectionListFlow(username: String): Flow<Resource<List<PhotoCollection>>>
 
-    /** [quantity] is the number of days, 1..30; `null` means the backend default. */
-    suspend fun getUserStatistics(username: String, quantity: Int? = null): Response<Statistics>
+    /** [quantity] is the number of days, 1..30; `null` means the backend default. Behaves like [getUserFlow]. */
+    fun getUserStatisticsFlow(username: String, quantity: Int? = null): Flow<Resource<Statistics>>
 }

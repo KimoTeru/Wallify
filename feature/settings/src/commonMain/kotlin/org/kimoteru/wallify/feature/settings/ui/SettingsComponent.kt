@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.combineState
-import org.kimoteru.wallify.core.common.response.onSuccess
+import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.domain.repository.AuthRepository
 import org.kimoteru.wallify.core.domain.repository.StatsRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
@@ -83,11 +83,15 @@ class SettingsLogic(
 
     override fun onCreate() {
         coroutineScope.launch {
-            statsRepository.getTotalStats().onSuccess { total -> updateTotalStats(total) }
+            statsRepository.getTotalStatsFlow().collect { resource ->
+                if (resource is Resource.Success) updateTotalStats(resource.data)
+            }
         }
 
         coroutineScope.launch {
-            statsRepository.getMonthStats().onSuccess { month -> updateMonthStats(month) }
+            statsRepository.getMonthStatsFlow().collect { resource ->
+                if (resource is Resource.Success) updateMonthStats(resource.data)
+            }
         }
     }
 
