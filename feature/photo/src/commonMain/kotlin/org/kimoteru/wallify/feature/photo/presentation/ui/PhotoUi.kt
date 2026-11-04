@@ -120,7 +120,8 @@ fun PhotoUi(
 
     FloatingBarScreen(
         modifier = modifier.background(appColor.basic.background),
-        scrolledPx = scroll.value,
+        // On a wide window the inspector scroll must not frost the bar: that blur spreads over the photo.
+        scrolledPx = if (windowType == WindowType.Compact) scroll.value else 0,
         bar = {
             DefaultTopBar(
                 paddingValues = screenPadding.header,
@@ -202,7 +203,10 @@ private fun PhotoCompactContent(
     }
 }
 
-/** Tablet and desktop: the whole photo on the left, the inspector with its own scroll on the right. */
+/**
+ * Tablet and desktop: the whole photo on the left, the inspector with its own scroll on the right.
+ * The photo is not a blur source: frosting the bar over it spills a blurred copy across the screen.
+ */
 @Composable
 private fun PhotoWideContent(
     photo: Photo,
@@ -223,8 +227,7 @@ private fun PhotoWideContent(
                 .statusBarsPadding()
                 .padding(appPadding.medium)
                 .clip(RoundedCornerShape(appCorner.large + appCorner.smallSpecial))
-                .background(appColor.glass.sub)
-                .blurSource(BlurSourceZIndex.Screen)
+                .background(appColor.basic.background)
         ) {
             CachedAsyncImage(
                 modifier = Modifier.fillMaxSize(),

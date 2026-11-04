@@ -4,14 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.paging.PagingData
@@ -19,8 +22,8 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.flow.flowOf
 import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
+import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberIsShortWindow
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen
-import org.kimoteru.wallify.core.designsystem.ui.glass.GlassChip
 import org.kimoteru.wallify.core.designsystem.ui.glass.scrolledPx
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
@@ -28,7 +31,6 @@ import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorDescription
 import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorTitle
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
-import org.kimoteru.wallify.core.designsystem.ui.paging.keyAt
 import org.kimoteru.wallify.core.designsystem.ui.paging.refreshError
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PagingPhotoGrid
@@ -79,8 +81,10 @@ fun TopicsUi(
     modifier: Modifier = Modifier,
     component: TopicsComponent
 ) {
+    val appColor = AppTheme.color
     val appPadding = AppTheme.padding
     val appTypography = AppTheme.typography
+    val isShortWindow = rememberIsShortWindow()
 
     val uiState = component.getUiState()
     val obtainEvent = component::obtainUiEvent
@@ -102,30 +106,43 @@ fun TopicsUi(
         modifier = modifier,
         scrolledPx = gridState.scrolledPx(),
         bar = {
-            Column {
-                DefaultTopBar(
-                    title = stringResource(Res.string.nav_topics),
-                    titleStyle = appTypography.h2.bold,
-                    paddingValues = screenPadding.header
-                )
-
-                LazyRow(
-                    modifier = Modifier.padding(top = appPadding.medium),
-                    contentPadding = PaddingValues(horizontal = screenPadding.start),
-                    horizontalArrangement = Arrangement.spacedBy(appPadding.small)
+            if (isShortWindow) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(screenPadding.header),
+                    horizontalArrangement = Arrangement.spacedBy(appPadding.small),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(
-                        count = topics.itemCount,
-                        key = { index -> topics.keyAt(index) { it.id } }
-                    ) { index ->
-                        topics[index]?.let { topic ->
-                            GlassChip(
-                                text = topic.title,
-                                selected = topic.slug == uiState.selectedSlug,
-                                onClick = { obtainEvent(TopicsContract.UiEvent.SelectTopic(topic.slug)) }
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(Res.string.nav_topics),
+                        style = appTypography.h5.semiBold,
+                        color = appColor.text.title,
+                        maxLines = 1
+                    )
+
+                    TopicChips(
+                        modifier = Modifier.weight(1f),
+                        topics = topics,
+                        selectedSlug = uiState.selectedSlug,
+                        obtainEvent = obtainEvent
+                    )
+                }
+            } else {
+                Column {
+                    DefaultTopBar(
+                        title = stringResource(Res.string.nav_topics),
+                        titleStyle = appTypography.h2.bold,
+                        paddingValues = screenPadding.header
+                    )
+
+                    TopicChips(
+                        modifier = Modifier.padding(top = appPadding.medium),
+                        topics = topics,
+                        selectedSlug = uiState.selectedSlug,
+                        contentPadding = PaddingValues(horizontal = screenPadding.start),
+                        obtainEvent = obtainEvent
+                    )
                 }
             }
         }

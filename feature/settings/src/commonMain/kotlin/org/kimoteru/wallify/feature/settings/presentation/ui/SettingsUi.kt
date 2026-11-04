@@ -24,6 +24,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.common.extensions.toCompactString
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberCanUseExpandedLayout
+import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberIsShortWindow
 import org.kimoteru.wallify.core.designsystem.ui.avatar.UserAvatar
 import org.kimoteru.wallify.core.designsystem.ui.blur.BlurSourceZIndex
 import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
@@ -132,6 +133,7 @@ fun SettingsUi(
     val obtainEvent = component::obtainUiEvent
     val screenPadding = rememberScreenPadding()
     val canUseExpandedLayout = rememberCanUseExpandedLayout()
+    val isShortWindow = rememberIsShortWindow()
     val scroll = rememberScrollState()
 
     FloatingBarScreen(
@@ -140,7 +142,7 @@ fun SettingsUi(
         bar = {
             DefaultTopBar(
                 title = stringResource(Res.string.nav_settings),
-                titleStyle = appTypography.h2.bold,
+                titleStyle = if (isShortWindow) appTypography.h5.semiBold else appTypography.h2.bold,
                 paddingValues = screenPadding.header
             )
         }

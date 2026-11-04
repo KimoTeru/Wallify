@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
+import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberIsShortWindow
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
 import org.kimoteru.wallify.core.designsystem.ui.glass.scrolledPx
@@ -69,6 +70,7 @@ fun RandomUi(
     component: RandomComponent
 ) {
     val appTypography = AppTheme.typography
+    val isShortWindow = rememberIsShortWindow()
 
     val uiState = component.getUiState()
     val obtainEvent = component::obtainUiEvent
@@ -81,7 +83,7 @@ fun RandomUi(
         bar = {
             DefaultTopBar(
                 title = stringResource(Res.string.nav_random),
-                titleStyle = appTypography.h2.bold,
+                titleStyle = if (isShortWindow) appTypography.h5.semiBold else appTypography.h2.bold,
                 paddingValues = screenPadding.header,
                 actions = {
                     GlassButton(

@@ -16,6 +16,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
+import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberIsShortWindow
 
 /**
  * The top bar of a scrolling screen: [bar] stays pinned, its background is [ScrollBlurBar] (transparent until
@@ -33,6 +34,7 @@ fun FloatingBarScreen(
     content: @Composable (topPadding: Dp) -> Unit
 ) {
     val appPadding = AppTheme.padding
+    val barGap = if (rememberIsShortWindow()) appPadding.small else appPadding.medium
 
     val density = LocalDensity.current
     val visibility = LocalNavigationVisibility.current
@@ -43,7 +45,7 @@ fun FloatingBarScreen(
             .fillMaxSize()
             .nestedScroll(rememberHideOnScrollConnection(visibility))
     ) {
-        content(barHeight + appPadding.medium)
+        content(barHeight + barGap)
 
         ScrollBlurBar(
             modifier = Modifier
@@ -51,7 +53,7 @@ fun FloatingBarScreen(
                 .onSizeChanged { size -> barHeight = with(density) { size.height.toDp() } },
             scrolledPx = scrolledPx
         ) {
-            Box(modifier = Modifier.padding(bottom = appPadding.medium)) {
+            Box(modifier = Modifier.padding(bottom = barGap)) {
                 bar()
             }
         }

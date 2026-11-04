@@ -33,3 +33,13 @@ fun rememberWindowType(): WindowType {
         else -> WindowType.Compact
     }
 }
+
+/**
+ * The window is too short for a tall header: a phone turned sideways. Height below the medium
+ * breakpoint, not the width class, so a wide tablet keeps its title.
+ */
+@Composable
+fun rememberIsShortWindow(): Boolean {
+    val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
+    return !windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
+}

@@ -8,10 +8,16 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -21,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
@@ -93,6 +100,12 @@ fun MainGraphUi(
     val appSize = AppTheme.size
 
     val windowType = rememberWindowType()
+    val layoutDirection = LocalLayoutDirection.current
+    // In landscape the camera sits on the start edge, where the status bar was in portrait.
+    val safeStart = WindowInsets.safeDrawing
+        .only(WindowInsetsSides.Start)
+        .asPaddingValues()
+        .calculateStartPadding(layoutDirection)
     val uiState = component.getUiState()
     val obtainEvent = component::obtainUiEvent
     val stack by component.stack.subscribeAsState()
@@ -166,7 +179,7 @@ fun MainGraphUi(
                 WindowType.Medium -> Box(modifier = Modifier.fillMaxSize()) {
                     CompositionLocalProvider(
                         LocalNavigationPadding provides PaddingValues(
-                            start = appSize.navigation.railWidth + appPadding.medium
+                            start = safeStart + appSize.navigation.railWidth + appPadding.medium
                         )
                     ) {
                         screens(Modifier.fillMaxSize())
@@ -175,6 +188,7 @@ fun MainGraphUi(
                     GlassRail(
                         modifier = Modifier
                             .align(Alignment.CenterStart)
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start))
                             .padding(start = appPadding.medium),
                         items = items,
                         selectedIndex = selectedIndex,
@@ -185,8 +199,11 @@ fun MainGraphUi(
                 WindowType.Expanded -> Row(modifier = Modifier.fillMaxSize()) {
                     GlassDrawer(
                         modifier = Modifier
-                            .statusBarsPadding()
-                            .navigationBarsPadding()
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(
+                                    WindowInsetsSides.Start + WindowInsetsSides.Top + WindowInsetsSides.Bottom
+                                )
+                            )
                             .padding(appPadding.medium),
                         title = stringResource(Res.string.app_name),
                         items = items,
