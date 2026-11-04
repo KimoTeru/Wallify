@@ -60,6 +60,9 @@ object RootGraphContract {
         val photoColumns: Int? = null,
         val screenLayout: ScreenLayout = ScreenLayout.Auto,
 
+        /** Language of the app; `null` follows the device. */
+        val languageTag: String? = null,
+
         /** `false` until the saved settings are read; the values above are defaults until then. */
         val isSettingsLoaded: Boolean = false
     ) : BaseContract.UiState

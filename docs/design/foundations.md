@@ -86,6 +86,7 @@ AsyncImage(
 | Кнопки | `GlassButton` (`Glass`, `Solid` для главного действия, `Ghost`), `GlassIconButton` |
 | Выбор | `GlassChip` (выбранный — залитый), `GlassSegmentedControl` |
 | Поиск | `GlassSearchField`: отправка клавишей поиска, крестик очистки |
+| Ввод в форме | `GlassTextField`: подпись над полем, утопленная панель (`GlassLevel.Sub`); `maxLines > 1` — многострочное поле. Форма лежит в `GlassOverlay` |
 | Навигация | `GlassDock` (телефон), `GlassRail` (планшет), `GlassDrawer` (большое окно); пункты — `GlassNavItem` |
 | Шторка / диалог | `GlassOverlay(isSheet, onDismiss) { close -> … }`: шторка на `Compact`, диалог на остальных. Экран вкладки кладёт её в `ScreenOverlay { … }`: навигация рисует её над доком и размывает всё под ней |
 | Прячущиеся панели | `LocalNavigationVisibility` + `rememberHideOnScrollConnection`: список вешает на себя `nestedScroll`, док и верхняя панель экрана скрываются при прокрутке вниз и возвращаются при прокрутке вверх |
@@ -132,7 +133,9 @@ JetBrains для Compose Multiplatform. Они подключены в `core:des
 | `adaptive-navigation` | Навигатор по панелям для этих раскладок |
 | `material3-adaptive-navigation-suite` | `NavigationSuiteScaffold`: нижняя панель, рейл или drawer по размеру окна |
 
-Для простого ветвления есть `rememberWindowType()` (`Compact` / `Medium` / `Expanded`) из `ui/adaptive`. Пользователь
+Для простого ветвления есть `rememberWindowType()` (`Compact` / `Medium` / `Expanded`) из `ui/adaptive`. Выбор компоновки
+показываем только там, где устройство может достичь `Expanded` (`rememberCanUseExpandedLayout()`: Desktop всегда,
+Android — от ширины планшета, телефон нет). Пользователь
 может принудительно выбрать компоновку экрана в настройках (`ScreenLayout`): корень кладёт её в
 `LocalWindowTypeOverride`, а `rememberWindowType()` её учитывает — поэтому ветвим только через него, не читая размер
 окна напрямую. Окно Desktop при смене выбора (но не при запуске) само принимает типичную ширину этой компоновки

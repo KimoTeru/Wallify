@@ -15,8 +15,13 @@ class SearchRemoteDataSourceImpl(
     private val searchApi: SearchApi
 ) : SearchRemoteDataSource {
 
-    override suspend fun searchPhotos(query: SearchPhotosQuery, page: Int, size: Int): Response<List<Photo>> {
-        return searchApi.searchPhotos(query = query, page = page, perPage = size)
+    override suspend fun searchPhotos(
+        query: SearchPhotosQuery,
+        languageTag: String?,
+        page: Int,
+        size: Int
+    ): Response<List<Photo>> {
+        return searchApi.searchPhotos(query = query, languageTag = languageTag, page = page, perPage = size)
             .map { it.toDomain() }
     }
 

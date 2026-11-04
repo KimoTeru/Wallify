@@ -15,6 +15,8 @@ interface UserRemoteDataSource {
 
     suspend fun updateCurrentUser(params: UpdateUserParams): Response<User>
 
+    val uploadPageUrl: String
+
     suspend fun getUser(username: String): Response<User>
 
     suspend fun getUserPhotos(

@@ -6,9 +6,12 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -17,16 +20,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
+import org.kimoteru.wallify.core.common.response.handleResponse
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.model.user.User
-import org.kimoteru.wallify.core.presentation.base.BaseComponent
-import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponent
-import org.kimoteru.wallify.core.presentation.base.BaseLogic
+import org.kimoteru.wallify.core.presentation.base.BaseComponentCore
+import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponentCore
+import org.kimoteru.wallify.core.presentation.base.BaseLogicCore
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
+import org.kimoteru.wallify.feature.profile.ui.ProfileContract.ComponentEvent
 import org.kimoteru.wallify.feature.profile.ui.ProfileContract.UiEvent
 import org.kimoteru.wallify.feature.profile.ui.ProfileContract.UiState
 import org.koin.core.annotation.Factory
@@ -40,7 +45,7 @@ sealed interface ProfileTarget {
     data class Username(val username: String) : ProfileTarget
 }
 
-interface ProfileComponent : BaseComponent<UiState, UiEvent> {
+interface ProfileComponent : BaseComponentCore<UiState, UiEvent, ComponentEvent> {
     /** Whether the screen was opened over another one and so has a back button. */
     val canNavigateBack: Boolean
 
@@ -54,7 +59,7 @@ class ProfileDefaultComponent(
     target: ProfileTarget,
     navigateBack: (() -> Unit)?,
     private val openPhoto: (photoId: String) -> Unit
-) : BaseDefaultComponent<ProfileLogic, UiState, UiEvent, ProfileNavigationEvent>(
+) : BaseDefaultComponentCore<ProfileLogic, UiState, UiEvent, ProfileNavigationEvent, ComponentEvent>(
     componentContext = componentContext,
     navigateBack = navigateBack
 ),
@@ -79,7 +84,9 @@ class ProfileDefaultComponent(
 
 /**
  * The profile of one user with its photos and collections. The own profile waits for the session to publish the
- * signed-in user (`UserRepository.currentUser`) and then works like any other profile.
+ * signed-in user (`UserRepository.currentUser`) and then works like any other profile; it also edits the profile
+ * and sends the user to the photo service's page to upload photos (the API cannot upload), then reloads the photos
+ * when the user is back.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @Factory
@@ -87,7 +94,7 @@ class ProfileLogic(
     @InjectedParam private val target: ProfileTarget,
     private val userRepository: UserRepository,
     private val collectionRepository: CollectionRepository
-) : BaseLogic<UiState, UiEvent, ProfileNavigationEvent>() {
+) : BaseLogicCore<UiState, UiEvent, ProfileNavigationEvent, ComponentEvent>() {
 
     override val uiState: StateFlow<UiState>
         field = MutableStateFlow(UiState())
@@ -97,7 +104,10 @@ class ProfileLogic(
         is ProfileTarget.Username -> flowOf(target.username)
     }
 
-    val photos: Flow<PagingData<Photo>> = username
+    /** Every change builds the photo list again, which loads it from the backend if it was made stale. */
+    private val photosReloadKey = MutableStateFlow(0)
+
+    val photos: Flow<PagingData<Photo>> = combine(username, photosReloadKey) { login, _ -> login }
         .flatMapLatest { login -> userRepository.getUserPhotosFlow(login) }
         .cachedIn(coroutineScope)
 
@@ -114,7 +124,16 @@ class ProfileLogic(
 
     private var loadJob: Job? = null
 
+    private var isUploadPending = false
+
     override fun onCreate() = load()
+
+    /** The user comes back from the browser after the upload page: the new photos and the counters are loaded. */
+    override fun onResume() {
+        if (!isUploadPending) return
+        isUploadPending = false
+        reloadAfterUpload()
+    }
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {
@@ -123,36 +142,89 @@ class ProfileLogic(
             is UiEvent.OpenCollection -> updateOpenedCollection(event.collection)
             is UiEvent.CloseCollection -> updateOpenedCollection(null)
             is UiEvent.OpenPhoto -> navigate(ProfileNavigationEvent.OpenPhoto(event.photoId))
+            is UiEvent.Upload -> upload()
+            is UiEvent.ShowEdit -> showEdit()
+            is UiEvent.HideEdit -> updateEditForm(null)
+            is UiEvent.ChangeEditField -> changeEditField(event.field, event.value)
+            is UiEvent.SaveEdit -> saveEdit()
         }
     }
 
-    /** Follows the user and the statistics in the database: the saved ones first, then the backend's answer. */
+    /**
+     * Follows the user and the statistics in the database: the saved ones first, then the backend's answer. The own
+     * profile starts over when the username changes.
+     */
     private fun load() {
         loadJob?.cancel()
         loadJob = coroutineScope.launch {
             updateIsLoading(true)
 
-            val login = username.first()
+            username.collectLatest { login ->
+                coroutineScope {
+                    launch {
+                        userRepository.getUserStatisticsFlow(login).collect { resource ->
+                            if (resource is Resource.Success) updateStatistics(resource.data)
+                        }
+                    }
 
-            launch {
-                userRepository.getUserStatisticsFlow(login).collect { resource ->
-                    if (resource is Resource.Success) updateStatistics(resource.data)
+                    userRepository.getUserFlow(login).collect { resource ->
+                        when (resource) {
+                            is Resource.Loading -> updateIsLoading(true)
+                            is Resource.Success -> {
+                                showUser(resource.data)
+                                updateIsLoading(false)
+                            }
+                            is Resource.Error -> {
+                                updateHasError(true)
+                                updateIsLoading(false)
+                            }
+                        }
+                    }
                 }
             }
+        }
+    }
 
-            userRepository.getUserFlow(login).collect { resource ->
-                when (resource) {
-                    is Resource.Loading -> updateIsLoading(true)
-                    is Resource.Success -> {
-                        showUser(resource.data)
-                        updateIsLoading(false)
-                    }
-                    is Resource.Error -> {
-                        updateHasError(true)
-                        updateIsLoading(false)
-                    }
-                }
-            }
+    private fun upload() {
+        isUploadPending = true
+        sendComponentEvent(ComponentEvent.OpenUrl(userRepository.uploadPageUrl))
+    }
+
+    private fun reloadAfterUpload() {
+        coroutineScope.launch {
+            userRepository.invalidateUserPhotos(username.first())
+            photosReloadKey.update { it + 1 }
+            load()
+        }
+    }
+
+    private fun showEdit() {
+        val user = uiState.value.user ?: return
+        updateHasSaveError(false)
+        updateEditForm(EditForm.of(user))
+    }
+
+    private fun changeEditField(field: EditField, value: String) {
+        val form = uiState.value.editForm ?: return
+        updateEditForm(form.with(field, value))
+    }
+
+    private fun saveEdit() {
+        val state = uiState.value
+        val form = state.editForm ?: return
+        val user = state.user ?: return
+        if (state.isSaving || !form.isValid) return
+
+        coroutineScope.launch {
+            updateIsSaving(true)
+            updateHasSaveError(false)
+
+            userRepository.updateCurrentUser(form.changesTo(user)).handleResponse(
+                onSuccess = { updateEditForm(null) },
+                onError = { updateHasSaveError(true) }
+            )
+
+            updateIsSaving(false)
         }
     }
 
@@ -164,9 +236,10 @@ class ProfileLogic(
         uiState.update { it.copy(hasError = hasError) }
     }
 
-    /** A loaded user also clears an earlier failure. */
+    /** A loaded user also clears an earlier failure and tells whether the profile is the signed-in user's own. */
     private fun showUser(user: User) {
-        uiState.update { it.copy(user = user, hasError = false) }
+        val isOwn = target is ProfileTarget.CurrentUser || user.id == userRepository.currentUser.value?.id
+        uiState.update { it.copy(user = user, isOwn = isOwn, hasError = false) }
     }
 
     private fun updateStatistics(statistics: Statistics) {
@@ -179,6 +252,18 @@ class ProfileLogic(
 
     private fun updateOpenedCollection(collection: PhotoCollection?) {
         uiState.update { it.copy(openedCollection = collection) }
+    }
+
+    private fun updateEditForm(form: EditForm?) {
+        uiState.update { it.copy(editForm = form) }
+    }
+
+    private fun updateIsSaving(isSaving: Boolean) {
+        uiState.update { it.copy(isSaving = isSaving) }
+    }
+
+    private fun updateHasSaveError(hasSaveError: Boolean) {
+        uiState.update { it.copy(hasSaveError = hasSaveError) }
     }
 }
 

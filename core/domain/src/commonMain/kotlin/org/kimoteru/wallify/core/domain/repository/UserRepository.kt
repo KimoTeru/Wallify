@@ -29,6 +29,12 @@ interface UserRepository {
     /** Needs the user token with the write scope. Publishes the changed user to [currentUser]. */
     suspend fun updateCurrentUser(params: UpdateUserParams): Response<User>
 
+    /**
+     * Page of the photo service where the signed-in user uploads photos. The API cannot upload, so the screen opens
+     * this address in the browser and, when the user is back, reloads the photos ([invalidateUserPhotos]).
+     */
+    val uploadPageUrl: String
+
     /** Behaves like `PhotoRepository.getPhotoFlow`: the database first, refreshed from the backend. */
     fun getUserFlow(username: String): Flow<Resource<User>>
 
@@ -37,6 +43,12 @@ interface UserRepository {
         order: UserPhotosOrder? = null,
         orientation: PhotoOrientation? = null
     ): Flow<PagingData<Photo>>
+
+    /**
+     * Makes the saved photo lists of the user stale: the next [getUserPhotosFlow] collected loads the first page
+     * again, while the saved photos stay on screen until the new ones arrive.
+     */
+    suspend fun invalidateUserPhotos(username: String)
 
     fun getUserCollectionsFlow(username: String): Flow<PagingData<PhotoCollection>>
 

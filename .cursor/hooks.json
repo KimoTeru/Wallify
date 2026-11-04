@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": ".cursor/hooks/require-docs.sh",
+        "timeout": 10
+      }
+    ]
+  }
+}

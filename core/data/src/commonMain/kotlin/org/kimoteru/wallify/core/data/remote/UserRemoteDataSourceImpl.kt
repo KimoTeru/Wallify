@@ -10,6 +10,7 @@ import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.model.user.UpdateUserParams
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.network.api.UsersApi
+import org.kimoteru.wallify.core.network.api.WebLinks
 import org.kimoteru.wallify.core.network.model.request.user.toRequest
 import org.kimoteru.wallify.core.network.model.response.collection.toDomain
 import org.kimoteru.wallify.core.network.model.response.photo.toDomain
@@ -19,7 +20,8 @@ import org.koin.core.annotation.Singleton
 
 @Singleton
 class UserRemoteDataSourceImpl(
-    private val usersApi: UsersApi
+    private val usersApi: UsersApi,
+    webLinks: WebLinks
 ) : UserRemoteDataSource {
 
     override suspend fun getCurrentUser(): Response<User> {
@@ -31,6 +33,8 @@ class UserRemoteDataSourceImpl(
         return usersApi.updateCurrentUser(request = params.toRequest())
             .map { it.toDomain() }
     }
+
+    override val uploadPageUrl: String = webLinks.uploadPageUrl
 
     override suspend fun getUser(username: String): Response<User> {
         return usersApi.getUser(username = username)

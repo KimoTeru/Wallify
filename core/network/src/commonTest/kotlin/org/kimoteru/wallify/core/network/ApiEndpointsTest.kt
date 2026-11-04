@@ -104,12 +104,14 @@ class ApiEndpointsTest {
             assertEquals("/search/photos", request.url.encodedPath)
             assertEquals("office", request.url.parameters["query"])
             assertEquals("black_and_white", request.url.parameters["color"])
+            assertEquals("ru", request.url.parameters["lang"])
             json("""{"total":133,"total_pages":7,"results":[$PHOTO]}""")
         }
 
         val page = assertIs<Response.Success<SearchPhotosResponse>>(
             SearchApi(client).searchPhotos(
                 query = SearchPhotosQuery(query = "office", color = PhotoColor.BlackAndWhite),
+                languageTag = "ru",
                 page = 1,
                 perPage = 10
             )

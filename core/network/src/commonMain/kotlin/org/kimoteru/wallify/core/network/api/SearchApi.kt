@@ -17,10 +17,20 @@ class SearchApi(
     private val client: HttpClient
 ) {
 
-    suspend fun searchPhotos(query: SearchPhotosQuery, page: Int, perPage: Int): Response<SearchPhotosResponse> {
+    /**
+     * [languageTag] is the language of the query; `null` and English leave the backend default and send nothing.
+     * Non-English search is in the backend's beta and works only for applications it enabled.
+     */
+    suspend fun searchPhotos(
+        query: SearchPhotosQuery,
+        languageTag: String?,
+        page: Int,
+        perPage: Int
+    ): Response<SearchPhotosResponse> {
         return executeRequest {
             client.get("search/photos") {
                 parameter(QueryParam.QUERY, query.query)
+                parameter(QueryParam.LANG, languageTag?.takeUnless { it == QueryParam.DEFAULT_LANGUAGE })
                 pagination(page, perPage)
                 parameter(QueryParam.ORDER_BY, query.order?.toQuery())
                 parameter(QueryParam.COLLECTIONS, query.collectionIds.toQueryList())
