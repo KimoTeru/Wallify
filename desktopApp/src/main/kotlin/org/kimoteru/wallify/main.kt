@@ -28,12 +28,14 @@ import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.theme.compositions.AppSizes
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.WindowType
+import org.kimoteru.wallify.core.designsystem.ui.locale.ProvideAppLocale
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.app_name
 import org.kimoteru.wallify.feature.root.presentation.components.DefaultRootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphUi
 import org.kimoteru.wallify.feature.root.presentation.ui.isDarkTheme
 import org.kimoteru.wallify.feature.root.presentation.ui.isSettingsLoaded
+import org.kimoteru.wallify.feature.root.presentation.ui.languageTag
 import org.kimoteru.wallify.feature.root.presentation.ui.requestedWindowType
 import org.koin.core.annotation.KoinApplication
 import org.koin.plugin.module.dsl.startKoin
@@ -165,26 +167,28 @@ fun main() {
                 }
             }
 
-            AppTheme(isDarkTheme = isDarkTheme) {
-                val appColor = AppTheme.color
+            ProvideAppLocale(languageTag = rootComponent.languageTag()) {
+                AppTheme(isDarkTheme = isDarkTheme) {
+                    val appColor = AppTheme.color
 
-                if (IS_MAC) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(appColor.basic.background)
-                            .padding(top = windowSizes.titleBarHeight)
-                    ) {
-                        RootGraphUi(component = rootComponent)
-                    }
-                } else {
-                    WindowFrame(
-                        windowState = windowState,
-                        title = title,
-                        minSize = DpSize(minimumWidth, windowSizes.minHeight),
-                        onClose = closeWindow
-                    ) {
-                        RootGraphUi(component = rootComponent)
+                    if (IS_MAC) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(appColor.basic.background)
+                                .padding(top = windowSizes.titleBarHeight)
+                        ) {
+                            RootGraphUi(component = rootComponent)
+                        }
+                    } else {
+                        WindowFrame(
+                            windowState = windowState,
+                            title = title,
+                            minSize = DpSize(minimumWidth, windowSizes.minHeight),
+                            onClose = closeWindow
+                        ) {
+                            RootGraphUi(component = rootComponent)
+                        }
                     }
                 }
             }

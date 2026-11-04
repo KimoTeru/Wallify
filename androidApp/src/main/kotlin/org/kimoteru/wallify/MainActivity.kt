@@ -10,10 +10,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.DisposableEffect
 import com.arkivanov.decompose.defaultComponentContext
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
+import org.kimoteru.wallify.core.designsystem.ui.locale.ProvideAppLocale
 import org.kimoteru.wallify.core.platform.managers.auth.AuthRedirectBus
 import org.kimoteru.wallify.feature.root.presentation.components.DefaultRootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphUi
 import org.kimoteru.wallify.feature.root.presentation.ui.isDarkTheme
+import org.kimoteru.wallify.feature.root.presentation.ui.languageTag
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
@@ -41,8 +43,10 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
 
-            AppTheme(isDarkTheme = isDarkTheme) {
-                RootGraphUi(component = rootComponent)
+            ProvideAppLocale(languageTag = rootComponent.languageTag()) {
+                AppTheme(isDarkTheme = isDarkTheme) {
+                    RootGraphUi(component = rootComponent)
+                }
             }
         }
     }

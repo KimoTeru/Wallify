@@ -47,11 +47,15 @@ internal object ListKeys {
     fun topicPhotos(idOrSlug: String, orientation: PhotoOrientation?, order: PhotosOrder?): String =
         "topics:photos:$idOrSlug:${orientation?.name.orEmpty()}:${order?.name.orEmpty()}"
 
-    fun userPhotos(username: String, order: UserPhotosOrder?, orientation: PhotoOrientation?): String =
-        "$USER_PHOTOS_PREFIX${username.lowercase()}:${order?.name.orEmpty()}:${orientation?.name.orEmpty()}"
+    /** Every photo list of one user, whatever the order and orientation. */
+    fun userPhotosPrefix(username: String): String = "$USER_PHOTOS_PREFIX${username.lowercase()}:"
 
-    fun searchPhotos(query: SearchPhotosQuery): String =
+    fun userPhotos(username: String, order: UserPhotosOrder?, orientation: PhotoOrientation?): String =
+        "${userPhotosPrefix(username)}${order?.name.orEmpty()}:${orientation?.name.orEmpty()}"
+
+    fun searchPhotos(query: SearchPhotosQuery, languageTag: String?): String =
         "search:photos:" + listOf(
+            languageTag.orEmpty(),
             query.query.trim().lowercase(),
             query.order?.name.orEmpty(),
             query.collectionIds.joinToString(","),

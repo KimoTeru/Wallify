@@ -76,6 +76,7 @@ class SettingsLogic(
             photoLayout = userSettings.photoLayout,
             photoColumns = userSettings.photoColumns,
             screenLayout = userSettings.screenLayout,
+            languageTag = userSettings.languageTag,
             totalStats = stats.total,
             monthStats = stats.month
         )
@@ -101,6 +102,7 @@ class SettingsLogic(
             is UiEvent.SelectPhotoLayout -> selectPhotoLayout(event.photoLayout)
             is UiEvent.SelectPhotoColumns -> selectPhotoColumns(event.columns)
             is UiEvent.SelectScreenLayout -> selectScreenLayout(event.screenLayout)
+            is UiEvent.SelectLanguage -> selectLanguage(event.languageTag)
             is UiEvent.SignOut -> coroutineScope.launch { authRepository.signOut() }
         }
     }
@@ -126,6 +128,12 @@ class SettingsLogic(
     private fun selectScreenLayout(screenLayout: ScreenLayout) {
         coroutineScope.launch {
             updateUserSettings(settings.value.copy(screenLayout = screenLayout))
+        }
+    }
+
+    private fun selectLanguage(languageTag: String?) {
+        coroutineScope.launch {
+            updateUserSettings(settings.value.copy(languageTag = languageTag))
         }
     }
 

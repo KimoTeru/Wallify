@@ -178,6 +178,32 @@
     <string name="profile_collection_photos">%1$d photos</string>
     <!-- Button that leaves the photos of a collection and returns to the list of collections -->
     <string name="profile_collection_back">All collections</string>
+    <!-- Button on the own profile: opens the form to change the profile -->
+    <string name="profile_edit">Edit profile</string>
+    <!-- Button on the own profile: opens the photo service's page for uploading photos in the browser -->
+    <string name="profile_upload">Upload photo</string>
+    <!-- Title of the form to change the own profile -->
+    <string name="profile_edit_title">Edit profile</string>
+    <!-- Field of the profile form: username -->
+    <string name="profile_edit_username">Username</string>
+    <!-- Field of the profile form: first name -->
+    <string name="profile_edit_first_name">First name</string>
+    <!-- Field of the profile form: last name -->
+    <string name="profile_edit_last_name">Last name</string>
+    <!-- Field of the profile form: email address -->
+    <string name="profile_edit_email">Email</string>
+    <!-- Field of the profile form: address of the personal website or portfolio -->
+    <string name="profile_edit_portfolio">Website</string>
+    <!-- Field of the profile form: where the user lives -->
+    <string name="profile_edit_location">Location</string>
+    <!-- Field of the profile form: short text about the user -->
+    <string name="profile_edit_bio">About you</string>
+    <!-- Field of the profile form: Instagram username without the at sign -->
+    <string name="profile_edit_instagram">Instagram username</string>
+    <!-- Button of the profile form: saves the changes -->
+    <string name="profile_edit_save">Save</string>
+    <!-- Message in the profile form when the changes were not saved -->
+    <string name="profile_edit_error">Could not save the profile. Check the fields and try again.</string>
 
     <!-- Section title of the settings: the signed-in account -->
     <string name="settings_account">Account</string>
@@ -215,6 +241,12 @@
     <string name="settings_columns_auto">Auto</string>
     <!-- Note under the photo layout choice: where it applies -->
     <string name="settings_layout_description">Applies to the photo feed. Curated, random photos and profiles always use a grid of equal cards.</string>
+    <!-- Section title of the settings: language of the app -->
+    <string name="settings_language">Language</string>
+    <!-- Choice of the language: the language of the device -->
+    <string name="settings_language_system">System</string>
+    <!-- Note under the language choice: what the language changes -->
+    <string name="settings_language_description">Language of the app and of your photo search queries. Search in languages other than English is a beta feature of the photo service and may not work for every app.</string>
     <!-- Section title of the settings: numbers of the whole photo service -->
     <string name="settings_service_title">Unsplash in numbers</string>
     <!-- Caption of the total number of photos of the service -->

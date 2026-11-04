@@ -69,6 +69,8 @@ class UserRepositoryImpl(
             .onSuccess { user -> cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) } }
     }
 
+    override val uploadPageUrl: String = userRemoteDataSource.uploadPageUrl
+
     override fun getUserFlow(username: String): Flow<Resource<User>> {
         return refreshableFlow(
             roomFlow = { userDao.observeByUsername(username) },
@@ -102,6 +104,10 @@ class UserRepositoryImpl(
             },
             saveItems = cacheStore::savePhotoSummaries
         )
+    }
+
+    override suspend fun invalidateUserPhotos(username: String) {
+        cacheStore.invalidateLists(ListKeys.userPhotosPrefix(username))
     }
 
     override fun getUserCollectionsFlow(username: String): Flow<PagingData<PhotoCollection>> {

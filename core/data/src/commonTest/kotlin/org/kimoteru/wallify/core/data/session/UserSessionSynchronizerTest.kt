@@ -201,7 +201,11 @@ private class FakeUserRepository(vararg results: Response<User>) : UserRepositor
 
     override suspend fun updateCurrentUser(params: UpdateUserParams): Response<User> = unused()
 
+    override val uploadPageUrl: String = ""
+
     override fun getUserFlow(username: String): Flow<Resource<User>> = unused()
+
+    override suspend fun invalidateUserPhotos(username: String): Unit = unused()
 
     override fun getUserPhotosFlow(
         username: String,

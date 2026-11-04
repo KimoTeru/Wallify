@@ -20,17 +20,21 @@ import org.kimoteru.wallify.core.common.extensions.toCompactString
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.avatar.UserAvatar
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
+import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButtonStyle
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassSegmentedControl
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassStat
+import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorTitle
 import org.kimoteru.wallify.core.designsystem.ui.shimmer.ShimmerBox
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.common_retry
+import org.kimoteru.wallify.core.resources.generated.resources.profile_edit
 import org.kimoteru.wallify.core.resources.generated.resources.profile_stat_collections
 import org.kimoteru.wallify.core.resources.generated.resources.profile_stat_downloads
 import org.kimoteru.wallify.core.resources.generated.resources.profile_stat_photos
 import org.kimoteru.wallify.core.resources.generated.resources.profile_tab_collections
 import org.kimoteru.wallify.core.resources.generated.resources.profile_tab_photos
+import org.kimoteru.wallify.core.resources.generated.resources.profile_upload
 
 /** Avatar, name, short bio, counters and the tab switch of a profile. */
 @Composable
@@ -103,6 +107,28 @@ fun ProfileHeader(
                     color = appColor.text.common,
                     textAlign = TextAlign.Center
                 )
+            }
+
+            if (uiState.isOwn) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(appPadding.small)
+                ) {
+                    GlassButton(
+                        modifier = Modifier.weight(1f),
+                        text = stringResource(Res.string.profile_edit),
+                        icon = AppIcons.Edit,
+                        onClick = { obtainEvent(ProfileContract.UiEvent.ShowEdit) }
+                    )
+
+                    GlassButton(
+                        modifier = Modifier.weight(1f),
+                        text = stringResource(Res.string.profile_upload),
+                        style = GlassButtonStyle.Solid,
+                        icon = AppIcons.Upload,
+                        onClick = { obtainEvent(ProfileContract.UiEvent.Upload) }
+                    )
+                }
             }
 
             // The tiles are one height whatever their labels take.

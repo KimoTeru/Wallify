@@ -87,6 +87,7 @@ class RootGraphLogic(
             photoLayout = settings.photoLayout,
             photoColumns = settings.photoColumns,
             screenLayout = settings.screenLayout,
+            languageTag = settings.languageTag,
             isSettingsLoaded = true
         )
     }

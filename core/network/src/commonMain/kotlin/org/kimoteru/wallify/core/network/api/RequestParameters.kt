@@ -26,6 +26,7 @@ internal object QueryParam {
     const val IDS = "ids"
     const val USERNAME = "username"
     const val QUERY = "query"
+    const val LANG = "lang"
     const val COUNT = "count"
     const val STATS = "stats"
     const val RESOLUTION = "resolution"
@@ -34,6 +35,9 @@ internal object QueryParam {
 
     /** The only statistics frequency the backend supports. */
     const val RESOLUTION_DAYS = "days"
+
+    /** Language of a search the backend uses when `lang` is absent; sending it would only need the beta access. */
+    const val DEFAULT_LANGUAGE = "en"
 }
 
 internal fun HttpRequestBuilder.pagination(page: Int, perPage: Int) {

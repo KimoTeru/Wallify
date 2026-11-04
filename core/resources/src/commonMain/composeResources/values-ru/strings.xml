@@ -1,0 +1,268 @@
+<resources>
+    <!-- Name of the app, shown on the splash and navigation screens and in the desktop window title -->
+    <string name="app_name">Wallify</string>
+    <!-- Confirm button of informational dialogs -->
+    <string name="action_ok">OK</string>
+    <!-- Button that repeats a failed request, shown under an error message -->
+    <string name="common_retry">Повторить</string>
+    <!-- Button of a filter dialog that applies the chosen values -->
+    <string name="common_apply">Применить</string>
+    <!-- Button of a filter dialog that clears the chosen values -->
+    <string name="common_reset">Сбросить</string>
+    <!-- Message of a photo list that has nothing to show -->
+    <string name="common_photos_empty">Здесь пока нет фото</string>
+
+    <!-- Title of the dialog shown when a request fails -->
+    <string name="error_dialog_title">Что-то пошло не так</string>
+    <!-- Description of the dialog shown when a request fails -->
+    <string name="error_dialog_description">Попробуйте ещё раз позже.</string>
+    <!-- Banner at the top of the screen while the device has no internet connection; also the title of an error state -->
+    <string name="error_no_internet">Нет подключения к интернету</string>
+    <!-- Description of an error state shown while the device is offline -->
+    <string name="error_no_internet_description">Проверьте соединение. Содержимое загрузится снова, как только появится интернет.</string>
+
+    <!-- Legal consent text; %1$s, %2$s and %3$s are the link names below, in this order -->
+    <string name="legal_consent">Продолжая, вы принимаете %1$s, %2$s и %3$s.</string>
+    <!-- Link name inside the legal consent text -->
+    <string name="legal_terms_of_service">Условия использования</string>
+    <!-- Link name inside the legal consent text -->
+    <string name="legal_privacy_policy">Политику конфиденциальности</string>
+    <!-- Link name inside the legal consent text -->
+    <string name="legal_subscription_terms">Условия подписки</string>
+
+    <!-- Permission name inside the denied-access dialog title -->
+    <string name="permission_camera">камере</string>
+    <!-- Permission name inside the denied-access dialog title -->
+    <string name="permission_notifications">уведомлениям</string>
+    <!-- Title of the denied-access dialog; %1$s is the permission name -->
+    <string name="permission_denied_title">Нет доступа к %1$s</string>
+    <!-- Description of the denied camera access dialog -->
+    <string name="permission_camera_description">Разрешите доступ к камере, чтобы продолжить.</string>
+    <!-- Description of the denied notifications access dialog -->
+    <string name="permission_notifications_description">Разрешите доступ к уведомлениям, чтобы быть в курсе событий.</string>
+    <!-- Button of the denied-access dialog that opens the app settings -->
+    <string name="permission_allow_access">Разрешить доступ</string>
+
+    <!-- Headline of the sign-in screen, which the app shows until the user is signed in -->
+    <string name="auth_title">Добро пожаловать в Wallify</string>
+    <!-- Description under the headline of the sign-in screen -->
+    <string name="auth_description">Войдите с аккаунтом Unsplash, чтобы смотреть обои, собирать избранное и скачивать фото.</string>
+    <!-- Button of the sign-in screen that opens the sign-in page of the photo service in the browser -->
+    <string name="auth_sign_in">Войти через Unsplash</string>
+    <!-- Button of the settings screen that signs the user out -->
+    <string name="auth_sign_out">Выйти</string>
+    <!-- Sign-in screen text while the sign-in page is open in the browser and the app waits for the user -->
+    <string name="auth_waiting_for_browser">Завершите вход в браузере</string>
+    <!-- Button of the sign-in screen that stops waiting for the sign-in in the browser -->
+    <string name="auth_cancel">Отмена</string>
+
+    <!-- Main navigation: the editorial photo feed with search; also the title of that screen -->
+    <string name="nav_feed">Все фото</string>
+    <!-- Main navigation: photos grouped by topic; also the title of that screen -->
+    <string name="nav_topics">Подборки</string>
+    <!-- Main navigation: random photos; also the title of that screen -->
+    <string name="nav_random">Случайные</string>
+    <!-- Main navigation: the profile of the signed-in user -->
+    <string name="nav_studio">Студия</string>
+    <!-- Main navigation: the settings screen; also the title of that screen -->
+    <string name="nav_settings">Настройки</string>
+
+    <!-- Hint of the search field above the photo feed -->
+    <string name="feed_search_hint">Поиск фото</string>
+    <!-- Title of the search filters sheet and dialog -->
+    <string name="feed_filters_title">Фильтры поиска</string>
+    <!-- Note under the title of the search filters: they work only together with a search text -->
+    <string name="feed_filters_note">Фильтры применяются к результатам поиска.</string>
+    <!-- Section of the search filters: orientation of the photo -->
+    <string name="feed_filter_orientation">Ориентация</string>
+    <!-- Section of the search filters: dominant color of the photo -->
+    <string name="feed_filter_color">Цвет</string>
+    <!-- Section of the search filters: order of the results -->
+    <string name="feed_filter_order">Сортировка</string>
+    <!-- Section of the search filters: filter of content unsuitable for younger audiences -->
+    <string name="feed_filter_content">Фильтр контента</string>
+    <!-- Photo orientation -->
+    <string name="orientation_landscape">Горизонтальная</string>
+    <!-- Photo orientation -->
+    <string name="orientation_portrait">Вертикальная</string>
+    <!-- Photo orientation: width equals height -->
+    <string name="orientation_squarish">Квадратная</string>
+    <!-- Photo color filter value -->
+    <string name="color_black_and_white">Чёрно-белое</string>
+    <!-- Photo color filter value -->
+    <string name="color_black">Чёрный</string>
+    <!-- Photo color filter value -->
+    <string name="color_white">Белый</string>
+    <!-- Photo color filter value -->
+    <string name="color_yellow">Жёлтый</string>
+    <!-- Photo color filter value -->
+    <string name="color_orange">Оранжевый</string>
+    <!-- Photo color filter value -->
+    <string name="color_red">Красный</string>
+    <!-- Photo color filter value -->
+    <string name="color_purple">Фиолетовый</string>
+    <!-- Photo color filter value -->
+    <string name="color_magenta">Пурпурный</string>
+    <!-- Photo color filter value -->
+    <string name="color_green">Зелёный</string>
+    <!-- Photo color filter value -->
+    <string name="color_teal">Бирюзовый</string>
+    <!-- Photo color filter value -->
+    <string name="color_blue">Синий</string>
+    <!-- Order of search results: the best match first -->
+    <string name="order_relevant">По релевантности</string>
+    <!-- Order of search results: the newest first -->
+    <string name="order_latest">Новые</string>
+    <!-- Content filter value: the backend default -->
+    <string name="content_filter_low">Стандартный</string>
+    <!-- Content filter value: removes content that may be unsuitable for younger audiences -->
+    <string name="content_filter_high">Строгий</string>
+
+    <!-- Button of the random photos screen that loads another set of photos -->
+    <string name="random_shuffle">Перемешать</string>
+
+    <!-- Attribution under the photo; %1$s is the name of the photographer, who is a link to the profile -->
+    <string name="photo_attribution">Фото: %1$s, Unsplash</string>
+    <!-- Button that opens the photo page of the photo service in the browser -->
+    <string name="photo_open_source">Открыть на Unsplash</string>
+    <!-- Button that downloads the photo through the browser -->
+    <string name="photo_download">Скачать</string>
+    <!-- Size of a photo in pixels; %1$d is the width, %2$d is the height -->
+    <string name="photo_dimensions">%1$d × %2$d px</string>
+    <!-- Section title: camera data of a photo -->
+    <string name="photo_exif_title">Данные камеры</string>
+    <!-- Label of the camera of a photo -->
+    <string name="photo_exif_camera">Камера</string>
+    <!-- Label of the aperture of a photo -->
+    <string name="photo_exif_aperture">Диафрагма</string>
+    <!-- Label of the shutter speed of a photo -->
+    <string name="photo_exif_exposure">Выдержка</string>
+    <!-- Label of the ISO sensitivity of a photo -->
+    <string name="photo_exif_iso">ISO</string>
+    <!-- Label of the focal length of a photo -->
+    <string name="photo_exif_focal">Фокусное расстояние</string>
+    <!-- Aperture value; %1$s is the f-number, e.g. 1.8 -->
+    <string name="photo_exif_aperture_value">ƒ/%1$s</string>
+    <!-- Shutter speed value; %1$s is the exposure time in seconds, e.g. 1/2000 -->
+    <string name="photo_exif_exposure_value">%1$s с</string>
+    <!-- Focal length value; %1$s is the length in millimeters -->
+    <string name="photo_exif_focal_value">%1$s мм</string>
+    <!-- Message when the photographer shared no camera data -->
+    <string name="photo_exif_empty">Фотограф не указал данные камеры.</string>
+    <!-- Section title: tags of a photo -->
+    <string name="photo_tags">Теги</string>
+    <!-- Section title: views and downloads of a photo for the last days -->
+    <string name="photo_stats_title">Последние 30 дней</string>
+    <!-- Caption of the number of views -->
+    <string name="photo_stats_views">Просмотры</string>
+    <!-- Caption of the number of downloads -->
+    <string name="photo_stats_downloads">Скачивания</string>
+    <!-- Section title: collections of the signed-in user, where the photo can be added or removed -->
+    <string name="photo_collections_title">Ваши коллекции</string>
+    <!-- Message when the signed-in user has no collections -->
+    <string name="photo_collections_empty">У вас пока нет коллекций.</string>
+
+    <!-- Tab of the profile: photos of the user -->
+    <string name="profile_tab_photos">Фото</string>
+    <!-- Tab of the profile: collections of the user -->
+    <string name="profile_tab_collections">Коллекции</string>
+    <!-- Caption of the number of photos of the user -->
+    <string name="profile_stat_photos">Фото</string>
+    <!-- Caption of the number of collections of the user -->
+    <string name="profile_stat_collections">Коллекции</string>
+    <!-- Caption of the number of downloads of the user's photos -->
+    <string name="profile_stat_downloads">Скачивания</string>
+    <!-- Message when the user has no collections -->
+    <string name="profile_collections_empty">Коллекций пока нет</string>
+    <!-- Number of photos of a collection; %1$d is the number -->
+    <string name="profile_collection_photos">Фото: %1$d</string>
+    <!-- Button that leaves the photos of a collection and returns to the list of collections -->
+    <string name="profile_collection_back">Все коллекции</string>
+    <!-- Button on the own profile: opens the form to change the profile -->
+    <string name="profile_edit">Изменить профиль</string>
+    <!-- Button on the own profile: opens the photo service's page for uploading photos in the browser -->
+    <string name="profile_upload">Загрузить фото</string>
+    <!-- Title of the form to change the own profile -->
+    <string name="profile_edit_title">Изменить профиль</string>
+    <!-- Field of the profile form: username -->
+    <string name="profile_edit_username">Имя пользователя</string>
+    <!-- Field of the profile form: first name -->
+    <string name="profile_edit_first_name">Имя</string>
+    <!-- Field of the profile form: last name -->
+    <string name="profile_edit_last_name">Фамилия</string>
+    <!-- Field of the profile form: email address -->
+    <string name="profile_edit_email">Электронная почта</string>
+    <!-- Field of the profile form: address of the personal website or portfolio -->
+    <string name="profile_edit_portfolio">Сайт</string>
+    <!-- Field of the profile form: where the user lives -->
+    <string name="profile_edit_location">Местоположение</string>
+    <!-- Field of the profile form: short text about the user -->
+    <string name="profile_edit_bio">О себе</string>
+    <!-- Field of the profile form: Instagram username without the at sign -->
+    <string name="profile_edit_instagram">Имя в Instagram</string>
+    <!-- Button of the profile form: saves the changes -->
+    <string name="profile_edit_save">Сохранить</string>
+    <!-- Message in the profile form when the changes were not saved -->
+    <string name="profile_edit_error">Не удалось сохранить профиль. Проверьте поля и попробуйте ещё раз.</string>
+
+    <!-- Section title of the settings: the signed-in account -->
+    <string name="settings_account">Аккаунт</string>
+    <!-- Section title of the settings: look of the app -->
+    <string name="settings_appearance">Оформление</string>
+    <!-- Choice of the color scheme: follows the device -->
+    <string name="settings_theme_system">Системная</string>
+    <!-- Choice of the color scheme: dark -->
+    <string name="settings_theme_night">Ночь</string>
+    <!-- Choice of the color scheme: light -->
+    <string name="settings_theme_day">День</string>
+    <!-- Section title of the settings: arrangement of the whole screen (navigation, panels, columns) -->
+    <string name="settings_screen_layout">Компоновка экрана</string>
+    <!-- Choice of the screen layout: follows the window size -->
+    <string name="settings_screen_layout_auto">Авто</string>
+    <!-- Choice of the screen layout: the phone arrangement with the bottom dock -->
+    <string name="settings_screen_layout_compact">Компактная</string>
+    <!-- Choice of the screen layout: the tablet arrangement with the side rail -->
+    <string name="settings_screen_layout_medium">Средняя</string>
+    <!-- Choice of the screen layout: the desktop arrangement with the permanent drawer -->
+    <string name="settings_screen_layout_expanded">Расширенная</string>
+    <!-- Note under the screen layout choice -->
+    <string name="settings_screen_layout_description">Компактная — для телефона, средняя — для планшета, расширенная — для компьютера. Авто подстраивается под размер окна.</string>
+    <!-- Section title of the settings: default layout of the photo lists -->
+    <string name="settings_layout">Компоновка фото</string>
+    <!-- Choice of the photo layout: cards keep the proportions of their photos -->
+    <string name="settings_layout_masonry">Мозаика</string>
+    <!-- Choice of the photo layout: all cards have the same size -->
+    <string name="settings_layout_grid">Сетка</string>
+    <!-- Choice of the photo layout: large cards in one column -->
+    <string name="settings_layout_list">Список</string>
+    <!-- Label of the choice of the number of photo columns -->
+    <string name="settings_columns">Столбцы</string>
+    <!-- Choice of the number of photo columns: the window width decides -->
+    <string name="settings_columns_auto">Авто</string>
+    <!-- Note under the photo layout choice: where it applies -->
+    <string name="settings_layout_description">Действует для ленты фото. Подборки, случайные фото и профили всегда показываются сеткой одинаковых карточек.</string>
+    <!-- Section title of the settings: language of the app -->
+    <string name="settings_language">Язык</string>
+    <!-- Choice of the language: the language of the device -->
+    <string name="settings_language_system">Системный</string>
+    <!-- Note under the language choice: what the language changes -->
+    <string name="settings_language_description">Язык приложения и поисковых запросов. Поиск не на английском — бета-функция сервиса фото, и она может работать не для всех приложений.</string>
+    <!-- Section title of the settings: numbers of the whole photo service -->
+    <string name="settings_service_title">Unsplash в цифрах</string>
+    <!-- Caption of the total number of photos of the service -->
+    <string name="settings_stat_photos">Фото</string>
+    <!-- Caption of the total number of downloads of the service -->
+    <string name="settings_stat_downloads">Скачивания</string>
+    <!-- Caption of the total number of views of the service -->
+    <string name="settings_stat_views">Просмотры</string>
+    <!-- Caption of the number of photographers of the service -->
+    <string name="settings_stat_photographers">Фотографы</string>
+    <!-- Caption of the number of photos added in the last 30 days -->
+    <string name="settings_stat_new_photos">Новые фото, 30 дней</string>
+    <!-- Caption of the number of photographers who joined in the last 30 days -->
+    <string name="settings_stat_new_photographers">Новые фотографы, 30 дней</string>
+    <!-- Section title of the settings: about the photo source -->
+    <string name="settings_about">О приложении</string>
+    <!-- Text of the about section: all photos come from the photo service -->
+    <string name="settings_about_description">Все фото предоставлены Unsplash и принадлежат их авторам.</string>
+</resources>

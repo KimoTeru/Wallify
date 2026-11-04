@@ -1,7 +1,10 @@
 package org.kimoteru.wallify.core.data.repository
 
 import androidx.paging.PagingData
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.data.cache.CacheLoader
 import org.kimoteru.wallify.core.data.cache.CacheStore
 import org.kimoteru.wallify.core.data.cache.CacheTtl
@@ -13,6 +16,7 @@ import org.kimoteru.wallify.core.database.dao.PhotoDao
 import org.kimoteru.wallify.core.database.dao.UserDao
 import org.kimoteru.wallify.core.database.entity.toDomain
 import org.kimoteru.wallify.core.domain.repository.SearchRepository
+import org.kimoteru.wallify.core.domain.repository.UserSettingsRepository
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.SearchPhotosQuery
@@ -25,21 +29,35 @@ class SearchRepositoryImpl(
     private val photoDao: PhotoDao,
     private val collectionDao: CollectionDao,
     private val userDao: UserDao,
+    private val userSettingsRepository: UserSettingsRepository,
     private val cacheLoader: CacheLoader,
     private val cacheStore: CacheStore
 ) : SearchRepository {
 
+    /** Searches in the language chosen in the settings and starts over when the choice changes. */
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun searchPhotosFlow(query: SearchPhotosQuery): Flow<PagingData<Photo>> {
-        val listKey = ListKeys.searchPhotos(query)
-        return cacheLoader.pager(
-            listKey = listKey,
-            ttl = CacheTtl.Feed,
-            pagingSource = { photoDao.pagingSource(listKey) },
-            toDomain = { entity -> entity.toDomain() },
-            itemId = { photo -> photo.id },
-            fetch = { page, size -> searchRemoteDataSource.searchPhotos(query = query, page = page, size = size) },
-            saveItems = cacheStore::savePhotoSummaries
-        )
+        return userSettingsRepository.observe()
+            .mapDistinctBy { settings -> settings.languageTag }
+            .flatMapLatest { languageTag ->
+                val listKey = ListKeys.searchPhotos(query, languageTag)
+                cacheLoader.pager(
+                    listKey = listKey,
+                    ttl = CacheTtl.Feed,
+                    pagingSource = { photoDao.pagingSource(listKey) },
+                    toDomain = { entity -> entity.toDomain() },
+                    itemId = { photo -> photo.id },
+                    fetch = { page, size ->
+                        searchRemoteDataSource.searchPhotos(
+                            query = query,
+                            languageTag = languageTag,
+                            page = page,
+                            size = size
+                        )
+                    },
+                    saveItems = cacheStore::savePhotoSummaries
+                )
+            }
     }
 
     override fun searchCollectionsFlow(query: String): Flow<PagingData<PhotoCollection>> {

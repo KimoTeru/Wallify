@@ -25,6 +25,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.common.extensions.toCompactString
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
+import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberCanUseExpandedLayout
 import org.kimoteru.wallify.core.designsystem.ui.avatar.UserAvatar
 import org.kimoteru.wallify.core.designsystem.ui.blur.BlurSourceZIndex
 import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
@@ -40,6 +41,7 @@ import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoLayoutCard
 import org.kimoteru.wallify.core.model.settings.PhotoLayout
 import org.kimoteru.wallify.core.model.settings.ScreenLayout
+import org.kimoteru.wallify.core.model.settings.SupportedLanguages
 import org.kimoteru.wallify.core.model.settings.ThemeMode
 import org.kimoteru.wallify.core.model.stats.MonthStats
 import org.kimoteru.wallify.core.model.stats.TotalStats
@@ -54,6 +56,9 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_account
 import org.kimoteru.wallify.core.resources.generated.resources.settings_appearance
 import org.kimoteru.wallify.core.resources.generated.resources.settings_columns
 import org.kimoteru.wallify.core.resources.generated.resources.settings_columns_auto
+import org.kimoteru.wallify.core.resources.generated.resources.settings_language
+import org.kimoteru.wallify.core.resources.generated.resources.settings_language_description
+import org.kimoteru.wallify.core.resources.generated.resources.settings_language_system
 import org.kimoteru.wallify.core.resources.generated.resources.settings_layout
 import org.kimoteru.wallify.core.resources.generated.resources.settings_layout_description
 import org.kimoteru.wallify.core.resources.generated.resources.settings_layout_grid
@@ -84,6 +89,9 @@ object SettingsContract {
         val photoLayout: PhotoLayout = PhotoLayout.Masonry,
         val photoColumns: Int? = null,
         val screenLayout: ScreenLayout = ScreenLayout.Auto,
+
+        /** Language of the app and of photo search; `null` follows the device. */
+        val languageTag: String? = null,
         val totalStats: TotalStats? = null,
         val monthStats: MonthStats? = null
     ) : BaseContract.UiState
@@ -96,6 +104,10 @@ object SettingsContract {
         data class SelectPhotoColumns(val columns: Int?) : UiEvent
 
         data class SelectScreenLayout(val screenLayout: ScreenLayout) : UiEvent
+
+        /** `null` follows the device language. */
+        data class SelectLanguage(val languageTag: String?) : UiEvent
+
         data object SignOut : UiEvent
     }
 }
@@ -132,6 +144,8 @@ fun SettingsUi(
     val photoLayouts = PhotoLayout.entries
     val columnOptions = listOf(1, 2, 3, 4)
     val screenLayouts = ScreenLayout.entries
+    val canUseExpandedLayout = rememberCanUseExpandedLayout()
+    val languages = SupportedLanguages
 
     Column(
         modifier = modifier
@@ -206,21 +220,42 @@ fun SettingsUi(
                 )
             }
 
-            SettingsSection(title = stringResource(Res.string.settings_screen_layout)) {
+            SettingsSection(title = stringResource(Res.string.settings_language)) {
                 GlassSegmentedControl(
                     modifier = Modifier.fillMaxWidth(),
-                    options = screenLayouts.map { screenLayout -> stringResource(screenLayout.labelRes()) },
-                    selectedIndex = screenLayouts.indexOf(uiState.screenLayout),
+                    options = listOf(stringResource(Res.string.settings_language_system)) +
+                        languages.map { language -> language.name },
+                    selectedIndex = languages.indexOfFirst { language -> language.tag == uiState.languageTag } + 1,
                     onSelect = { index ->
-                        obtainEvent(SettingsContract.UiEvent.SelectScreenLayout(screenLayouts[index]))
+                        obtainEvent(SettingsContract.UiEvent.SelectLanguage(languages.getOrNull(index - 1)?.tag))
                     }
                 )
 
                 Text(
-                    text = stringResource(Res.string.settings_screen_layout_description),
+                    text = stringResource(Res.string.settings_language_description),
                     style = appTypography.h7.regular,
                     color = appColor.text.subtitle
                 )
+            }
+
+            // Phones never reach the Expanded layout, so there is nothing to choose between there.
+            if (canUseExpandedLayout) {
+                SettingsSection(title = stringResource(Res.string.settings_screen_layout)) {
+                    GlassSegmentedControl(
+                        modifier = Modifier.fillMaxWidth(),
+                        options = screenLayouts.map { screenLayout -> stringResource(screenLayout.labelRes()) },
+                        selectedIndex = screenLayouts.indexOf(uiState.screenLayout),
+                        onSelect = { index ->
+                            obtainEvent(SettingsContract.UiEvent.SelectScreenLayout(screenLayouts[index]))
+                        }
+                    )
+
+                    Text(
+                        text = stringResource(Res.string.settings_screen_layout_description),
+                        style = appTypography.h7.regular,
+                        color = appColor.text.subtitle
+                    )
+                }
             }
 
             SettingsSection(title = stringResource(Res.string.settings_layout)) {

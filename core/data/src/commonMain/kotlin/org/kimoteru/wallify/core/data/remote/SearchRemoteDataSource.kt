@@ -8,7 +8,13 @@ import org.kimoteru.wallify.core.model.user.User
 
 interface SearchRemoteDataSource {
 
-    suspend fun searchPhotos(query: SearchPhotosQuery, page: Int, size: Int): Response<List<Photo>>
+    /** [languageTag] is the language of the query; `null` leaves the backend default. */
+    suspend fun searchPhotos(
+        query: SearchPhotosQuery,
+        languageTag: String?,
+        page: Int,
+        size: Int
+    ): Response<List<Photo>>
 
     suspend fun searchCollections(query: String, page: Int, size: Int): Response<List<PhotoCollection>>
 
