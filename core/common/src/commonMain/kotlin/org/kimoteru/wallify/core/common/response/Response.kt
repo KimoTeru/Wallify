@@ -6,8 +6,13 @@ data class ResponseError(
     val message: String,
     val code: Int = DEBUG_ERROR_CODE
 ) {
+    /** The backend does not accept the session token (or its absence): the user has to sign in again. */
+    val isUnauthorized: Boolean
+        get() = code == UNAUTHORIZED_CODE
+
     companion object {
         const val DEBUG_ERROR_CODE = -1
+        const val UNAUTHORIZED_CODE = 401
     }
 }
 

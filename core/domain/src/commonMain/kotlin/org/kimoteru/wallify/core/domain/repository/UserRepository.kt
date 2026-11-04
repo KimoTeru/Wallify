@@ -2,6 +2,7 @@ package org.kimoteru.wallify.core.domain.repository
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
@@ -13,10 +14,18 @@ import org.kimoteru.wallify.core.model.user.User
 
 interface UserRepository {
 
-    /** Needs the user token; with the access key alone the backend answers 401. */
-    suspend fun getCurrentUser(): Response<User>
+    /**
+     * The signed-in user. The session keeps it up to date: it is loaded when the token appears and cleared
+     * on sign-out, so screens only read it and never load it. `null` until the first load and without a session.
+     */
+    val currentUser: StateFlow<User?>
 
-    /** Needs the user token with the write scope. */
+    /** Loads the signed-in user and publishes it to [currentUser]. Needs the user token, otherwise 401. */
+    suspend fun refreshCurrentUser(): Response<User>
+
+    fun clearCurrentUser()
+
+    /** Needs the user token with the write scope. Publishes the changed user to [currentUser]. */
     suspend fun updateCurrentUser(params: UpdateUserParams): Response<User>
 
     suspend fun getUser(username: String): Response<User>

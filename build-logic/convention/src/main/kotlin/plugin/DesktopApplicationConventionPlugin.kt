@@ -27,6 +27,9 @@ class DesktopApplicationConventionPlugin : Plugin<Project> {
                     mainClass = ProjectConfig.DESKTOP_MAIN_CLASS
                     nativeDistributions {
                         targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+                        // The sign-in redirect is caught by a local HTTP server (`JvmAuthBrowser`); the trimmed
+                        // runtime of a packaged app does not include its module by default.
+                        modules("jdk.httpserver")
                         packageName = ProjectConfig.APPLICATION_ID
                         packageVersion = ProjectConfig.VERSION_NAME
                     }
@@ -35,8 +38,9 @@ class DesktopApplicationConventionPlugin : Plugin<Project> {
         }
 
         // Desktop has no build types: only the run tasks (`run`, `hotRun`) are debug, a packaged app is release.
+        // The argument is added right before the start, so the task setup of the Compose plugin cannot drop it.
         tasks.withType(JavaExec::class.java).configureEach {
-            jvmArgs("-Dwallify.debug=true")
+            doFirst { jvmArgs("-Dwallify.debug=true") }
         }
 
         val composeDependencies = extensions.getByType(ComposeExtension::class.java).dependencies

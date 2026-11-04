@@ -32,4 +32,20 @@
     <string name="permission_notifications_description">Please allow notification access to stay updated.</string>
     <!-- Button of the denied-access dialog that opens the app settings -->
     <string name="permission_allow_access">Allow access</string>
+
+    <!-- Headline of the sign-in screen, which the app shows until the user is signed in -->
+    <string name="auth_title">Welcome to Wallify</string>
+    <!-- Description under the headline of the sign-in screen -->
+    <string name="auth_description">Sign in with your Unsplash account to browse wallpapers, collect your favorites and download photos.</string>
+    <!-- Button of the sign-in screen that opens the sign-in page of the photo service in the browser -->
+    <string name="auth_sign_in">Sign in with Unsplash</string>
+    <!-- Button of the home screen that signs the user out -->
+    <string name="auth_sign_out">Sign out</string>
+    <!-- Sign-in screen text while the sign-in page is open in the browser and the app waits for the user -->
+    <string name="auth_waiting_for_browser">Finish signing in in your browser</string>
+    <!-- Button of the sign-in screen that stops waiting for the sign-in in the browser -->
+    <string name="auth_cancel">Cancel</string>
+
+    <!-- Home screen line under the app name; %1$s is the name of the signed-in user -->
+    <string name="home_signed_in_as">Signed in as %1$s</string>
 </resources>

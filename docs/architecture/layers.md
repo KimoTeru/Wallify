@@ -43,6 +43,7 @@ Ui (Compose)
 |---|---|
 | Интерфейс репозитория (любой, включая `SessionRepository`, `ConnectivityRepository`) | `core/domain/.../repository/` |
 | Use case | `core/domain/.../usecase/<область>/` |
+| Интерфейс фонового сервиса данных, наружу которого нужно показать состояние (`UserSessionManager`) | `core/domain/.../manager/`, реализация — `core/data/.../<область>/` |
 | Реализация репозитория (`XxxRepositoryImpl`) | `core/data/.../repository/` |
 | Источник данных | `core/data/.../<область>/` (например, `settings/`) |
 | Удалённый источник (`XxxRemoteDataSource` + `Impl`, мапит ответ API в доменные модели) | `core/data/.../remote/` |

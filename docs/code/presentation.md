@@ -39,6 +39,10 @@ override val logic: XxxLogic = instanceKeeper.getOrCreate { get<XxxLogic>() }
 3. Состояние — один `UiState` (`data class`, неизменяемый), обновляется через `MutableStateFlow.update { it.copy(…) }`.
    `MutableStateFlow` объявляется через `field` (`code/code-style.md` § Корутины и потоки), а не парой
    `_uiState` / `uiState`. Для Compose помечаем `@Immutable`, если в нём есть нестабильные типы.
+   Каждое поле состояния меняется отдельным приватным методом `updateXxx(value)` с одним
+   `uiState.update { it.copy(xxx = value) }` внутри; в местах вызова `it.copy(…)` не пишем. Публичные `showXxx()` /
+   `hideXxx()` — тонкие обёртки над ним: `fun showDialog() = updateIsVisibleDialog(true)` (образец —
+   `ApiErrorManagerLogic`). Если поля нужно менять только вместе, это один метод с говорящим именем.
 4. Действия пользователя — `UiEvent` (`sealed interface`, `data object` / `data class`). Метод на каждое действие в
    Ui не заводим: один `obtainUiEvent`.
 5. Одноразовые эффекты: навигация — `navigate(NavigationEvent)` логики; сообщение пользователю — `NotifierManager`;

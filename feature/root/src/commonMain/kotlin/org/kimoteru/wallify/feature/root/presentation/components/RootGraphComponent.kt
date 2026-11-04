@@ -1,8 +1,13 @@
 package org.kimoteru.wallify.feature.root.presentation.components
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.combineState
+import org.kimoteru.wallify.core.domain.manager.UserSessionManager
+import org.kimoteru.wallify.core.domain.repository.AuthRepository
 import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationComponentCore
@@ -13,6 +18,7 @@ import org.kimoteru.wallify.core.presentation.components.units.api_error_manager
 import org.kimoteru.wallify.core.presentation.components.units.api_error_manager.presentation.ui.getApiErrorManagerLogic
 import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.domain.NotifierManager
 import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.getNotifierManagerLogic
+import org.kimoteru.wallify.feature.auth.ui.AuthComponent
 import org.kimoteru.wallify.feature.home.ui.HomeComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract.UiEvent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract.UiState
@@ -23,6 +29,7 @@ interface RootGraphComponent : BaseNavigationComponentCore<UiState, UiEvent, Roo
     sealed interface Child : BaseNavigationComponentCore.BaseNavigationChild {
         class Splash(val component: SplashComponent) : Child
         class Home(val component: HomeComponent) : Child
+        class Auth(val component: AuthComponent) : Child
     }
 }
 
@@ -30,15 +37,23 @@ interface RootGraphComponent : BaseNavigationComponentCore<UiState, UiEvent, Roo
  * Root-level logic shared by every screen:
  * - hosts the API error dialog and the snackbar notifier,
  * - tracks internet availability while the app is in the foreground,
- * - clears the session when the backend reports that it expired.
+ * - clears the session when the backend reports that it expired,
+ * - guards the app: after the splash the user without a session sees the sign-in screen, the signed-in user sees
+ *   the home screen, and the screen follows every later change of the session (sign-in, sign-out, expired token),
+ * - tells the user when the signed-in user's data could not be loaded. Offline needs no dialog: the banner is shown
+ *   and the data is loaded again when the connection returns.
  */
 @Factory
 class RootGraphLogic(
     private val connectivityRepository: ConnectivityRepository,
     private val sessionRepository: SessionRepository,
+    private val authRepository: AuthRepository,
+    private val userSessionManager: UserSessionManager,
     private val apiErrorManager: ApiErrorManager,
     private val notifierManager: NotifierManager
 ) : BaseNavigationLogicCore<UiState, UiEvent, RootGraphNavigationEvent, Nothing>() {
+
+    private val isSplashFinished = MutableStateFlow(false)
 
     private val apiErrorManagerLogic = getApiErrorManagerLogic()
     private val notifierManagerLogic = getNotifierManagerLogic(coroutineScope)
@@ -81,7 +96,28 @@ class RootGraphLogic(
                     notifierManagerLogic.show(model)
                 }
             }
+
+            launch {
+                userSessionManager.loadError.collectLatest { error ->
+                    if (error != null && connectivityRepository.isOnline.value) {
+                        apiErrorManagerLogic.showDialog()
+                    }
+                }
+            }
+
+            launch {
+                isSplashFinished.first { it }
+
+                authRepository.isSignedIn.collectLatest { isSignedIn ->
+                    navigate(if (isSignedIn) RootGraphNavigationEvent.Home else RootGraphNavigationEvent.Auth)
+                }
+            }
         }
+    }
+
+    /** The splash is over (or the app was restored past it): from now on the session decides the screen. */
+    fun onSplashFinished() {
+        isSplashFinished.value = true
     }
 
     override fun onResume() = connectivityRepository.start()
@@ -91,4 +127,5 @@ class RootGraphLogic(
 
 sealed interface RootGraphNavigationEvent : BaseNavigationEvent {
     data object Home : RootGraphNavigationEvent
+    data object Auth : RootGraphNavigationEvent
 }

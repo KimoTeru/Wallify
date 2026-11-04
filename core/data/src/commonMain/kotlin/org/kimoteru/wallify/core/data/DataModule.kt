@@ -4,7 +4,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.data.session.SessionHeadersSynchronizer
+import org.kimoteru.wallify.core.data.session.UserSessionSynchronizer
+import org.kimoteru.wallify.core.domain.manager.UserSessionManager
+import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
+import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.repository.UserSettingsRepository
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.domain.usecase.settings.UpdateUserSettingsUseCase
@@ -40,6 +44,21 @@ class DataModule {
         session = session,
         settings = settings,
         headersCollector = headersCollector,
+        scope = scope
+    ).also { it.start() }
+
+    @Singleton(createdAtStart = true)
+    fun userSessionManager(
+        headersCollector: HeadersCollectorRepository,
+        userRepository: UserRepository,
+        session: SessionRepository,
+        connectivityRepository: ConnectivityRepository,
+        scope: CoroutineScope
+    ): UserSessionManager = UserSessionSynchronizer(
+        headersCollector = headersCollector,
+        userRepository = userRepository,
+        session = session,
+        connectivityRepository = connectivityRepository,
         scope = scope
     ).also { it.start() }
 

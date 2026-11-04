@@ -2,8 +2,11 @@ package org.kimoteru.wallify.core.data.repository
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.kimoteru.wallify.core.common.paging.createPager
 import org.kimoteru.wallify.core.common.response.Response
+import org.kimoteru.wallify.core.common.response.onSuccess
 import org.kimoteru.wallify.core.data.remote.UserRemoteDataSource
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
@@ -20,12 +23,21 @@ class UserRepositoryImpl(
     private val userRemoteDataSource: UserRemoteDataSource
 ) : UserRepository {
 
-    override suspend fun getCurrentUser(): Response<User> {
+    override val currentUser: StateFlow<User?>
+        field = MutableStateFlow<User?>(null)
+
+    override suspend fun refreshCurrentUser(): Response<User> {
         return userRemoteDataSource.getCurrentUser()
+            .onSuccess { user -> currentUser.value = user }
+    }
+
+    override fun clearCurrentUser() {
+        currentUser.value = null
     }
 
     override suspend fun updateCurrentUser(params: UpdateUserParams): Response<User> {
         return userRemoteDataSource.updateCurrentUser(params = params)
+            .onSuccess { user -> currentUser.value = user }
     }
 
     override suspend fun getUser(username: String): Response<User> {

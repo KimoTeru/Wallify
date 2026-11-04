@@ -20,6 +20,9 @@ fun apiNetworkConfig(
 )
 
 private const val API_BASE_URL = "https://api.unsplash.com/"
+
+/** Address of the user authorization endpoints; they live on another host than the API. */
+internal const val OAUTH_BASE_URL = "https://unsplash.com/oauth/"
 private const val ACCEPT_VERSION_HEADER = "Accept-Version"
 private const val AUTHORIZATION_HEADER = "Authorization"
 private const val API_VERSION = "v1"

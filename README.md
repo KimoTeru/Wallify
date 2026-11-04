@@ -2,7 +2,7 @@
 
 Kotlin Multiplatform application built with Compose Multiplatform, targeting Android and Desktop (JVM).
 The project is an empty but fully configured base: modular architecture, networking, session handling, storage,
-design system and an app shell (root graph, splash, home). Feature code is added on top.
+design system and an app shell (root graph, splash, sign-in, home). Feature code is added on top.
 
 ## Tech Stack
 
@@ -47,7 +47,8 @@ Wallify/
 ├── feature/
 │   ├── root/            # Navigation graph, error dialog, snackbars, offline banner
 │   ├── splash/
-│   └── home/
+│   ├── home/
+│   └── auth/            # Sign-in screen, shown until the user has a session
 └── build-logic/         # Convention plugins
 ```
 
@@ -94,5 +95,7 @@ download tracking and attribution (`docs/architecture/data.md` § Бэкенд �
 - The API layer covers every documented endpoint: API classes and full response models (with their `toDomain()`
   mappers) in `core:network`, remote data sources and repositories in `core:data`, trimmed domain models in
   `core:model`. No screen uses it yet.
+- Signing in opens the system browser and needs two redirect URIs in the application on the backend
+  (`docs/setup/config-and-secrets.md` § Вход пользователя). Nothing is downloaded and no server of your own is needed.
 - The secret key is built into the application. For a public release move requests that need it behind your own proxy
   (`docs/setup/config-and-secrets.md`).

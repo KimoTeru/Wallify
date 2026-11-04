@@ -80,8 +80,30 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   работает как анонимный клиент со статическим ключом.
 - `SessionHeadersSynchronizer` стартует вместе с Koin и сводит токен и язык (из `UserSettings` или системный) в
   `HeadersCollectorRepository`. Токен уходит как `Bearer <token>`, заменяя статический заголовок авторизации.
-- Истёкшая сессия: любой код, увидевший 401, вызывает `ApiErrorManager.emitEvent(SessionExpired)`; корневой экран
-  очищает сессию (`code/presentation.md` § Общие блоки).
+- Истёкшая сессия: любой код, увидевший 401 (`ResponseError.isUnauthorized`), вызывает
+  `ApiErrorManager.emitEvent(SessionExpired)`; корневой экран очищает сессию (`code/presentation.md` § Общие блоки),
+  и граф показывает экран входа. Образец — `UserSessionSynchronizer`: он в слое данных и не знает про
+  `ApiErrorManager`, поэтому очищает сессию сам.
+- Данные, нужные многим экранам (вошедший пользователь), экраны не загружают. Их грузит слой сессии и держит
+  репозиторий в `StateFlow`: `UserSessionSynchronizer` следит за `Authorization` из `HeadersCollectorRepository` (а не
+  за сохранённым токеном: запрос должен уйти уже с новым токеном), при новом токене вызывает
+  `UserRepository.refreshCurrentUser()`, без токена — `clearCurrentUser()`. Экран читает `UserRepository.currentUser`.
+  Синхронизаторы стартуют вместе с Koin (`@Singleton(createdAtStart = true)` в `DataModule`).
+- Слой данных не показывает диалоги, но и не прячет сбои: фоновая работа открывает их в домене интерфейсом
+  (`UserSessionManager.loadError`), а корень (`RootGraphLogic`) решает, что показать. Так сбой загрузки пользователя
+  (не 401) даёт общий диалог, но только пока устройство в сети: без сети виден баннер, а загрузка повторяется сама
+  при каждом возврате сети. Фоновой повтор ждёт возврата сети, а не крутится по таймеру.
+- Вход пользователя — `AuthRepository.signIn()` (OAuth, код авторизации, системный браузер): одним вызовом
+  открывает страницу входа, ждёт возврата пользователя, меняет код на токен и кладёт его в `SessionRepository`;
+  экран токен не видит. Результат — `Response<Boolean>`: `true` вошёл, `false` отказался или не вернулся за 5 минут,
+  `Error` — браузер не открылся или бэкенд отклонил код. Ожидание отменяется отменой корутины. Выход — `signOut()`;
+  токен бессрочный, отзывать его на бэкенде нечем. Какой экран показать по сессии, решает корневой граф
+  (`code/navigation.md` § Экран по сессии).
+- Браузер открывает платформенный `AuthBrowser` (`core:platform`) и сам знает свой `redirectUri`: Android — ссылка
+  `wallify://oauth/callback`, которую принимает `MainActivity` (`singleTask`) и отдаёт в `AuthRedirectBus`;
+  Desktop — временный HTTP-сервер на `127.0.0.1` (`JvmAuthBrowser`), живущий только пока идёт ожидание.
+- Адреса авторизации, список прав и имена полей — в `AuthApi` (`core:network`); `redirect_uri` приходит ей аргументом.
+  Секретный ключ уходит только в запрос токена.
 
 ## Хранилища
 

@@ -7,6 +7,7 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.serialization.Serializable
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationDefaultComponentCore
+import org.kimoteru.wallify.feature.auth.ui.AuthDefaultComponent
 import org.kimoteru.wallify.feature.home.ui.HomeDefaultComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract
 import org.kimoteru.wallify.feature.splash.ui.SplashDefaultComponent
@@ -41,9 +42,17 @@ class DefaultRootGraphComponent(
 
     override val logic: RootGraphLogic = instanceKeeper.getOrCreate { get<RootGraphLogic>() }
 
+    init {
+        // The app restored past the splash has no splash to wait for: the session decides the screen at once.
+        if (stack.value.active.configuration !is Config.Splash) {
+            logic.onSplashFinished()
+        }
+    }
+
     override fun obtainNavigateEvent(event: RootGraphNavigationEvent) {
         when (event) {
             is RootGraphNavigationEvent.Home -> navigateClearBackStack(Config.Home)
+            is RootGraphNavigationEvent.Auth -> navigateClearBackStack(Config.Auth)
         }
     }
 
@@ -55,12 +64,16 @@ class DefaultRootGraphComponent(
             is Config.Splash -> RootGraphComponent.Child.Splash(
                 SplashDefaultComponent(
                     componentContext = componentContext,
-                    navigateNext = { obtainNavigateEvent(RootGraphNavigationEvent.Home) }
+                    navigateNext = { logic.onSplashFinished() }
                 )
             )
 
             is Config.Home -> RootGraphComponent.Child.Home(
                 HomeDefaultComponent(componentContext = componentContext)
+            )
+
+            is Config.Auth -> RootGraphComponent.Child.Auth(
+                AuthDefaultComponent(componentContext = componentContext)
             )
         }
     }
@@ -72,5 +85,8 @@ class DefaultRootGraphComponent(
 
         @Serializable
         data object Home : Config
+
+        @Serializable
+        data object Auth : Config
     }
 }

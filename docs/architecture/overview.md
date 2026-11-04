@@ -10,7 +10,7 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 |---|---|
 | `androidApp`, `desktopApp` | Точки входа платформ: окно или `Application`, старт Koin (`@KoinApplication`), создание корневого компонента. Список модулей графа им даёт `applyAppGraph()` в `build-logic` |
 | `feature:root` | Корневой граф навигации, диалог ошибок, снекбары, баннер отсутствия сети; `RootGraphUi(component)` — корневой экран, тему вокруг него задают приложения |
-| `feature:splash`, `feature:home` | Экраны |
+| `feature:splash`, `feature:home`, `feature:auth` | Экраны; `feature:auth` — экран входа, показывается, пока нет сессии |
 | `core:presentation` | Базовые классы экрана, общие UI-блоки с логикой (шторка, диалог ошибок, уведомления, разрешения) |
 | `core:design-system` | Тема, токены, компоненты без бизнес-логики |
 | `core:resources` | Единственное место ресурсов: строки (по областям), шрифты, картинки; публичный `Res` |
@@ -39,6 +39,7 @@ flowchart TB
         root["feature:root"]
         splash["feature:splash"]
         home["feature:home"]
+        auth["feature:auth"]
     end
 
     subgraph ui["UI"]
@@ -69,6 +70,7 @@ flowchart TB
     apps --> presentation
     root --> splash
     root --> home
+    root --> auth
     features --> presentation
     features --> domain
     presentation --> designSystem
