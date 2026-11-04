@@ -15,6 +15,12 @@ val String.Companion.Space: String
 val String.Companion.SemicolonSpace: String
     get() = "; "
 
+val String.Companion.Comma: String
+    get() = ","
+
+val String.Companion.CommaSpace: String
+    get() = ", "
+
 val String.Companion.Underscore: String
     get() = "_"
 

@@ -4,6 +4,8 @@ import io.ktor.client.HttpClient
 import org.kimoteru.wallify.core.network.client.DownloadHttpClient
 import org.kimoteru.wallify.core.network.client.HttpClientFactory
 import org.kimoteru.wallify.core.network.config.ApiBuildConfig
+import org.kimoteru.wallify.core.network.config.ApiCredentials
+import org.kimoteru.wallify.core.network.config.AppBuild
 import org.kimoteru.wallify.core.network.config.NetworkConfig
 import org.kimoteru.wallify.core.network.config.apiNetworkConfig
 import org.koin.core.annotation.ComponentScan
@@ -14,19 +16,25 @@ import org.koin.core.annotation.Singleton
 /**
  * Shared HTTP stack.
  *
- * The backend address and key are build constants (`ApiBuildConfig`, generated from `local.properties` or the
- * environment), do not hardcode hosts or keys here. The session layer updates `HeadersCollectorRepository`
- * (user token, language) and the client reads it per request.
+ * The backend address is embedded in `apiNetworkConfig`. Both keys are build constants (`ApiBuildConfig`, generated
+ * from `local.properties` or the environment), do not hardcode keys here. The session layer updates
+ * `HeadersCollectorRepository` (user token, language) and the client reads it per request. HTTP logging is on in
+ * debug builds (`AppBuild`).
  */
 @Module
 @Configuration
 @ComponentScan("org.kimoteru.wallify.core.network")
 class NetworkModule {
     @Singleton
-    fun networkConfig(): NetworkConfig = apiNetworkConfig(
-        baseUrl = ApiBuildConfig.BASE_URL,
+    fun apiCredentials(): ApiCredentials = ApiCredentials(
         accessKey = ApiBuildConfig.ACCESS_KEY,
-        enableLogging = ApiBuildConfig.ENABLE_LOGGING
+        secretKey = ApiBuildConfig.SECRET_KEY
+    )
+
+    @Singleton
+    fun networkConfig(credentials: ApiCredentials, appBuild: AppBuild): NetworkConfig = apiNetworkConfig(
+        credentials = credentials,
+        enableLogging = appBuild.isDebug
     )
 
     @Singleton

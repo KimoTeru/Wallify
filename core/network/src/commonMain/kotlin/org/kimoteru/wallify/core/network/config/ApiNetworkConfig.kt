@@ -1,27 +1,25 @@
 package org.kimoteru.wallify.core.network.config
 
 /**
- * Builds the [NetworkConfig] for the backend API.
+ * Builds the [NetworkConfig] for the Unsplash API.
  *
- * Authentication and versioning are static headers, defined here and nowhere else.
+ * The address, authentication and versioning are defined here and nowhere else.
  * Change them in this function if the backend uses another scheme.
- * [accessKey] must come from the build or the environment, never from VCS.
+ * The access key of [credentials] must come from the build or the environment, never from VCS.
  */
 fun apiNetworkConfig(
-    baseUrl: String,
-    accessKey: String,
+    credentials: ApiCredentials,
     enableLogging: Boolean = false
 ): NetworkConfig = StaticNetworkConfig(
-    baseUrl = baseUrl,
+    baseUrl = API_BASE_URL,
     enableLogging = enableLogging,
-    defaultHeaders = buildMap {
-        put(ACCEPT_VERSION_HEADER, API_VERSION)
-        if (accessKey.isNotBlank()) {
-            put(AUTHORIZATION_HEADER, "$ACCESS_KEY_SCHEME $accessKey")
-        }
-    }
+    defaultHeaders = mapOf(
+        ACCEPT_VERSION_HEADER to API_VERSION,
+        AUTHORIZATION_HEADER to "$ACCESS_KEY_SCHEME ${credentials.accessKey}"
+    )
 )
 
+private const val API_BASE_URL = "https://api.unsplash.com/"
 private const val ACCEPT_VERSION_HEADER = "Accept-Version"
 private const val AUTHORIZATION_HEADER = "Authorization"
 private const val API_VERSION = "v1"

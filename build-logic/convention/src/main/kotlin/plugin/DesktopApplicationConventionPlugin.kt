@@ -3,6 +3,7 @@ package org.kimoteru.wallify.buildlogic.plugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.tasks.JavaExec
 import org.gradle.kotlin.dsl.dependencies
 import org.jetbrains.compose.ComposeExtension
 import org.jetbrains.compose.desktop.DesktopExtension
@@ -31,6 +32,11 @@ class DesktopApplicationConventionPlugin : Plugin<Project> {
                     }
                 }
             }
+        }
+
+        // Desktop has no build types: only the run tasks (`run`, `hotRun`) are debug, a packaged app is release.
+        tasks.withType(JavaExec::class.java).configureEach {
+            jvmArgs("-Dwallify.debug=true")
         }
 
         val composeDependencies = extensions.getByType(ComposeExtension::class.java).dependencies

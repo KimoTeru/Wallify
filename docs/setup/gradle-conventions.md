@@ -22,7 +22,7 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 | `wallify.kmp.library` | KMP-библиотека: таргеты Android (KMP-library) и JVM, `namespace` из пути модуля без дефисов (`:core:design-system` → `org.kimoteru.wallify.core.designsystem`), `commonTest` с `kotlin-test` |
 | `wallify.compose` | Compose Multiplatform и compiler plugin, базовые Compose-зависимости |
 | `wallify.feature` | `kmp.library` + `compose` + serialization + Decompose, Koin и его компиляторный плагин, `common`, `model`, `domain`, `design-system`, `resources`, `presentation` |
-| `wallify.api.config` | Генерирует `ApiBuildConfig` (адрес и ключ бэкенда) из `local.properties` или окружения; подключён в `core:network` |
+| `wallify.api.config` | Генерирует `ApiBuildConfig` (два обязательных ключа бэкенда и флаг логирования) из `local.properties` или окружения; без ключей задача падает; подключён в `core:network` |
 | `wallify.android.application` | Android-приложение: SDK, Compose, граф Koin |
 | `wallify.desktop.application` | Desktop-приложение: JVM, окно, пакеты, граф Koin |
 
@@ -59,7 +59,7 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 - Если тип из зависимости виден в публичном API модуля (параметр, возвращаемое значение, супертип), зависимость
   объявляется как `api`. Иначе потребитель получает `Cannot access class …`.
 - Так сделано, например, для корутин в `core:common`, `core:common` в `core:domain`, `okio` в `core:cache`,
-  `androidx.datastore` в `core:datastore`, Room в `core:database`, Ktor client и `core:common` в `core:network`,
+  `androidx.datastore` в `core:datastore`, Room в `core:database`, Ktor client, `core:common` и `core:model` в `core:network`,
   `paging-common` в `core:common`, `paging-compose` в `core:design-system`.
 - Всё остальное — `implementation`.
 

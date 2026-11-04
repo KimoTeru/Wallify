@@ -52,7 +52,8 @@ docs/
 |---|---|
 | Что проверять и как, «как собрать» | `setup/commands.md` |
 | Новый модуль, зависимость, версия, правка `*.gradle.kts` / `libs.versions.toml` / `settings.gradle.kts` | `setup/gradle-conventions.md` |
-| Адрес бэкенда, ключ, `local.properties`, `ApiBuildConfig` | `setup/config-and-secrets.md` |
+| Адрес бэкенда, ключи, `local.properties`, `ApiBuildConfig` | `setup/config-and-secrets.md` |
+| Новый эндпоинт, модель ответа / запроса, API-класс, источник данных, маппер, репозиторий над бэкендом | `architecture/data.md` § Сеть, § Бэкенд фото, `architecture/layers.md` |
 | Где что лежит, какой модуль от какого зависит, платформенный код | `architecture/overview.md` |
 | Куда положить класс: репозиторий, use case, модель; кто кого может вызывать | `architecture/layers.md` |
 | Запрос к API, ошибка запроса, `Response`, заголовки, токен пользователя | `architecture/data.md` § Response, § Сеть, § Сессия |

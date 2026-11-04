@@ -41,9 +41,11 @@ Kotlin Multiplatform (Android + Desktop) приложение на Compose Multi
     системных часов (`code/code-style.md`).
 11. Версии зависимостей — только в `gradle/libs.versions.toml`, конфигурация сборки — в convention-плагинах
     `build-logic`, `repositories {}` в модулях запрещены (`setup/gradle-conventions.md`).
-12. Секреты и адреса бэкенда не коммитим: `local.properties` или переменные окружения
-    (`setup/config-and-secrets.md`).
-13. В коде, комментариях и документации нет названий сторонних сервисов бэкенда и проектов-источников; всё,
-    что специфично для бэкенда, живёт в одном месте — `apiNetworkConfig` (`architecture/data.md` § Сеть).
+12. Ключи бэкенда не коммитим: `local.properties` или переменные окружения (`setup/config-and-secrets.md`).
+    Адрес бэкенда публичный и встроен в `apiNetworkConfig`.
+13. Название бэкенда (Unsplash) и его адрес допустимы в `core:network`, README и строках атрибуции в `core:resources`.
+    Всё, что специфично для бэкенда (адрес, заголовки, имена параметров, форматы запросов и ответов), живёт в
+    `core:network`: `apiNetworkConfig`, API-классы, модели запросов и ответов. Остальной код от конкретного бэкенда не зависит
+    (`architecture/data.md` § Сеть).
 
 Если более конкретное правило в доке противоречит правилу выше, прав док: в нём есть обоснование.

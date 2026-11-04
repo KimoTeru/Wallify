@@ -17,7 +17,7 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 | `core:domain` | Интерфейсы репозиториев, use case'ы |
 | `core:data` | Реализации репозиториев, сессия, скачивание файлов |
 | `core:model` | Чистые `@Serializable` модели |
-| `core:network` | Ktor-клиент, `Response`-обёртка запросов, мониторинг сети |
+| `core:network` | Ktor-клиент, `Response`-обёртка запросов, API-классы, модели запросов и ответов с мапперами в доменные модели, мониторинг сети |
 | `core:database`, `core:datastore`, `core:cache` | Room, DataStore, кэш на диске и в памяти |
 | `core:platform` | `expect`/`actual`: диспетчеры, время, язык, буфер обмена, переходы по системным ссылкам |
 | `core:common` | Без зависимостей на другие `core`: `Response`, `AppDispatchers`, пагинация, расширения, flow-утилиты |
@@ -78,6 +78,7 @@ flowchart TB
     domain --> model
     data --> domain
     data --> network
+    network --> model
     data --> database
     data --> datastore
     data --> cache
@@ -92,6 +93,8 @@ flowchart TB
 1. `core:common`, `core:model` ни от чего не зависят (кроме библиотек). `core:model` — только данные, без логики и UI.
 2. `core:domain` зависит от `core:model` и `core:common`, не знает про `core:data`, сеть, базу и UI.
 3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет.
+   `core:network` зависит от `core:model`: модель ответа API мапится в доменную рядом с собой (`toDomain()`),
+   `core:model` про сеть не знает.
 4. Feature-модули не зависят друг от друга, кроме `feature:root`, который собирает экраны в стек.
 5. Приложения зависят от всех модулей с Koin-привязками (список в `build-logic`, `applyAppGraph()`), чтобы собрать
    граф; в коде приложения используют только `feature:root`, `design-system` (тема) и `core:resources` (строки).

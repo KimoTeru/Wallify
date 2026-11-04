@@ -17,8 +17,8 @@ Related: `architecture/overview.md`, `architecture/data.md`, `code/presentation.
    `.onSuccess` / `.onError` / `handleResponse`.
 5. Состояние экрана живёт в `Logic` (`code/presentation.md`). Репозитории, use case'ы и менеджеры данных своего
    состояния экрана не держат: у них только зависимости из конструктора и (у репозиториев) источники данных.
-6. Модели `core:model` не знают про UI и сеть. DTO запроса — рядом с API в `core:network` или `core:data`,
-   маппер DTO → модель — в `core:data`.
+6. Модели `core:model` не знают про UI и сеть. Модели запроса и ответа (`XxxRequest` / `XxxResponse`) — рядом с API в
+   `core:network`; маппер `toDomain()` / `toRequest()` лежит в файле своей модели, отдельных файлов мапперов нет.
 
 ## Цепочка
 
@@ -28,7 +28,8 @@ Ui (Compose)
        └─ Logic         состояние экрана, обработка UiEvent
             └─ UseCase* / Repository interface   (core:domain)
                  └─ Repository impl              (core:data)
-                      ├─ Api        Ktor, ответ → Response     (core:network)
+                      ├─ RemoteDataSource  вызов Api + toDomain()      (core:data)
+                      │    └─ Api  Ktor, ответ → Response              (core:network)
                       ├─ Dao        Room                        (core:database)
                       ├─ Prefs      DataStore                   (core:datastore)
                       └─ Cache      память и диск               (core:cache)
@@ -44,8 +45,9 @@ Ui (Compose)
 | Use case | `core/domain/.../usecase/<область>/` |
 | Реализация репозитория (`XxxRepositoryImpl`) | `core/data/.../repository/` |
 | Источник данных | `core/data/.../<область>/` (например, `settings/`) |
+| Удалённый источник (`XxxRemoteDataSource` + `Impl`, мапит ответ API в доменные модели) | `core/data/.../remote/` |
 | Сервис данных без репозитория (синхронизация сессии, загрузка файлов) | `core/data/.../<область>/` (`session/`, `download/`) |
-| API-класс (запросы), DTO | `core/network` (или `core/data`, если DTO нужен только репозиторию) |
+| API-класс (запросы), `XxxRequest`, `XxxResponse` | `core/network/.../api/`, `.../model/request/`, `.../model/response/<область>/` |
 | Модель предметной области | `core/model` |
 | Сущность и DAO Room | `core/database/.../entity/` и `core/database/.../dao/` (`AppDatabase` и `DatabaseModule` — в корне пакета) |
 | Менеджер платформы (буфер, язык, ссылки) | интерфейс в `core/platform/commonMain`, реализации в `androidMain` / `jvmMain` |
