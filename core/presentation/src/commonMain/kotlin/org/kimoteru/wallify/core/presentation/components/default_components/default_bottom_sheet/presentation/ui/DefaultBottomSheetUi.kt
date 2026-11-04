@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -153,6 +154,7 @@ fun DefaultBottomSheet(
         ) {
             Column(
                 modifier = Modifier
+                    .widthIn(max = appSize.panel.sheetMaxWidth)
                     .fillMaxWidth()
                     .applyIf(uiState.sheetHeight == Dp.Hairline) {
                         onSizeChanged {

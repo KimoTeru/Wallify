@@ -6,6 +6,7 @@ import org.kimoteru.wallify.core.common.extensions.Space
 import org.kimoteru.wallify.core.common.extensions.nullIfBlank
 import org.kimoteru.wallify.core.model.user.ProfileImage
 import org.kimoteru.wallify.core.model.user.User
+import org.kimoteru.wallify.core.network.model.response.withReferral
 
 /**
  * User of any endpoint: the short form inside photos and collections, the public profile, or the current user
@@ -151,7 +152,7 @@ fun UserResponse.toDomain(): User = User(
     totalPhotos = totalPhotos ?: 0,
     totalCollections = totalCollections ?: 0,
     profileImage = profileImage?.toDomain(),
-    profileUrl = links?.html
+    profileUrl = links?.html?.withReferral()
 )
 
 /** The backend sends only the sizes it has, so the missing ones are replaced by the one that exists. */

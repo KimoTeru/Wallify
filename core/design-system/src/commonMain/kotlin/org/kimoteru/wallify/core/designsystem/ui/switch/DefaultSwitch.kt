@@ -45,6 +45,11 @@ fun DefaultSwitch(
         if (isChecked) appColor.basic.primary else appColor.icons.nav
     }
 
+    // The primary color is white on the night scheme, so the thumb on the active track takes the reversed text color.
+    val thumbColor by transition.animateColor { isChecked ->
+        if (isChecked) appColor.text.reversed else appColor.basic.white
+    }
+
     val alpha by animateFloatAsState(targetValue = if (enabled) 1f else 0.5f)
 
     val clickableModifier = if (onCheckedChange != null) {
@@ -69,7 +74,7 @@ fun DefaultSwitch(
             modifier = Modifier
                 .offset(x = thumbOffset)
                 .size(appSize.switch.thumbSize)
-                .background(appColor.basic.white, CircleShape)
+                .background(thumbColor, CircleShape)
         )
     }
 }

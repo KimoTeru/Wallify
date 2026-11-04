@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -110,9 +111,9 @@ fun DefaultDialogLayout(
     content: @Composable (() -> Unit)? = null
 ) {
     val appColor = AppTheme.color
-    val appAlpha = AppTheme.alpha
     val appCorner = AppTheme.corner
     val appPadding = AppTheme.padding
+    val appSize = AppTheme.size
 
     // Lifts the dialog above the keyboard. Tapping outside the card also dismisses it.
     val bottomPadding = (WindowInsets.ime.asPaddingValues().calculateBottomPadding() -
@@ -131,7 +132,8 @@ fun DefaultDialogLayout(
             modifier = modifier
                 .align(alignment)
                 .padding(horizontal = appPadding.medium)
-                .padding(bottom = bottomPadding),
+                .padding(bottom = bottomPadding)
+                .widthIn(max = appSize.panel.dialogMaxWidth),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Column(
@@ -152,13 +154,15 @@ fun DefaultDialogLayout(
             Spacer(Modifier.padding(top = if (isVisibleCloseButton) appPadding.large else appPadding.medium))
 
             if (isVisibleCloseButton) {
+                // Same surface as the dialog and the title color: a white-on-translucent button vanished on the day scheme.
                 IconClose(
                     modifier = Modifier
                         .padding(bottom = appPadding.medium)
                         .iconContainer(
-                            color = appColor.basic.white.copy(alpha = appAlpha.small),
+                            color = appColor.basic.card.basic,
                             onClick = { dismissRequested = true }
-                        )
+                        ),
+                    tint = appColor.text.title
                 )
             }
         }

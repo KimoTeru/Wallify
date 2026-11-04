@@ -1,8 +1,9 @@
 # Wallify
 
 Kotlin Multiplatform application built with Compose Multiplatform, targeting Android and Desktop (JVM).
-The project is an empty but fully configured base: modular architecture, networking, session handling, storage,
-design system and an app shell (root graph, splash, sign-in, home). Feature code is added on top.
+The project is a photo browser on a modular architecture: networking, session handling, storage, a crystalline glass
+design system (night and day schemes, adaptive phone / tablet / desktop navigation) and the screens: feed with search,
+curated topics, random photos, photo details, photographer profile and settings.
 
 ## Tech Stack
 
@@ -45,10 +46,15 @@ Wallify/
 │   ├── design-system/   # Theme, tokens, UI components
 │   └── resources/       # All strings, fonts and images (public Res)
 ├── feature/
-│   ├── root/            # Navigation graph, error dialog, snackbars, offline banner
+│   ├── root/            # Navigation graph, tab navigation, error dialog, snackbars, offline banner
 │   ├── splash/
-│   ├── home/
-│   └── auth/            # Sign-in screen, shown until the user has a session
+│   ├── auth/            # Sign-in screen, shown until the user has a session
+│   ├── feed/            # Photo feed with search and filters
+│   ├── topics/          # Curated topics and their photos
+│   ├── random/          # Random photos
+│   ├── photo/           # Photo details: EXIF, statistics, collections, download
+│   ├── profile/         # Photographer profile and the user's own studio
+│   └── settings/        # Account, color scheme, service numbers
 └── build-logic/         # Convention plugins
 ```
 

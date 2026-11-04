@@ -27,6 +27,16 @@ class ExtensionsTest {
     }
 
     @Test
+    fun toCompactStringShortensBigCounters() {
+        assertEquals("999", 999L.toCompactString())
+        assertEquals("1k", 1_000L.toCompactString())
+        assertEquals("1.2k", 1_234L.toCompactString())
+        assertEquals("48.2k", 48_210L.toCompactString())
+        assertEquals("3.4M", 3_400_000L.toCompactString())
+        assertEquals("2B", 2_000_000_000L.toCompactString())
+    }
+
+    @Test
     fun toYearReadsIsoDates() {
         assertEquals(2024, "2024-05-17T10:15:30.000Z".toYear())
         assertEquals(1999, "1999-01-01".toYear())

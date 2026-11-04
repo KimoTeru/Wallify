@@ -8,7 +8,10 @@ import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.serialization.Serializable
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationDefaultComponentCore
 import org.kimoteru.wallify.feature.auth.ui.AuthDefaultComponent
-import org.kimoteru.wallify.feature.home.ui.HomeDefaultComponent
+import org.kimoteru.wallify.feature.photo.ui.PhotoDefaultComponent
+import org.kimoteru.wallify.feature.profile.ui.ProfileDefaultComponent
+import org.kimoteru.wallify.feature.profile.ui.ProfileTarget
+import org.kimoteru.wallify.feature.root.main.DefaultMainGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract
 import org.kimoteru.wallify.feature.splash.ui.SplashDefaultComponent
 import org.koin.core.component.get
@@ -51,7 +54,7 @@ class DefaultRootGraphComponent(
 
     override fun obtainNavigateEvent(event: RootGraphNavigationEvent) {
         when (event) {
-            is RootGraphNavigationEvent.Home -> navigateClearBackStack(Config.Home)
+            is RootGraphNavigationEvent.Main -> navigateClearBackStack(Config.Main)
             is RootGraphNavigationEvent.Auth -> navigateClearBackStack(Config.Auth)
         }
     }
@@ -68,8 +71,29 @@ class DefaultRootGraphComponent(
                 )
             )
 
-            is Config.Home -> RootGraphComponent.Child.Home(
-                HomeDefaultComponent(componentContext = componentContext)
+            is Config.Main -> RootGraphComponent.Child.Main(
+                DefaultMainGraphComponent(
+                    componentContext = componentContext,
+                    openPhoto = { photoId -> navigate(Config.Photo(photoId)) }
+                )
+            )
+
+            is Config.Photo -> RootGraphComponent.Child.Photo(
+                PhotoDefaultComponent(
+                    componentContext = componentContext,
+                    photoId = config.photoId,
+                    navigateBack = { onBackClicked() },
+                    openProfile = { username -> navigate(Config.Profile(username)) }
+                )
+            )
+
+            is Config.Profile -> RootGraphComponent.Child.Profile(
+                ProfileDefaultComponent(
+                    componentContext = componentContext,
+                    target = ProfileTarget.Username(config.username),
+                    navigateBack = { onBackClicked() },
+                    openPhoto = { photoId -> navigate(Config.Photo(photoId)) }
+                )
             )
 
             is Config.Auth -> RootGraphComponent.Child.Auth(
@@ -84,7 +108,13 @@ class DefaultRootGraphComponent(
         data object Splash : Config
 
         @Serializable
-        data object Home : Config
+        data object Main : Config
+
+        @Serializable
+        data class Photo(val photoId: String) : Config
+
+        @Serializable
+        data class Profile(val username: String) : Config
 
         @Serializable
         data object Auth : Config

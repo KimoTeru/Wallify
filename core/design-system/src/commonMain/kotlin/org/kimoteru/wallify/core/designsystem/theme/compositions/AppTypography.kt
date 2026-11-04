@@ -5,28 +5,39 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
-private val baseFont = FontFamily.SansSerif
-
-private fun baseTextStyle(size: Int, lineHeight: Int, baseTextColor: Color) = TextStyle(
+private fun baseTextStyle(
+    size: Int,
+    lineHeight: Int,
+    baseTextColor: Color,
+    fontFamily: FontFamily,
+    letterSpacing: TextUnit = TextUnit.Unspecified
+) = TextStyle(
     fontSize = size.sp,
-    fontFamily = baseFont,
+    fontFamily = fontFamily,
     lineHeight = lineHeight.sp,
+    letterSpacing = letterSpacing,
     color = baseTextColor
 )
 
 data class AppTypography(
-    val baseTextColor: Color = AppColors.DarkColors.text.title
+    val baseTextColor: Color = AppColors.DarkColors.text.title,
+    val fontFamily: FontFamily = FontFamily.SansSerif
 ) {
-    val h1 = TextStyles(baseTextStyle(48, 72, baseTextColor))
-    val h2 = TextStyles(baseTextStyle(32, 48, baseTextColor))
-    val h3 = TextStyles(baseTextStyle(24, 36, baseTextColor))
-    val h4 = TextStyles(baseTextStyle(20, 30, baseTextColor))
-    val h5 = TextStyles(baseTextStyle(16, 24, baseTextColor))
-    val h6 = TextStyles(baseTextStyle(14, 20, baseTextColor))
-    val h7 = TextStyles(baseTextStyle(12, 18, baseTextColor))
-    val h8 = TextStyles(baseTextStyle(10, 16, baseTextColor))
+    val h1 = TextStyles(baseTextStyle(48, 72, baseTextColor, fontFamily, (-0.035).em))
+    val h2 = TextStyles(baseTextStyle(32, 44, baseTextColor, fontFamily, (-0.025).em))
+    val h3 = TextStyles(baseTextStyle(24, 32, baseTextColor, fontFamily, (-0.015).em))
+    val h4 = TextStyles(baseTextStyle(20, 28, baseTextColor, fontFamily, (-0.01).em))
+    val h5 = TextStyles(baseTextStyle(16, 24, baseTextColor, fontFamily))
+    val h6 = TextStyles(baseTextStyle(14, 20, baseTextColor, fontFamily))
+    val h7 = TextStyles(baseTextStyle(12, 18, baseTextColor, fontFamily))
+    val h8 = TextStyles(baseTextStyle(10, 16, baseTextColor, fontFamily))
+
+    /** Micro labels and section headers; the text itself is uppercased by the caller. */
+    val caps = TextStyles(baseTextStyle(11, 16, baseTextColor, fontFamily, 0.08.em))
 }
 
 data class TextStyles(private val base: TextStyle) {

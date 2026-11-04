@@ -31,10 +31,14 @@ Related: `setup/gradle-conventions.md` § Compose Resources, `design/foundations
 
 ## Иконки
 
-- Простые иконки — `ImageVector`, нарисованный в коде (`AppIcons` в `core:design-system`, `ui/icon`): путь
-  `moveTo`/`lineTo`/`close` в viewport 24×24, заливка чёрная — цвет задаёт `tint`. Новая иконка — новый `val` в
-  `AppIcons` + функция `IconXxx(modifier, tint)` рядом.
-- Путь иконки берём из Material Symbols (24 px, Filled); сложные многоцветные векторы — XML в `composeResources/drawable`.
+- Простые иконки — `ImageVector`, нарисованный в коде (`AppIcons` в `core:design-system`, `ui/icon`): путь в
+  viewport 24×24, заливка чёрная — цвет задаёт `tint`. Новая иконка — новый `val` в `AppIcons`; рисуем её через
+  `AppIcon(icon = AppIcons.Xxx, tint, size)`. Функция `IconXxx` нужна только для иконки с особым видом по умолчанию
+  (`IconBack`, `IconClose`).
+- Путь иконки берём из Material Symbols (24 px, Filled) строкой SVG-пути (`icon("Name", "M…")`); сложные
+  многоцветные векторы — XML в `composeResources/drawable`.
+- Шрифт приложения (Plus Jakarta Sans, четыре начертания) лежит в `composeResources/font`; в `FontFamily` его собирает
+  `rememberAppFontFamily()` из `core:design-system`, экраны шрифт не выбирают.
 - Иконка, на которую нигде нет ссылки, не лежит в проекте.
 
 ## Изображения

@@ -6,11 +6,13 @@ import org.kimoteru.wallify.core.common.extensions.CommaSpace
 import org.kimoteru.wallify.core.common.extensions.Empty
 import org.kimoteru.wallify.core.common.extensions.nullIfBlank
 import org.kimoteru.wallify.core.model.photo.Photo
+import org.kimoteru.wallify.core.model.photo.PhotoExif
 import org.kimoteru.wallify.core.model.photo.PhotoUrls
 import org.kimoteru.wallify.core.network.model.response.collection.CollectionResponse
 import org.kimoteru.wallify.core.network.model.response.stats.PhotoStatisticsResponse
 import org.kimoteru.wallify.core.network.model.response.user.UserResponse
 import org.kimoteru.wallify.core.network.model.response.user.toDomain
+import org.kimoteru.wallify.core.network.model.response.withReferral
 
 /**
  * Photo as the backend sends it. List endpoints return a summary, so the detail-only fields are `null` there.
@@ -181,12 +183,23 @@ fun PhotoResponse.toDomain(): Photo = Photo(
     blurHash = blurHash,
     description = description?.nullIfBlank() ?: altDescription?.nullIfBlank(),
     urls = urls.toDomain(),
-    htmlUrl = links?.html,
+    htmlUrl = links?.html?.withReferral(),
     downloadLocation = links?.downloadLocation,
     location = location?.toDisplayName(),
     tags = tags.map { tag -> tag.title },
     downloads = downloads,
+    exif = exif?.toDomain(),
+    currentUserCollectionIds = currentUserCollections.map { collection -> collection.id },
     user = user?.toDomain()
+)
+
+fun ExifResponse.toDomain(): PhotoExif = PhotoExif(
+    make = make?.nullIfBlank(),
+    model = model?.nullIfBlank(),
+    exposureTime = exposureTime?.nullIfBlank(),
+    aperture = aperture?.nullIfBlank(),
+    focalLength = focalLength?.nullIfBlank(),
+    iso = iso
 )
 
 /** Sizes the backend left out fall back to [PhotoUrlsResponse.raw], so the UI always has a URL to show. */
