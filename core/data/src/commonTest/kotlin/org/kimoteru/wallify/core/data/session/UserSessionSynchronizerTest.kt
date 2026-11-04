@@ -65,6 +65,15 @@ class UserSessionSynchronizerTest {
     }
 
     @Test
+    fun startWithoutTokenYetKeepsTheSavedUserWhileTheStorageHoldsOne() = runTest(UnconfinedTestDispatcher()) {
+        val users = FakeUserRepository(Response.Success(USER))
+
+        createSynchronizer(users, session = RecordingSessionRepository(token = "token"), scope = backgroundScope)
+
+        assertEquals(0, users.clearCalls)
+    }
+
+    @Test
     fun tokenRejectedByBackendEndsTheSessionWithoutReportingAnError() = runTest(UnconfinedTestDispatcher()) {
         val session = RecordingSessionRepository(token = "token")
         val users = FakeUserRepository(Response.Error(ResponseError(message = "Unauthorized", code = 401)))
@@ -195,7 +204,11 @@ private class FakeUserRepository(vararg results: Response<User>) : UserRepositor
         return answer
     }
 
+    var clearCalls = 0
+        private set
+
     override fun clearCurrentUser() {
+        clearCalls++
         currentUser.value = null
     }
 

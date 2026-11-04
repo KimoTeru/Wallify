@@ -8,16 +8,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import java.util.Locale
 
-/** The language of the device, taken before the app changes the default locale for the first time. */
-private val deviceLocale: Locale = Locale.getDefault()
-
 /**
  * The string resources follow the default locale and the configuration of the composition, so both are changed; the
  * context stays the activity, only its configuration seen by Compose is replaced.
  */
 @Composable
-actual fun ProvideAppLocale(languageTag: String?, content: @Composable () -> Unit) {
-    val locale = languageTag?.let(Locale::forLanguageTag) ?: deviceLocale
+actual fun ProvideAppLocale(languageTag: String, content: @Composable () -> Unit) {
+    val locale = Locale.forLanguageTag(languageTag)
     val configuration = LocalConfiguration.current
 
     Locale.setDefault(locale)

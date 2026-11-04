@@ -243,8 +243,6 @@
     <string name="settings_layout_description">Applies to the photo feed. Curated, random photos and profiles always use a grid of equal cards.</string>
     <!-- Section title of the settings: language of the app -->
     <string name="settings_language">Language</string>
-    <!-- Choice of the language: the language of the device -->
-    <string name="settings_language_system">System</string>
     <!-- Note under the language choice: what the language changes -->
     <string name="settings_language_description">Language of the app and of your photo search queries. Search in languages other than English is a beta feature of the photo service and may not work for every app.</string>
     <!-- Section title of the settings: numbers of the whole photo service -->

@@ -22,7 +22,8 @@ import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
  *
  * It follows the `Authorization` of [HeadersCollectorRepository], not the stored token: the user is requested only
  * once the HTTP client really sends the new token, otherwise the request would go out with the old one and fail.
- * A new token loads the user, no token clears it, and a token the backend rejects (401) ends the session.
+ * A new token loads the user, a missing token clears it once the storage has none either (a sign-out), and a token
+ * the backend rejects (401) ends the session.
  * Any other failure goes to [loadError] and the load is repeated when the connection returns after a drop.
  */
 class UserSessionSynchronizer(
@@ -46,7 +47,7 @@ class UserSessionSynchronizer(
                 .collectLatest { authorization ->
                     loadError.value = null
                     if (authorization == null) {
-                        userRepository.clearCurrentUser()
+                        clearUserIfSignedOut()
                     } else {
                         loadUser()
                     }
@@ -57,6 +58,17 @@ class UserSessionSynchronizer(
     fun stop() {
         job?.cancel()
         job = null
+    }
+
+    /**
+     * The client starts without a token and gets it from the storage a moment later, so "no token" alone does not
+     * mean a sign-out. Only when the storage holds no token either is the session over; otherwise the saved user stays,
+     * and the app opens with it even without a connection.
+     */
+    private suspend fun clearUserIfSignedOut() {
+        if (session.authToken.first().isNullOrBlank()) {
+            userRepository.clearCurrentUser()
+        }
     }
 
     private suspend fun loadUser() {

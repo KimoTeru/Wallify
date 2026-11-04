@@ -5,8 +5,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserSettings(
+    /** Language of the app and of photo search, one of [org.kimoteru.wallify.core.model.settings.SupportedLanguages]. */
     @SerialName("language_tag")
-    val languageTag: String? = null,
+    val languageTag: String = SupportedLanguages.first().tag,
 
     @SerialName("theme_mode")
     val themeMode: ThemeMode = ThemeMode.System,

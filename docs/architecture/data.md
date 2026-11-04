@@ -99,7 +99,10 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 - Данные, нужные многим экранам (вошедший пользователь), экраны не загружают. Их грузит слой сессии и держит
   репозиторий в `StateFlow`: `UserSessionSynchronizer` следит за `Authorization` из `HeadersCollectorRepository` (а не
   за сохранённым токеном: запрос должен уйти уже с новым токеном), при новом токене вызывает
-  `UserRepository.refreshCurrentUser()`, без токена — `clearCurrentUser()`. Экран читает `UserRepository.currentUser`.
+  `UserRepository.refreshCurrentUser()`, без токена — `clearCurrentUser()`, но только если токена нет и в хранилище:
+  клиент стартует без токена и получает его из хранилища чуть позже, и такой старт не выход (иначе сохранённый
+  пользователь стирался бы при каждом запуске, а профиль без сети был бы пустым). Экран читает
+  `UserRepository.currentUser`; собственный профиль открывается уже с сохранённым пользователем.
   Синхронизаторы стартуют вместе с Koin (`@Singleton(createdAtStart = true)` в `DataModule`).
 - Слой данных не показывает диалоги, но и не прячет сбои: фоновая работа открывает их в домене интерфейсом
   (`UserSessionManager.loadError`), а корень (`RootGraphLogic`) решает, что показать. Так сбой загрузки пользователя
