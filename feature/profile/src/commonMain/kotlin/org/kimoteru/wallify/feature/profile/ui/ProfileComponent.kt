@@ -126,7 +126,10 @@ class ProfileLogic(
 
     private var isUploadPending = false
 
-    override fun onCreate() = load()
+    override fun onCreate() {
+        showSavedUser()
+        load()
+    }
 
     /** The user comes back from the browser after the upload page: the new photos and the counters are loaded. */
     override fun onResume() {
@@ -150,6 +153,13 @@ class ProfileLogic(
         }
     }
 
+    /** The own profile opens with the saved signed-in user, so it is never empty while the backend answers. */
+    private fun showSavedUser() {
+        val saved = userRepository.currentUser.value.takeIf { target is ProfileTarget.CurrentUser } ?: return
+        showUser(saved)
+        updateIsLoading(false)
+    }
+
     /**
      * Follows the user and the statistics in the database: the saved ones first, then the backend's answer. The own
      * profile starts over when the username changes.
@@ -157,7 +167,7 @@ class ProfileLogic(
     private fun load() {
         loadJob?.cancel()
         loadJob = coroutineScope.launch {
-            updateIsLoading(true)
+            if (uiState.value.user == null) updateIsLoading(true)
 
             username.collectLatest { login ->
                 coroutineScope {
