@@ -19,6 +19,8 @@ Related: `architecture/overview.md`, `architecture/data.md`, `code/presentation.
    состояния экрана не держат: у них только зависимости из конструктора и (у репозиториев) источники данных.
 6. Модели `core:model` не знают про UI и сеть. Модели запроса и ответа (`XxxRequest` / `XxxResponse`) — рядом с API в
    `core:network`; маппер `toDomain()` / `toRequest()` лежит в файле своей модели, отдельных файлов мапперов нет.
+   Если у значения есть доменный enum, экранный называется `XxxUi`: `toDomain()` и `toPresentation()` лежат в его
+   файле. Образец — `ContentFilter` и `ContentFilterUi`. Доменный enum про экранный не знает.
 
 ## Цепочка
 
@@ -32,7 +34,7 @@ Ui (Compose)
                       │    └─ Api  Ktor, ответ → Response              (core:network)
                       ├─ Dao        Room                        (core:database)
                       ├─ Prefs      DataStore                   (core:datastore)
-                      └─ Files      каталог скачанных файлов    (core:cache)
+                      └─ Files      каталог скачанных файлов    (core:storage)
 ```
 
 Стрелки только вниз; никто не знает про слой выше себя.
@@ -50,10 +52,11 @@ Ui (Compose)
 | Сервис данных без репозитория (синхронизация сессии, загрузка файлов) | `core/data/.../<область>/` (`session/`, `download/`) |
 | API-класс (запросы), `XxxRequest`, `XxxResponse` | `core/network/.../api/`, `.../model/request/`, `.../model/response/<область>/` |
 | Модель предметной области | `core/model` |
+| Свойства экрана для enum | Доменный enum в `core/model`, экранный `XxxUi` в `core/presentation`, маппер `toDomain()` / `toPresentation()` в файле `XxxUi`. Образец — `ContentFilter` и `ContentFilterUi` |
 | Сущность и DAO Room (мапперы `toEntity()` / `toDomain()` — в файле сущности) | `core/database/.../entity/` и `core/database/.../dao/` (`AppDatabase` и `DatabaseModule` — в корне пакета; конвертеры — `converter/`) |
 | Загрузка с кэшем в Room: `CacheLoader` (постраничные списки), `ListRemoteMediator`, `refreshableFlow`, `CacheStore`, ключи списков, очистка базы | `core/data/.../cache/` |
 | Менеджер платформы (буфер, язык, ссылки) | интерфейс в `core/platform/commonMain`, реализации в `androidMain` / `jvmMain` |
-| Общая логика с состоянием для нескольких экранов (уведомления, диалог ошибок) | `core/presentation/.../components/units/<name>/` |
+| Общая логика с состоянием для нескольких экранов (уведомления, сообщение об ошибке запроса) | `core/presentation/.../components/units/<name>/` |
 
 ## Пакеты внутри модуля
 

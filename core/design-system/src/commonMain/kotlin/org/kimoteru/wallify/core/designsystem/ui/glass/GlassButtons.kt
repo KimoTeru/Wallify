@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.click.debouncedClickable
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcon
+import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIf
 
 /** Look of a [GlassButton]: glass capsule, solid inverted capsule for the main action, ghost for quiet ones. */
 enum class GlassButtonStyle {
@@ -54,13 +56,13 @@ fun GlassButton(
         modifier = modifier
             .alpha(if (enabled) appAlpha.full else appAlpha.medium)
             .clip(CircleShape)
-            .then(
-                when (style) {
-                    GlassButtonStyle.Glass -> Modifier.glassSurface(level, CircleShape)
-                    GlassButtonStyle.Solid -> Modifier.background(appColor.basic.button.primary)
-                    GlassButtonStyle.Ghost -> Modifier.border(appBorderWidth.small, appColor.glass.edge, CircleShape)
+            .applyIf(style) { buttonStyle ->
+                when (buttonStyle) {
+                    GlassButtonStyle.Glass -> glassSurface(level, CircleShape)
+                    GlassButtonStyle.Solid -> background(appColor.basic.button.primary)
+                    GlassButtonStyle.Ghost -> border(appBorderWidth.small, appColor.glass.edge, CircleShape)
                 }
-            )
+            }
             .debouncedClickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = appPadding.largeSpecial, vertical = appPadding.mediumSpecial),
         horizontalArrangement = Arrangement.spacedBy(appPadding.small, Alignment.CenterHorizontally),

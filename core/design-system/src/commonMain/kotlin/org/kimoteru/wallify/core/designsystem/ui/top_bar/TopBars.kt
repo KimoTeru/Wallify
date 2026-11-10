@@ -1,32 +1,22 @@
 package org.kimoteru.wallify.core.designsystem.ui.top_bar
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import org.kimoteru.wallify.core.designsystem.extensions.half
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.icon.IconBack
 import org.kimoteru.wallify.core.designsystem.ui.icon.IconClose
 import org.kimoteru.wallify.core.designsystem.ui.icon.iconContainer
-import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIfNotNull
-import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIfNull
 
 /** Top bar with an optional back button on the left and close button on the right. */
 @Composable
@@ -68,7 +58,7 @@ fun DefaultTopBar(
     )
 }
 
-/** Title with optional actions on both sides. The title stays centered and never overlaps the actions. */
+/** Title sits after the left actions and fills the space up to the right ones. */
 @Composable
 fun DefaultTopBar(
     modifier: Modifier = Modifier,
@@ -79,72 +69,33 @@ fun DefaultTopBar(
         top = AppTheme.padding.smallSpecial + AppTheme.padding.smallExtra.half,
         bottom = AppTheme.padding.smallExtra.half
     ),
-    actionsLeft: @Composable() (RowScope.() -> Unit) = {},
-    actionsRight: @Composable() (RowScope.() -> Unit) = {}
+    actionsLeft: @Composable RowScope.() -> Unit = {},
+    actionsRight: @Composable RowScope.() -> Unit = {}
 ) {
-    val density = LocalDensity.current
     val appPadding = AppTheme.padding
 
-    Box(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(paddingValues)
+            .padding(paddingValues),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        var rightWidth by remember { mutableStateOf<Dp?>(null) }
-        var leftWidth by remember { mutableStateOf<Dp?>(null) }
-        var isTitleOverflow by remember { mutableStateOf(false) }
+        actionsLeft()
 
-        Row(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .applyIfNull(leftWidth) {
-                    onSizeChanged {
-                        leftWidth = with(density) { it.width.toDp() }
-                    }
-                }
-        ) {
-            actionsLeft()
-        }
-
-        title?.let { nonNullTitle ->
+        if (title != null) {
             Text(
                 modifier = Modifier
-                    .applyIfNotNull {
-                        rightWidth?.let { rWidth ->
-                            leftWidth?.let { lWidth ->
-                                if (isTitleOverflow) {
-                                    padding(
-                                        start = lWidth + appPadding.medium,
-                                        end = rWidth + appPadding.medium
-                                    )
-                                } else {
-                                    padding(horizontal = maxOf(lWidth, rWidth) + appPadding.medium)
-                                }
-                            }
-                        }
-                    }
-                    .align(Alignment.Center),
-                text = nonNullTitle,
+                    .weight(1f)
+                    .padding(end = appPadding.small),
+                text = title,
                 style = titleStyle,
                 maxLines = titleMaxLines,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                onTextLayout = { textLayoutResult ->
-                    isTitleOverflow = textLayoutResult.hasVisualOverflow
-                }
+                overflow = TextOverflow.Ellipsis
             )
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
         }
 
-        Row(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .applyIfNull(rightWidth) {
-                    onSizeChanged {
-                        rightWidth = with(density) { it.width.toDp() }
-                    }
-                }
-        ) {
-            actionsRight()
-        }
+        actionsRight()
     }
 }

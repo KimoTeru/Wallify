@@ -38,7 +38,7 @@ Related: `code/presentation.md`, `architecture/layers.md`, `setup/gradle-convent
    `@ComponentScan` корневого класса модуля. `expect fun platformXxxModule()` не нужны. `Context` приходит из
    `androidContext()` и в проверке графа не требует `@Provided`.
 9. Бизнес-код не зависит от Koin: классы получают зависимости через конструктор. Аннотации допустимы в `core:data`,
-   `core:network`, `core:cache`, `core:database`, `core:datastore`, `core:platform`, `core:presentation` и
+   `core:network`, `core:storage`, `core:database`, `core:datastore`, `core:platform`, `core:presentation` и
    `feature:*`; в `core:common`, `core:model`, `core:domain` их нет. `KoinComponent` допустим в `Component` и `Logic`
    экрана (базовые классы уже его реализуют).
 10. Нужно, чтобы привязка создавалась на старте приложения (например, `SessionHeadersSynchronizer`):
@@ -55,7 +55,7 @@ Related: `code/presentation.md`, `architecture/layers.md`, `setup/gradle-convent
 
 ## Фичи
 
-Образец — `feature/splash`:
+Образец — `feature/splash` (`presentation/components` для логики, `XxxModule` в корне пакета):
 
 ```kotlin
 @Module

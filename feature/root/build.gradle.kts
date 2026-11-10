@@ -7,12 +7,9 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.feature.splash)
             implementation(projects.feature.auth)
-            implementation(projects.feature.feed)
-            implementation(projects.feature.topics)
-            implementation(projects.feature.random)
             implementation(projects.feature.photo)
             implementation(projects.feature.profile)
-            implementation(projects.feature.settings)
+            implementation(projects.feature.main)
         }
     }
 }

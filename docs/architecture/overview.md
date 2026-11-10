@@ -9,18 +9,19 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 | Модуль | Роль |
 |---|---|
 | `androidApp`, `desktopApp` | Точки входа платформ: окно или `Application`, старт Koin (`@KoinApplication`), создание корневого компонента. Список модулей графа им даёт `applyAppGraph()` в `build-logic` |
-| `feature:root` | Корневой граф навигации, граф вкладок (`main`), диалог ошибок, снекбары, баннер отсутствия сети; `RootGraphUi(component)` — корневой экран, тему вокруг него задают приложения |
+| `feature:root` | Корневой граф: сплэш, вход, фото и чужой профиль поверх вкладок, снекбары; `RootGraphUi(component)` — корневой экран, тему вокруг него задают приложения |
+| `feature:main` | Граф вкладок вошедшего пользователя: лента, подборки, случайные, студия, настройки |
 | `feature:splash`, `feature:auth` | Экраны; `feature:auth` — экран входа, показывается, пока нет сессии |
 | `feature:feed`, `feature:topics`, `feature:random`, `feature:profile`, `feature:settings` | Вкладки основной навигации; `feature:profile` также открывается над навигацией как чужой профиль |
 | `feature:photo` | Детали фото: EXIF, статистика, коллекции пользователя, скачивание |
-| `core:presentation` | Базовые классы экрана, общие UI-блоки с логикой (шторка, диалог ошибок, уведомления, разрешения) |
+| `core:presentation` | Базовые классы экрана, общие UI-блоки с логикой (шторка, сообщение об ошибке запроса, уведомления, разрешения) |
 | `core:design-system` | Тема, токены, компоненты без бизнес-логики |
 | `core:resources` | Единственное место ресурсов: строки (по областям), шрифты, картинки; публичный `Res` |
 | `core:domain` | Интерфейсы репозиториев, use case'ы |
 | `core:data` | Реализации репозиториев, сессия, скачивание файлов |
 | `core:model` | Чистые `@Serializable` модели |
 | `core:network` | Ktor-клиент, `Response`-обёртка запросов, API-классы, модели запросов и ответов с мапперами в доменные модели, мониторинг сети |
-| `core:database`, `core:datastore`, `core:cache` | Room (кэш данных), DataStore, каталог для скачанных файлов |
+| `core:database`, `core:datastore`, `core:storage` | Room (кэш данных), DataStore, каталог для скачанных файлов |
 | `core:platform` | `expect`/`actual`: диспетчеры, время, язык, буфер обмена, переходы по системным ссылкам |
 | `core:common` | Без зависимостей на другие `core`: `Response`, `AppDispatchers`, пагинация, расширения, flow-утилиты |
 
@@ -39,9 +40,12 @@ flowchart TB
 
     subgraph features["Фичи"]
         root["feature:root"]
+        main["feature:main"]
         splash["feature:splash"]
         auth["feature:auth"]
-        screens["feature:feed, topics, random,<br/>photo, profile, settings"]
+        photo["feature:photo"]
+        profile["feature:profile"]
+        tabs["feature:feed, topics,<br/>random, settings"]
     end
 
     subgraph ui["UI"]
@@ -60,7 +64,7 @@ flowchart TB
         network["core:network"]
         database["core:database"]
         datastore["core:datastore"]
-        cache["core:cache"]
+        storage["core:storage"]
         platform["core:platform"]
     end
 
@@ -72,11 +76,16 @@ flowchart TB
     apps --> presentation
     root --> splash
     root --> auth
-    root --> screens
+    root --> photo
+    root --> profile
+    root --> main
+    main --> profile
+    main --> tabs
     features --> presentation
     features --> domain
     presentation --> designSystem
     presentation --> resources
+    presentation --> model
     designSystem --> resources
     features --> resources
     presentation --> platform
@@ -87,7 +96,7 @@ flowchart TB
     database --> model
     data --> database
     data --> datastore
-    data --> cache
+    data --> storage
     data --> platform
     infra -.-> common
     business -.-> common
@@ -98,11 +107,14 @@ flowchart TB
 
 1. `core:common`, `core:model` ни от чего не зависят (кроме библиотек). `core:model` — только данные, без логики и UI.
 2. `core:domain` зависит от `core:model` и `core:common`, не знает про `core:data`, сеть, базу и UI.
+   `core:presentation` зависит от `core:model`: `XxxUi` мапится в доменный enum рядом с собой (`toDomain()`,
+   обратно `toPresentation()`). `core:model` про UI не знает.
 3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет.
    `core:network` зависит от `core:model`: модель ответа API мапится в доменную рядом с собой (`toDomain()`),
    `core:model` про сеть не знает. Так же `core:database` зависит от `core:model`: сущность Room мапится в доменную
    модель и обратно рядом с собой (`toEntity()` / `toDomain()`), `core:model` про базу не знает.
-4. Feature-модули не зависят друг от друга, кроме `feature:root`, который собирает экраны в стек и вкладки.
+4. Feature-модули не зависят друг от друга, кроме двух графов: `feature:main` собирает вкладки, `feature:root`
+   собирает сплэш, вход, фото, чужой профиль и `feature:main`.
    `core:design-system` берёт из `core:resources` шрифт темы и общие тексты своих компонентов (состояния списка
    фото); обратной зависимости нет.
 5. Приложения зависят от всех модулей с Koin-привязками (список в `build-logic`, `applyAppGraph()`), чтобы собрать
@@ -114,8 +126,13 @@ flowchart TB
 - Поддерживаются Android и Desktop (JVM). iOS-таргетов нет; добавлять их без просьбы не нужно.
 - В `commonMain` — только мультиплатформенные API: `kotlin.*`, `kotlinx.*`, Compose Multiplatform, Ktor, Room KMP,
   Koin. Без `android.*`, `java.*`, `javax.*`.
-- Платформенная реализация — `expect`/`actual` в одном модуле (`core:platform`, `core:cache`, `core:datastore`,
-  `core:database`, `core:network`): интерфейс или `expect` в `commonMain`, реализации в `androidMain` и `jvmMain`.
+- Платформенная реализация — `expect`/`actual` в одном модуле: интерфейс или `expect` в `commonMain`, реализации в
+  `androidMain` и `jvmMain`. Такой код есть в `core:platform`, `core:storage`, `core:datastore`, `core:database`,
+  `core:network`, `core:design-system` (язык приложения, признак широкого макета) и `core:presentation`
+  (`PlatformBackHandler`). Новая платформенная часть в другом модуле допустима, если она нужна самому модулю; список
+  выше при этом дополняется.
+- Исключение — `take_permission` в `core:presentation`: он есть только в `androidMain`, на Desktop разрешений нет
+  и аналога не нужно (`code/presentation.md` § Общие блоки).
 - Если `androidMain` и `jvmMain` нужен один и тот же JVM-код, пока допустимо небольшое дублирование; общий
   промежуточный source set заводится только по просьбе.
 - `TODO` и `return null` вместо реализации на одной из платформ не оставляем.

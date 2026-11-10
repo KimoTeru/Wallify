@@ -9,7 +9,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path
-import org.kimoteru.wallify.core.cache.CacheDirectoryProvider
+import org.kimoteru.wallify.core.storage.CacheDirectoryProvider
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.extensions.Empty
 import org.kimoteru.wallify.core.common.extensions.formatFromUrl

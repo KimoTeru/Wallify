@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,9 +48,11 @@ import org.kimoteru.wallify.core.resources.generated.resources.common_retry
 @Composable
 fun PhotoGridLayout(
     modifier: Modifier = Modifier,
+    state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
     contentPadding: PaddingValues = PaddingValues(),
     content: LazyStaggeredGridScope.() -> Unit
 ) {
+    val appPadding = AppTheme.padding
     val appSize = AppTheme.size
 
     val windowType = rememberWindowType()
@@ -70,9 +74,10 @@ fun PhotoGridLayout(
     // The photos are what the frosted bars (dock, search) and the sheets over the screen blur.
     LazyVerticalStaggeredGrid(
         modifier = modifier.blurSource(BlurSourceZIndex.Screen),
+        state = state,
         columns = StaggeredGridCells.Fixed(columns),
         contentPadding = contentPadding,
-        horizontalArrangement = Arrangement.spacedBy(appSize.photoGrid.spacing),
+        horizontalArrangement = Arrangement.spacedBy(appPadding.medium),
         verticalItemSpacing = appSize.photoGrid.spacing,
         content = content
     )
@@ -121,6 +126,7 @@ fun <T : Any> PagingPhotoGrid(
     paging: LazyPagingItems<T>,
     itemKey: (T) -> Any,
     emptyText: String,
+    state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
     contentPadding: PaddingValues = PaddingValues(),
     itemContent: @Composable (T) -> Unit
 ) {
@@ -153,6 +159,7 @@ fun <T : Any> PagingPhotoGrid(
 
         else -> PhotoGridLayout(
             modifier = modifier,
+            state = state,
             contentPadding = contentPadding
         ) {
             items(

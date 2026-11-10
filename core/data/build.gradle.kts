@@ -14,7 +14,7 @@ kotlin {
             implementation(projects.core.network)
             implementation(projects.core.database)
             implementation(projects.core.datastore)
-            implementation(projects.core.cache)
+            implementation(projects.core.storage)
             implementation(libs.datastore.preferences)
             implementation(libs.okio)
             implementation(libs.koin.core)

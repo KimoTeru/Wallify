@@ -40,7 +40,7 @@ Wallify/
 │   ├── network/         # Ktor client, request helpers, network monitor
 │   ├── database/        # Room
 │   ├── datastore/       # DataStore
-│   ├── cache/           # Memory and disk cache
+│   ├── storage/         # Directory for downloaded files
 │   ├── platform/        # expect/actual platform services
 │   ├── presentation/    # Base screen classes, shared UI blocks with logic
 │   ├── design-system/   # Theme, tokens, UI components

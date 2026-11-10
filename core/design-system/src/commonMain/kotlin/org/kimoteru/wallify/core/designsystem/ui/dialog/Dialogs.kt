@@ -14,7 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -54,6 +55,7 @@ fun DefaultDialogContainer(
     durationAnim: Int = AppTheme.durationAnim.smallExtra,
     onDismiss: () -> Unit,
     dismissRequested: Boolean = false,
+    windowInsets: WindowInsets? = null,
     content: @Composable() (BoxScope.() -> Unit) = {}
 ) {
     val appAlpha = AppTheme.alpha
@@ -87,7 +89,7 @@ fun DefaultDialogContainer(
                 level = blurLevel,
                 alpha = backdropAlpha
             )
-            .systemBarsPadding()
+            .windowInsetsPadding(windowInsets ?: WindowInsets.systemBars)
             .zIndex(appZIndex.dialogs),
         visible = isVisible,
         duration = durationAnim

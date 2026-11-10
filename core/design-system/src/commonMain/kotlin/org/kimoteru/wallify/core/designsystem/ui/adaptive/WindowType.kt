@@ -1,6 +1,6 @@
 package org.kimoteru.wallify.core.designsystem.ui.adaptive
 
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.window.core.layout.WindowSizeClass
@@ -25,11 +25,21 @@ val LocalWindowTypeOverride = staticCompositionLocalOf<WindowType?> { null }
 @Composable
 fun rememberWindowType(): WindowType {
     val override = LocalWindowTypeOverride.current
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
 
     return override ?: when {
         windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND) -> WindowType.Expanded
         windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) -> WindowType.Medium
         else -> WindowType.Compact
     }
+}
+
+/**
+ * The window is too short for a tall header: a phone turned sideways. Height below the medium
+ * breakpoint, not the width class, so a wide tablet keeps its title.
+ */
+@Composable
+fun rememberIsShortWindow(): Boolean {
+    val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
+    return !windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
 }

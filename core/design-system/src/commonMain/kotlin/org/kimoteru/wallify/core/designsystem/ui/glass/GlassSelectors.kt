@@ -1,5 +1,9 @@
 package org.kimoteru.wallify.core.designsystem.ui.glass
 
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,9 +26,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.animation.compose.animateColor
-import org.kimoteru.wallify.core.designsystem.ui.animation.compose.animateDp
 import org.kimoteru.wallify.core.designsystem.ui.click.debouncedClickable
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcon
+import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIf
 
 /**
  * Pebble chip: glass when idle, solid inverted when [selected]. [leading] is drawn before the text. Over photos pass
@@ -49,15 +54,13 @@ fun GlassChip(
     Row(
         modifier = modifier
             .height(appSize.control.chipHeight)
-            .then(
-                if (selected) {
-                    Modifier
-                        .clip(CircleShape)
-                        .background(appColor.basic.button.primary)
+            .applyIf(selected) { isSelected ->
+                if (isSelected) {
+                    clip(CircleShape).background(appColor.basic.button.primary)
                 } else {
-                    Modifier.glassSurface(level, CircleShape)
+                    glassSurface(level, CircleShape)
                 }
-            )
+            }
             .debouncedClickable(onClick = onClick)
             .padding(horizontal = appPadding.mediumSpecial),
         horizontalArrangement = Arrangement.spacedBy(appPadding.small, Alignment.CenterHorizontally),
@@ -86,6 +89,7 @@ fun GlassSegmentedControl(
     onSelect: (Int) -> Unit
 ) {
     val appColor = AppTheme.color
+    val appDurationAnim = AppTheme.durationAnim
     val appPadding = AppTheme.padding
     val appSize = AppTheme.size
     val appTypography = AppTheme.typography
@@ -100,8 +104,13 @@ fun GlassSegmentedControl(
             .glassSurface(GlassLevel.Sub, CircleShape)
             .padding(gap)
     ) {
+        val transition = updateTransition(safeIndex)
         val segmentWidth = (maxWidth - gap * options.lastIndex) / options.size
-        val indicatorOffset = animateDp(targetValue = (segmentWidth + gap) * safeIndex)
+        val indicatorOffset by transition.animateDp(
+            transitionSpec = { tween(appDurationAnim.small) }
+        ) { index ->
+            (segmentWidth + gap) * index
+        }
 
         Box(
             modifier = Modifier
@@ -117,14 +126,17 @@ fun GlassSegmentedControl(
             horizontalArrangement = Arrangement.spacedBy(gap)
         ) {
             options.forEachIndexed { index, option ->
-                val contentColor = animateColor(
-                    if (index == safeIndex) appColor.text.reversed else appColor.text.subtitle
-                )
+                val contentColor by transition.animateColor(
+                    transitionSpec = { tween(appDurationAnim.small) }
+                ) { selected ->
+                    if (index == selected) appColor.text.reversed else appColor.text.subtitle
+                }
 
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .height(appSize.control.chipHeight)
+                        .clip(CircleShape)
                         .debouncedClickable(onClick = { onSelect(index) }),
                     contentAlignment = Alignment.Center
                 ) {

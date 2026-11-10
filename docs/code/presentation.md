@@ -10,15 +10,18 @@ Related: `code/navigation.md`, `code/di.md`, `design/foundations.md`, `architect
 
 ```
 feature/<name>/src/commonMain/kotlin/.../feature/<name>/
-├── ui/XxxComponent.kt     интерфейс XxxComponent, XxxDefaultComponent, XxxLogic, XxxNavigationEvent
-├── ui/XxxUi.kt            XxxContract (UiState, UiEvent) и composable XxxUi
-└── XxxModule.kt           корневой класс Koin-модуля фичи (Logic помечается @Factory)
+├── presentation/components/XxxComponent.kt         интерфейс XxxComponent, XxxLogic, XxxNavigationEvent
+├── presentation/components/DefaultXxxComponent.kt  реализация компонента
+├── presentation/ui/XxxUi.kt                        XxxContract (UiState, UiEvent) и composable XxxUi
+└── XxxModule.kt                                    корневой класс Koin-модуля фичи (Logic помечается @Factory)
 ```
+
+Образец раскладки — `feature/root`: компонент и логика в `presentation/components`, вёрстка в `presentation/ui`.
 
 | Часть | Роль | Знает |
 |---|---|---|
 | `XxxComponent` (интерфейс) | Что Ui может у экрана просить: `getUiState()`, `obtainUiEvent(event)` | Contract |
-| `XxxDefaultComponent` | Реализация: `ComponentContext`, получает `Logic` из Koin, слушает события навигации | Logic, Decompose |
+| `DefaultXxxComponent` | Реализация: `ComponentContext`, получает `Logic` из Koin, слушает события навигации | Logic, Decompose |
 | `XxxLogic` | Состояние экрана (`uiState: StateFlow`), обработка `UiEvent`, вызовы domain, `navigate(...)` | Contract, domain |
 | `XxxContract` | `UiState : BaseContract.UiState`, `UiEvent : BaseContract.UiEvent` | ничего |
 | `XxxUi` | Composable экрана | только интерфейс `XxxComponent` и Contract |
@@ -42,12 +45,14 @@ override val logic: XxxLogic = instanceKeeper.getOrCreate { get<XxxLogic>() }
    `_uiState` / `uiState`. Для Compose помечаем `@Immutable`, если в нём есть нестабильные типы.
    Каждое поле состояния меняется отдельным приватным методом `updateXxx(value)` с одним
    `uiState.update { it.copy(xxx = value) }` внутри; в местах вызова `it.copy(…)` не пишем. Публичные `showXxx()` /
-   `hideXxx()` — тонкие обёртки над ним: `fun showDialog() = updateIsVisibleDialog(true)` (образец —
-   `ApiErrorManagerLogic`). Если поля нужно менять только вместе, это один метод с говорящим именем.
+   `hideXxx()` — тонкие обёртки над ним: `fun showDialog() = updateIsVisibleDialog(true)`. Если поля нужно менять
+   только вместе, это один метод с говорящим именем. Списки вариантов экрана (`Xxx.entries`, языки) —
+   поля `UiState` со значением по умолчанию, не локальные `val` в composable.
 4. Действия пользователя — `UiEvent` (`sealed interface`, `data object` / `data class`). Метод на каждое действие в
    Ui не заводим: один `obtainUiEvent`.
-5. Одноразовые эффекты: навигация — `navigate(NavigationEvent)` логики; сообщение пользователю — `NotifierManager`;
-   ошибка запроса — `ApiErrorManager`; действие, которое выполняет сам экран (открыть адрес в браузере через
+5. Одноразовые эффекты: навигация — `navigate(NavigationEvent)` логики; сообщение пользователю и сбой действия —
+   `NotifierManager` (без сети отдельный снекбар уже виден, текст сбоя логика берёт `getString`); действие, которое
+   выполняет сам экран (открыть адрес в браузере через
    `LocalUriHandler`), — `ComponentEvent`: логика шлёт `sendComponentEvent(…)`, Ui ловит
    `component.collectComponentEvents { … }` (для него нужны `…Core`-типы с явным `ComponentEvent`). Не
    `StateFlow<Boolean>` с ручным сбросом.
@@ -106,13 +111,13 @@ fun XxxUi(
 
 | Блок | Как использовать |
 |---|---|
-| `ApiErrorManager` | `emitEvent(ShowDialog / HideDialog / SessionExpired)` из любого слоя; диалог рисует корневой экран |
-| `NotifierManager` | `showShort(text)` / `showLong(text)`; снекбар рисует корневой экран |
+| `NotifierManager` | `showShort(text)` / `showLong(text)`; снекбар рисует корневой экран. Сбой действия — `showLong(getString(Res.string.error_dialog_description))`. Пока нет сети корень его не показывает и сам держит `error_no_internet`. Сеть читает только `RootGraphLogic` |
 | Шторка (`DefaultBottomSheet…`) | Компонент со своей логикой; открывать через его логику |
 | Разрешения (`take_permission`, Android) | Только `androidMain`; на Desktop аналога нет |
+| Свойства экрана для enum | Доменный enum в `core:model`, экранный `XxxUi` в `core:presentation` (подпись и другие свойства экрана). Связь — `toDomain()` / `toPresentation()` в файле `XxxUi`. Образец — `ContentFilter` и `ContentFilterUi`. Фича свою функцию на доменный enum не пишет |
 
 - Новый блок с общей логикой и состоянием — `core/presentation/.../components/units/<name>/` в слоях `domain` /
   `data` / `presentation`; классы блока помечаются аннотациями Koin, отдельный модуль не нужен: пакет уже
   сканирует `PresentationModule`.
-- Корневой экран (`feature:root`) подписан на `ApiErrorManager`, `NotifierManager` и `ConnectivityRepository`;
+- Корневой экран (`feature:root`) подписан на `NotifierManager` и `ConnectivityRepository`;
   фичи подписываться на них самостоятельно не должны.

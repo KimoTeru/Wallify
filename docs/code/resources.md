@@ -17,7 +17,9 @@ Related: `setup/gradle-conventions.md` § Compose Resources, `design/foundations
 4. Доступ — публичный `Res` из `org.kimoteru.wallify.core.resources.generated.resources`:
    `stringResource(Res.string.error_dialog_title)`. Модуль, которому нужны ресурсы, зависит от `core:resources`
    (фичи получают его от `wallify.feature`).
-5. В `Logic`, репозиториях и use case'ах строк нет: туда приходят данные и коды, перевод делает Ui.
+5. В `Logic`, репозиториях и use case'ах строк нет: туда приходят данные и коды, перевод делает Ui. Исключение —
+   общий снекбар: его рисует корень, поэтому логика сама берёт `getString` и передаёт в `NotifierManager`
+   (`error_dialog_description` для сбоя действия, `error_no_internet` пока нет сети).
 6. Строка с подстановкой — `%1$s`, `%2$s` в XML и `stringResource(Res.string.name, arg1, arg2)`; склеивать текст из
    частей в коде нельзя (порядок слов зависит от языка).
 7. Название приложения для Android (манифест, лаунчер) — `androidApp/src/main/res/values/strings.xml` (`app_name`);
@@ -40,6 +42,10 @@ Related: `setup/gradle-conventions.md` § Compose Resources, `design/foundations
 - Шрифт приложения (Plus Jakarta Sans, четыре начертания) лежит в `composeResources/font`; в `FontFamily` его собирает
   `rememberAppFontFamily()` из `core:design-system`, экраны шрифт не выбирают.
 - Иконка, на которую нигде нет ссылки, не лежит в проекте.
+- Иконка приложения — не пункт `AppIcons`. Свой знак: белая W на чёрном скруглённом квадрате, с полями как у знака X. Крайние штрихи разрезаны каналом вдоль середины и не доходят до концов, внутренние целые.
+  На Android это адаптивные векторы `androidApp/.../res/drawable/ic_launcher_*`. На Desktop растр в
+  `desktopApp/src/main/resources/icons`: `icon.png` для окна и Dock, `icon.icns` и `icon.ico`
+  для собранного приложения. В заголовок своего окна её не кладём.
 
 ## Изображения
 

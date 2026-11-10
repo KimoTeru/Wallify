@@ -1,49 +1,34 @@
 package org.kimoteru.wallify.feature.root.presentation.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.blur.BlurHost
 import org.kimoteru.wallify.core.designsystem.ui.image.ClearImageCacheEffect
-import org.kimoteru.wallify.core.model.settings.PhotoLayout
-import org.kimoteru.wallify.core.model.settings.ScreenLayout
 import org.kimoteru.wallify.core.model.settings.SupportedLanguages
-import org.kimoteru.wallify.core.model.settings.ThemeMode
 import org.kimoteru.wallify.core.presentation.base.BaseContract
-import org.kimoteru.wallify.core.presentation.components.units.api_error_manager.presentation.ui.ApiErrorManagerContract
-import org.kimoteru.wallify.core.presentation.components.units.api_error_manager.presentation.ui.ApiErrorManagerUi
+import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
+import org.kimoteru.wallify.core.presentation.settings.ScreenLayoutUi
+import org.kimoteru.wallify.core.presentation.settings.ThemeModeUi
 import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerContract
 import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerUi
-import org.kimoteru.wallify.core.resources.generated.resources.Res
-import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
 
 object RootGraphContract {
     @Immutable
     data class UiState(
-        val apiErrorManagerState: ApiErrorManagerContract.UiState = ApiErrorManagerContract.UiState(),
         val notifierManagerState: NotifierManagerContract.UiState = NotifierManagerContract.UiState(),
         val isOnline: Boolean = true,
-        val themeMode: ThemeMode = ThemeMode.System,
-        val photoLayout: PhotoLayout = PhotoLayout.Masonry,
+        val themeMode: ThemeModeUi = ThemeModeUi.System,
+        val photoLayout: PhotoLayoutUi = PhotoLayoutUi.Masonry,
         val photoColumns: Int? = null,
-        val screenLayout: ScreenLayout = ScreenLayout.Auto,
+        val screenLayout: ScreenLayoutUi = ScreenLayoutUi.Auto,
 
         /** Language of the app, one of [SupportedLanguages]. */
         val languageTag: String = SupportedLanguages.first().tag,
@@ -53,7 +38,6 @@ object RootGraphContract {
     ) : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent {
-        data class ApiErrorManagerEvent(val event: ApiErrorManagerContract.UiEvent) : UiEvent
         data class NotifierManagerEvent(val event: NotifierManagerContract.UiEvent) : UiEvent
     }
 }
@@ -67,8 +51,6 @@ fun RootGraphUi(
     val obtainUiEvent = component::obtainUiEvent
 
     val appColor = AppTheme.color
-    val appPadding = AppTheme.padding
-    val appTypography = AppTheme.typography
 
     val stack by component.stack.subscribeAsState()
 
@@ -84,31 +66,6 @@ fun RootGraphUi(
             modifier = Modifier.fillMaxSize(),
             component = component,
             uiState = uiState
-        )
-
-        AnimatedVisibility(
-            modifier = Modifier.align(Alignment.TopCenter),
-            visible = !uiState.isOnline,
-            enter = slideInVertically { -it },
-            exit = slideOutVertically { -it }
-        ) {
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(appColor.basic.error)
-                    .statusBarsPadding()
-                    .padding(appPadding.small),
-                text = stringResource(Res.string.error_no_internet),
-                style = appTypography.h6.medium,
-                color = appColor.text.reversed,
-                textAlign = TextAlign.Center
-            )
-        }
-
-        ApiErrorManagerUi(
-            uiState = uiState.apiErrorManagerState,
-            isOffline = !uiState.isOnline,
-            obtainUiEvent = { obtainUiEvent(RootGraphContract.UiEvent.ApiErrorManagerEvent(it)) }
         )
 
         NotifierManagerUi(

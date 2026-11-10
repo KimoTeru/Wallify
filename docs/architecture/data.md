@@ -16,8 +16,14 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   пробрасывается, остальное становится `Response.Error`.
 - Типизированная ошибка (код, enum бэкенда) — `DetailedResponse<T, E>`; `executeRequestWithErrorCode` возвращает
   `DetailedResponse<T, Int>`.
-- Состояние загрузки для UI — `Resource<T>` (`Loading` / `Success` / `Error`), строится через `asResource()` и
-  `asResourceFlow()`.
+- `Resource<T>` (`Loading` / `Success` / `Error`) — не второй тип результата, а состояние потока для UI: оболочка
+  значений `Flow` с загрузкой, в первую очередь данных из кэша Room (`Flow<Resource<T>>`, § Кэш). `Response<T>` —
+  итог разовой операции (`suspend`-вызов, запрос к API, действие пользователя): он уже получен, у него нет состояния
+  «грузится». Правило: разовая операция возвращает `Response`, поток значений, за которым экран следит, —
+  `Flow<Resource<T>>`. `Response` превращается в `Resource` через `asResource()`, поток ответов —
+  `asResourceFlow()` (добавляет `Loading` в начало); `Flow<T>.asResource()` оборачивает значения в `Success`, а
+  исключение (кроме `CancellationException`) превращает в `Resource.Error`. Обратного перехода нет: слои данных
+  `Resource` не принимают.
 - `catch (e: Exception)` в `suspend`-коде всегда пропускает `CancellationException`.
 
 ## Сеть
@@ -92,10 +98,8 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   работает как анонимный клиент со статическим ключом.
 - `SessionHeadersSynchronizer` стартует вместе с Koin и сводит токен и язык (из `UserSettings` или системный) в
   `HeadersCollectorRepository`. Токен уходит как `Bearer <token>`, заменяя статический заголовок авторизации.
-- Истёкшая сессия: любой код, увидевший 401 (`ResponseError.isUnauthorized`), вызывает
-  `ApiErrorManager.emitEvent(SessionExpired)`; корневой экран очищает сессию (`code/presentation.md` § Общие блоки),
-  и граф показывает экран входа. Образец — `UserSessionSynchronizer`: он в слое данных и не знает про
-  `ApiErrorManager`, поэтому очищает сессию сам.
+- Истёкшая сессия: 401 (`ResponseError.isUnauthorized`) на загрузке текущего пользователя очищает сессию в
+  `UserSessionSynchronizer` (`session.clear()`), и корневой граф показывает экран входа.
 - Данные, нужные многим экранам (вошедший пользователь), экраны не загружают. Их грузит слой сессии и держит
   репозиторий в `StateFlow`: `UserSessionSynchronizer` следит за `Authorization` из `HeadersCollectorRepository` (а не
   за сохранённым токеном: запрос должен уйти уже с новым токеном), при новом токене вызывает
@@ -106,7 +110,7 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   Синхронизаторы стартуют вместе с Koin (`@Singleton(createdAtStart = true)` в `DataModule`).
 - Слой данных не показывает диалоги, но и не прячет сбои: фоновая работа открывает их в домене интерфейсом
   (`UserSessionManager.loadError`), а корень (`RootGraphLogic`) решает, что показать. Так сбой загрузки пользователя
-  (не 401) даёт общий диалог, но только пока устройство в сети: без сети виден баннер, а загрузка повторяется сама
+  (не 401) даёт снекбар, но только пока устройство в сети: без сети уже виден снекбар про интернет, а загрузка повторяется сама
   при каждом возврате сети. Фоновой повтор ждёт возврата сети, а не крутится по таймеру.
 - Вход пользователя — `AuthRepository.signIn()` (OAuth, код авторизации, системный браузер): одним вызовом
   открывает страницу входа, ждёт возврата пользователя, меняет код на токен и кладёт его в `SessionRepository`;
@@ -126,7 +130,7 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 |---|---|---|
 | Реляционные данные и кэш ответов бэкенда | `core:database` (Room KMP) | Правка сущности — новая версия `AppDatabase`; миграций нет: база хранит только копию данных бэкенда и при смене схемы пересоздаётся (`fallbackToDestructiveMigration`). Схема экспортируется в `schemas/`. Пока проект не выпущен; перед релизом это правило пересматривается. Устройство кэша — § Кэш |
 | Настройки и маленькие значения | `core:datastore` (`DataStorePrefs`) | `core:datastore` — только хранилище ключ-значение без смысла полей. Что именно хранится (например, язык), описывает модель в `core:model`, маппинг и доступ — `core:data`; feature читает только через репозиторий |
-| Скачанные файлы | `FileDownloader` (`core:data`), каталог из `CacheDirectoryProvider` (`core:cache`) | Только файлы; кэша данных в памяти и на диске рядом с Room нет |
+| Скачанные файлы | `FileDownloader` (`core:data`), каталог из `CacheDirectoryProvider` (`core:storage`) | Только файлы; кэша данных в памяти и на диске рядом с Room нет |
 
 - Размер, положение и «развёрнуто» окна Desktop хранит `WindowStateStore` в `desktopApp` (`java.util.prefs`): это
   состояние платформенного окна, а не пользовательская настройка, поэтому в `UserSettings` и DataStore его нет.
@@ -204,6 +208,11 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   Первая страница — 1; страница короче запрошенной — последняя. `initialLoadSize` равен `pageSize`, не меняем:
   иначе арифметика номеров страниц ломается.
 - Ошибка страницы приходит как `PagingLoadException` с HTTP-кодом.
+- Компромисс, принятый сознательно: доменные интерфейсы (`core:domain`) отдают `Flow<PagingData<T>>` из AndroidX
+  Paging, поэтому `paging-common` объявлен в `core:common` как `api` и виден `core:domain`, `core:data` и фичам. Свой
+  доменный тип страницы не вводим: он дублировал бы `PagingData`, а `cachedIn` и `collectAsLazyPagingItems()` всё
+  равно требуют его. Другие типы библиотек Paging (`PagingSource`, `RemoteMediator`) живут в `core:common`, `core:database` и
+  `core:data` и выше не поднимаются.
 - В `Logic` поток кэшируется `cachedIn(coroutineScope)`, в Ui — `collectAsLazyPagingItems()` (`design/foundations.md`
   § Списки).
 - Ошибка `RemoteMediator` тоже приходит как `PagingLoadException` с HTTP-кодом: экран показывает её, только если

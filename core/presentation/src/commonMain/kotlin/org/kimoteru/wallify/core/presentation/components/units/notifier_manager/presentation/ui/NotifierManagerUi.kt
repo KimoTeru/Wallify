@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
-import org.kimoteru.wallify.core.common.extensions.half
 import org.kimoteru.wallify.core.designsystem.extensions.half
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.card.DefaultRowCard
@@ -47,11 +46,11 @@ fun NotifierManagerUi(
     val appTypography = AppTheme.typography
     val appZIndex = AppTheme.zIndex
 
-    LaunchedEffect(uiState.notifierModel?.message) {
-        val event = uiState.notifierModel ?: return@LaunchedEffect
-        if (event.message.isBlank()) return@LaunchedEffect
-
+    LaunchedEffect(uiState.notifierModel) {
+        val event = uiState.notifierModel
         hostState.currentSnackbarData?.dismiss()
+        if (event == null || event.message.isBlank()) return@LaunchedEffect
+
         hostState.showSnackbar(message = event.message, duration = event.snackbarDuration)
     }
 
