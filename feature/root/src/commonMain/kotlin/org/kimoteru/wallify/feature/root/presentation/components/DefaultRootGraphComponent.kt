@@ -7,10 +7,10 @@ import com.arkivanov.decompose.value.Value
 import kotlinx.serialization.Serializable
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationDefaultComponentCore
 import org.kimoteru.wallify.feature.auth.presentation.components.DefaultAuthComponent
+import org.kimoteru.wallify.feature.main.presentation.components.DefaultMainGraphComponent
 import org.kimoteru.wallify.feature.photo.presentation.components.DefaultPhotoComponent
 import org.kimoteru.wallify.feature.profile.presentation.components.DefaultProfileComponent
 import org.kimoteru.wallify.feature.profile.presentation.components.ProfileTarget
-import org.kimoteru.wallify.feature.main.presentation.components.DefaultMainGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract
 import org.kimoteru.wallify.feature.splash.presentation.components.DefaultSplashComponent
 import org.koin.core.component.get

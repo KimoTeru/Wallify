@@ -162,16 +162,17 @@ fun ProfileUi(
             )
         }
 
-        uiState.editForm?.let { form ->
-            ScreenOverlay {
-                ProfileEditOverlay(
-                    isSheet = isSheet,
-                    form = form,
-                    isSaving = uiState.isSaving,
-                    hasSaveError = uiState.hasSaveError,
-                    obtainEvent = obtainEvent
-                )
-            }
+    }
+
+    uiState.editForm?.let { form ->
+        ScreenOverlay {
+            ProfileEditOverlay(
+                isSheet = isSheet,
+                form = form,
+                isSaving = uiState.isSaving,
+                hasSaveError = uiState.hasSaveError,
+                obtainEvent = obtainEvent
+            )
         }
     }
 }

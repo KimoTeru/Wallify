@@ -44,10 +44,12 @@ AsyncImage(
 
 Тема — «Ночь» и «День» палитры Crystalline; пользователь выбирает `ThemeMode` (`System` / `Night` / `Day`) в
 настройках, значение лежит в `UserSettings.themeMode`. `RootGraphLogic` подписан на него и кладёт в состояние корня;
-платформенные приложения оборачивают `RootGraphUi` в `AppTheme(isDarkTheme = rootComponent.isDarkTheme())`
-(`RootGraphTheme.kt` в `feature:root`), сами `ThemeMode` не знают. Android-приложение дополнительно переключает цвет
-значков системных панелей (`enableEdgeToEdge` в `MainActivity`), потому что тема приложения может отличаться от
-системной.
+платформенные приложения читают `rootComponent.getUiState()` и оборачивают `RootGraphUi` в
+`AppTheme(isDarkTheme = uiState.themeMode.isDarkTheme())` (`ThemeModeUi.kt` в `core:presentation`), сами `ThemeMode`
+не знают. Значения состояния корня приложения берут из `UiState` напрямую: расширения-геттеры на компоненте
+(`RootGraphComponent.xxx() = getUiState().xxx`) не заводим, вычисление над экранным enum — функция в файле `XxxUi`.
+Android-приложение дополнительно переключает цвет значков системных панелей (`enableEdgeToEdge` в `MainActivity`),
+потому что тема приложения может отличаться от системной.
 
 ## Нет сети
 
@@ -146,7 +148,7 @@ Android — от ширины планшета, телефон нет). Поль
 может принудительно выбрать компоновку экрана в настройках (`ScreenLayout`): корень кладёт её в
 `LocalWindowTypeOverride`, а `rememberWindowType()` её учитывает — поэтому ветвим только через него, не читая размер
 окна напрямую. Окно Desktop при смене выбора (но не при запуске) само принимает типичную ширину этой компоновки
-(`AppTheme.size.window`): корень отдаёт приложению `requestedWindowType()` и `isSettingsLoaded()`. Там же
+(`AppTheme.size.window`): приложение берёт из `UiState` корня `screenLayout.windowType` и `isSettingsLoaded`. Там же
 минимальные ширина и высота окна (`minWidth`, `minHeight`): окно Desktop нельзя ужать меньше. При принудительных
 Medium и Expanded минимальная ширина растёт до `mediumMinWidth` и `expandedMinWidth`: навигации (рейлу, drawer) нужно
 место, иначе содержимое экранов сжимается до нескольких символов в строке. Сырые

@@ -12,11 +12,11 @@ import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.image.ClearImageCacheEffect
 import org.kimoteru.wallify.core.model.settings.SupportedLanguages
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerContract
+import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerUi
 import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ScreenLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ThemeModeUi
-import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerContract
-import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
 
@@ -67,10 +67,10 @@ fun RootGraphUi(
             component = component,
             uiState = uiState
         )
-
-        NotifierManagerUi(
-            uiState = uiState.notifierManagerState,
-            obtainUiEvent = { obtainUiEvent(RootGraphContract.UiEvent.NotifierManagerEvent(it)) }
-        )
     }
+
+    NotifierManagerUi(
+        uiState = uiState.notifierManagerState,
+        obtainUiEvent = { obtainUiEvent(RootGraphContract.UiEvent.NotifierManagerEvent(it)) }
+    )
 }

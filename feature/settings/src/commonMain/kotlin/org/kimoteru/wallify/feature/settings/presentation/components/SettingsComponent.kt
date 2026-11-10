@@ -20,17 +20,13 @@ import org.kimoteru.wallify.core.model.stats.TotalStats
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
-import org.kimoteru.wallify.core.presentation.settings.ImageQualityUi
-import org.kimoteru.wallify.core.presentation.settings.PhotoColumnsUi
-import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
-import org.kimoteru.wallify.core.presentation.settings.ScreenLayoutUi
-import org.kimoteru.wallify.core.presentation.settings.ThemeModeUi
 import org.kimoteru.wallify.core.presentation.settings.toDomain
 import org.kimoteru.wallify.core.presentation.settings.toPhotoColumns
 import org.kimoteru.wallify.core.presentation.settings.toPresentation
 import org.kimoteru.wallify.feature.settings.presentation.ui.SettingsContract.UiEvent
 import org.kimoteru.wallify.feature.settings.presentation.ui.SettingsContract.UiState
 import org.koin.core.annotation.Factory
+
 interface SettingsComponent : BaseComponent<UiState, UiEvent>
 
 /**
@@ -75,77 +71,46 @@ class SettingsLogic(
 
     override fun onCreate() {
         coroutineScope.launch {
-            statsRepository.getTotalStatsFlow().collect { resource ->
-                if (resource is Resource.Success) updateTotalStats(resource.data)
+            launch {
+                statsRepository.getTotalStatsFlow().collect { resource ->
+                    if (resource is Resource.Success) updateTotalStats(resource.data)
+                }
             }
-        }
 
-        coroutineScope.launch {
-            statsRepository.getMonthStatsFlow().collect { resource ->
-                if (resource is Resource.Success) updateMonthStats(resource.data)
+            launch {
+                statsRepository.getMonthStatsFlow().collect { resource ->
+                    if (resource is Resource.Success) updateMonthStats(resource.data)
+                }
             }
         }
     }
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {
-            is UiEvent.SelectTheme -> selectTheme(event.themeMode)
-            is UiEvent.SelectPhotoLayout -> selectPhotoLayout(event.photoLayout)
-            is UiEvent.SelectPhotoColumns -> selectPhotoColumns(event.columns)
-            is UiEvent.SelectScreenLayout -> selectScreenLayout(event.screenLayout)
-            is UiEvent.SelectListImageQuality -> selectListImageQuality(event.quality)
-            is UiEvent.SelectDetailImageQuality -> selectDetailImageQuality(event.quality)
-            is UiEvent.SelectDownloadImageQuality -> selectDownloadImageQuality(event.quality)
-            is UiEvent.SelectLanguage -> selectLanguage(event.languageTag)
-            is UiEvent.SignOut -> coroutineScope.launch { authRepository.signOut() }
+            is UiEvent.SelectTheme -> saveSettings { copy(themeMode = event.themeMode.toDomain()) }
+            is UiEvent.SelectPhotoLayout -> saveSettings { copy(photoLayout = event.photoLayout.toDomain()) }
+            is UiEvent.SelectPhotoColumns -> saveSettings { copy(photoColumns = event.columns.toDomain()) }
+            is UiEvent.SelectScreenLayout -> saveSettings { copy(screenLayout = event.screenLayout.toDomain()) }
+            is UiEvent.SelectListImageQuality -> saveSettings { copy(listImageQuality = event.quality.toDomain()) }
+            is UiEvent.SelectDetailImageQuality -> saveSettings { copy(detailImageQuality = event.quality.toDomain()) }
+            is UiEvent.SelectDownloadImageQuality -> saveSettings {
+                copy(downloadImageQuality = event.quality.toDomain())
+            }
+            is UiEvent.SelectLanguage -> saveSettings { copy(languageTag = event.languageTag) }
+            is UiEvent.SignOut -> signOut()
         }
     }
 
-    private fun selectTheme(themeMode: ThemeModeUi) {
+    /** Every choice on the screen is one field of the saved settings: the rest of them stay as they are. */
+    private fun saveSettings(change: UserSettings.() -> UserSettings) {
         coroutineScope.launch {
-            updateUserSettings(settings.value.copy(themeMode = themeMode.toDomain()))
+            updateUserSettings(settings.value.change())
         }
     }
 
-    private fun selectPhotoLayout(photoLayout: PhotoLayoutUi) {
+    private fun signOut() {
         coroutineScope.launch {
-            updateUserSettings(settings.value.copy(photoLayout = photoLayout.toDomain()))
-        }
-    }
-
-    private fun selectPhotoColumns(columns: PhotoColumnsUi) {
-        coroutineScope.launch {
-            updateUserSettings(settings.value.copy(photoColumns = columns.toDomain()))
-        }
-    }
-
-    private fun selectScreenLayout(screenLayout: ScreenLayoutUi) {
-        coroutineScope.launch {
-            updateUserSettings(settings.value.copy(screenLayout = screenLayout.toDomain()))
-        }
-    }
-
-    private fun selectListImageQuality(quality: ImageQualityUi) {
-        coroutineScope.launch {
-            updateUserSettings(settings.value.copy(listImageQuality = quality.toDomain()))
-        }
-    }
-
-    private fun selectDetailImageQuality(quality: ImageQualityUi) {
-        coroutineScope.launch {
-            updateUserSettings(settings.value.copy(detailImageQuality = quality.toDomain()))
-        }
-    }
-
-    private fun selectDownloadImageQuality(quality: ImageQualityUi) {
-        coroutineScope.launch {
-            updateUserSettings(settings.value.copy(downloadImageQuality = quality.toDomain()))
-        }
-    }
-
-    private fun selectLanguage(languageTag: String) {
-        coroutineScope.launch {
-            updateUserSettings(settings.value.copy(languageTag = languageTag))
+            authRepository.signOut()
         }
     }
 

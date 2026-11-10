@@ -15,9 +15,9 @@ import org.kimoteru.wallify.core.designsystem.ui.network.LocalIsOnline
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridColumns
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
 import org.kimoteru.wallify.feature.auth.presentation.ui.AuthUi
+import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphUi
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileUi
-import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
 import org.kimoteru.wallify.feature.splash.presentation.ui.SplashUi
