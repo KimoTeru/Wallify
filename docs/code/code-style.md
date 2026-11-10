@@ -38,8 +38,15 @@ Related: `code/presentation.md`, `code/di.md`, `architecture/overview.md` § П�
 - **Конец файла.** Файл заканчивается сразу после последнего символа кода: ни пустых строк, ни отступа снизу.
   Финальный перевод строки не добавляем (`insert_final_newline = false`). Это правило для каждого файла: Kotlin,
   Gradle, Markdown, XML, TOML, JSON.
-- **Trailing comma.** Не ставим нигде (параметры, аргументы, `data class`, перечисления): так настроен форматтер IDE
-  в `.editorconfig`, и Reformat Code приводит весь код к этому виду.
+- **Trailing comma.** В объявлениях, где каждый параметр или элемент стоит на своей строке, после последнего ставим
+  запятую: параметры функции и конструктора, поля `data class`, варианты `enum`, параметры `sealed`-вариантов. В
+  вызовах (аргументы функции, именованные аргументы, `Koin`-модули) запятую после последнего аргумента не ставим.
+  `.editorconfig` задаёт то же (`ij_kotlin_allow_trailing_comma = true`, `…_on_call_site = false`), поэтому Reformat
+  Code приводит код к этому виду. Почему в объявлениях: добавление параметра не меняет предыдущую строку в diff.
+- **Порядок членов.** Класс (логика, репозиторий, модуль): зависимости и `by lazy` → состояние (`uiState`) →
+  жизненный цикл (`onCreate`, `onResume`, …) → публичные точки входа (`obtainUiEvent`, `load`) → приватные функции.
+  Тип, на который ссылается класс (`sealed interface XxxNavigationEvent`, `Destination`), — после класса, в том же
+  файле. Файл Ui: `@Preview` → аргументы экрана (`@Serializable`) → Contract → `XxxUi` → приватные composable блоков.
 - **`when` по типам.** Если ветки — типы из `sealed`-иерархии (`class`, `data class`, `data object`), всегда пишем
   `is`: `is UiEvent.Close -> …`, `is Child.Home -> …`. Без `is` — только значения: `enum` и константы
   (`BlurLevel.Small -> …`).
