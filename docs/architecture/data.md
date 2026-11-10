@@ -16,8 +16,14 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   пробрасывается, остальное становится `Response.Error`.
 - Типизированная ошибка (код, enum бэкенда) — `DetailedResponse<T, E>`; `executeRequestWithErrorCode` возвращает
   `DetailedResponse<T, Int>`.
-- Состояние загрузки для UI — `Resource<T>` (`Loading` / `Success` / `Error`), строится через `asResource()` и
-  `asResourceFlow()`.
+- `Resource<T>` (`Loading` / `Success` / `Error`) — не второй тип результата, а состояние потока для UI: оболочка
+  значений `Flow` с загрузкой, в первую очередь данных из кэша Room (`Flow<Resource<T>>`, § Кэш). `Response<T>` —
+  итог разовой операции (`suspend`-вызов, запрос к API, действие пользователя): он уже получен, у него нет состояния
+  «грузится». Правило: разовая операция возвращает `Response`, поток значений, за которым экран следит, —
+  `Flow<Resource<T>>`. `Response` превращается в `Resource` через `asResource()`, поток ответов —
+  `asResourceFlow()` (добавляет `Loading` в начало); `Flow<T>.asResource()` оборачивает значения в `Success`, а
+  исключение (кроме `CancellationException`) превращает в `Resource.Error`. Обратного перехода нет: слои данных
+  `Resource` не принимают.
 - `catch (e: Exception)` в `suspend`-коде всегда пропускает `CancellationException`.
 
 ## Сеть
@@ -124,7 +130,7 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 |---|---|---|
 | Реляционные данные и кэш ответов бэкенда | `core:database` (Room KMP) | Правка сущности — новая версия `AppDatabase`; миграций нет: база хранит только копию данных бэкенда и при смене схемы пересоздаётся (`fallbackToDestructiveMigration`). Схема экспортируется в `schemas/`. Пока проект не выпущен; перед релизом это правило пересматривается. Устройство кэша — § Кэш |
 | Настройки и маленькие значения | `core:datastore` (`DataStorePrefs`) | `core:datastore` — только хранилище ключ-значение без смысла полей. Что именно хранится (например, язык), описывает модель в `core:model`, маппинг и доступ — `core:data`; feature читает только через репозиторий |
-| Скачанные файлы | `FileDownloader` (`core:data`), каталог из `CacheDirectoryProvider` (`core:cache`) | Только файлы; кэша данных в памяти и на диске рядом с Room нет |
+| Скачанные файлы | `FileDownloader` (`core:data`), каталог из `CacheDirectoryProvider` (`core:storage`) | Только файлы; кэша данных в памяти и на диске рядом с Room нет |
 
 - Размер, положение и «развёрнуто» окна Desktop хранит `WindowStateStore` в `desktopApp` (`java.util.prefs`): это
   состояние платформенного окна, а не пользовательская настройка, поэтому в `UserSettings` и DataStore его нет.
@@ -202,6 +208,11 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   Первая страница — 1; страница короче запрошенной — последняя. `initialLoadSize` равен `pageSize`, не меняем:
   иначе арифметика номеров страниц ломается.
 - Ошибка страницы приходит как `PagingLoadException` с HTTP-кодом.
+- Компромисс, принятый сознательно: доменные интерфейсы (`core:domain`) отдают `Flow<PagingData<T>>` из AndroidX
+  Paging, поэтому `paging-common` объявлен в `core:common` как `api` и виден `core:domain`, `core:data` и фичам. Свой
+  доменный тип страницы не вводим: он дублировал бы `PagingData`, а `cachedIn` и `collectAsLazyPagingItems()` всё
+  равно требуют его. Другие типы библиотек Paging (`PagingSource`, `RemoteMediator`) живут в `core:common`, `core:database` и
+  `core:data` и выше не поднимаются.
 - В `Logic` поток кэшируется `cachedIn(coroutineScope)`, в Ui — `collectAsLazyPagingItems()` (`design/foundations.md`
   § Списки).
 - Ошибка `RemoteMediator` тоже приходит как `PagingLoadException` с HTTP-кодом: экран показывает её, только если

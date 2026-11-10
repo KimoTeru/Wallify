@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.core.cache
+package org.kimoteru.wallify.core.storage
 
 import java.io.File
 import okio.Path

@@ -14,7 +14,7 @@ import org.kimoteru.wallify.buildlogic.extension.libsPlugin
 private val graphProjects = listOf(
     ":core:platform",
     ":core:network",
-    ":core:cache",
+    ":core:storage",
     ":core:database",
     ":core:datastore",
     ":core:data",

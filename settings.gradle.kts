@@ -47,7 +47,7 @@ include(":core:design-system")
 include(":core:resources")
 include(":core:database")
 include(":core:datastore")
-include(":core:cache")
+include(":core:storage")
 
 include(":feature:root")
 include(":feature:main")

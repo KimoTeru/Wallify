@@ -21,7 +21,7 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 | `core:data` | Реализации репозиториев, сессия, скачивание файлов |
 | `core:model` | Чистые `@Serializable` модели |
 | `core:network` | Ktor-клиент, `Response`-обёртка запросов, API-классы, модели запросов и ответов с мапперами в доменные модели, мониторинг сети |
-| `core:database`, `core:datastore`, `core:cache` | Room (кэш данных), DataStore, каталог для скачанных файлов |
+| `core:database`, `core:datastore`, `core:storage` | Room (кэш данных), DataStore, каталог для скачанных файлов |
 | `core:platform` | `expect`/`actual`: диспетчеры, время, язык, буфер обмена, переходы по системным ссылкам |
 | `core:common` | Без зависимостей на другие `core`: `Response`, `AppDispatchers`, пагинация, расширения, flow-утилиты |
 
@@ -64,7 +64,7 @@ flowchart TB
         network["core:network"]
         database["core:database"]
         datastore["core:datastore"]
-        cache["core:cache"]
+        storage["core:storage"]
         platform["core:platform"]
     end
 
@@ -96,7 +96,7 @@ flowchart TB
     database --> model
     data --> database
     data --> datastore
-    data --> cache
+    data --> storage
     data --> platform
     infra -.-> common
     business -.-> common
@@ -126,8 +126,13 @@ flowchart TB
 - Поддерживаются Android и Desktop (JVM). iOS-таргетов нет; добавлять их без просьбы не нужно.
 - В `commonMain` — только мультиплатформенные API: `kotlin.*`, `kotlinx.*`, Compose Multiplatform, Ktor, Room KMP,
   Koin. Без `android.*`, `java.*`, `javax.*`.
-- Платформенная реализация — `expect`/`actual` в одном модуле (`core:platform`, `core:cache`, `core:datastore`,
-  `core:database`, `core:network`): интерфейс или `expect` в `commonMain`, реализации в `androidMain` и `jvmMain`.
+- Платформенная реализация — `expect`/`actual` в одном модуле: интерфейс или `expect` в `commonMain`, реализации в
+  `androidMain` и `jvmMain`. Такой код есть в `core:platform`, `core:storage`, `core:datastore`, `core:database`,
+  `core:network`, `core:design-system` (язык приложения, признак широкого макета) и `core:presentation`
+  (`PlatformBackHandler`). Новая платформенная часть в другом модуле допустима, если она нужна самому модулю; список
+  выше при этом дополняется.
+- Исключение — `take_permission` в `core:presentation`: он есть только в `androidMain`, на Desktop разрешений нет
+  и аналога не нужно (`code/presentation.md` § Общие блоки).
 - Если `androidMain` и `jvmMain` нужен один и тот же JVM-код, пока допустимо небольшое дублирование; общий
   промежуточный source set заводится только по просьбе.
 - `TODO` и `return null` вместо реализации на одной из платформ не оставляем.

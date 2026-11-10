@@ -34,7 +34,7 @@ Ui (Compose)
                       │    └─ Api  Ktor, ответ → Response              (core:network)
                       ├─ Dao        Room                        (core:database)
                       ├─ Prefs      DataStore                   (core:datastore)
-                      └─ Files      каталог скачанных файлов    (core:cache)
+                      └─ Files      каталог скачанных файлов    (core:storage)
 ```
 
 Стрелки только вниз; никто не знает про слой выше себя.
