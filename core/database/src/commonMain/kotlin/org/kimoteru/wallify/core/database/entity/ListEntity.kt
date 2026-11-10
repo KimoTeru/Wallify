@@ -19,7 +19,10 @@ data class ListEntryEntity(
     val itemId: String
 )
 
-/** When the list [listKey] was last loaded from the backend; a list without a row has never been loaded. */
+/**
+ * When the list or the single item [listKey] was last loaded from the backend; a key without a row has never been
+ * loaded (or was made stale). Items use keys that start with `item:`, so they never meet the keys of lists.
+ */
 @Entity(tableName = "list_state")
 data class ListStateEntity(
     @PrimaryKey val listKey: String,

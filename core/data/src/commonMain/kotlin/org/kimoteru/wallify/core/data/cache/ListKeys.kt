@@ -75,3 +75,29 @@ internal object StatisticsKeys {
 
     fun user(username: String, quantity: Int?): String = "user:${username.lowercase()}:${quantity ?: 0}"
 }
+
+/**
+ * Keys under which `list_state` keeps the age of single items (the same table as for lists, told apart by the
+ * `item:` start). The key of a statistics row is `item:` + its [StatisticsKeys] key, which is how the rows of
+ * statistics whose age was pruned are found.
+ */
+internal object ItemKeys {
+
+    const val TOTAL_STATS = "item:stats:total"
+    const val MONTH_STATS = "item:stats:month"
+
+    /** Every item key of one user: the profile and the statistics. */
+    fun userPrefix(username: String): String = "item:user:${username.lowercase()}:"
+
+    fun user(username: String): String = "${userPrefix(username)}profile"
+
+    fun userStatistics(username: String, quantity: Int?): String = "item:${StatisticsKeys.user(username, quantity)}"
+
+    fun photo(id: String): String = "item:photo:$id:details"
+
+    fun photoStatistics(id: String, quantity: Int?): String = "item:${StatisticsKeys.photo(id, quantity)}"
+
+    fun collection(id: Int): String = "item:collection:$id"
+
+    fun topic(idOrSlug: String): String = "item:topic:$idOrSlug"
+}

@@ -146,6 +146,43 @@ class ListRemoteMediatorTest {
         assertEquals(emptyList(), requestedPages)
     }
 
+    @Test
+    fun `refresh runs even when the list is fresh`() = runTest {
+        backend = listOf("a", "b")
+        listDao.states[LIST_KEY] = 900L
+
+        val result = mediator.load(LoadType.REFRESH, state)
+
+        assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = false), result)
+        assertEquals(listOf(1), requestedPages)
+    }
+
+    @Test
+    fun `refresh with the same items does not write the list again`() = runTest {
+        backend = listOf("a", "b", "c", "d", "e")
+        mediator.load(LoadType.REFRESH, state)
+        mediator.load(LoadType.APPEND, state)
+        val writes = listDao.insertCalls
+
+        mediator.load(LoadType.REFRESH, state)
+
+        assertEquals(writes, listDao.insertCalls)
+        assertEquals(listOf("a", "b"), listDao.itemIds(LIST_KEY).take(2))
+    }
+
+    @Test
+    fun `refresh with another first page writes the list`() = runTest {
+        backend = listOf("a", "b", "c")
+        mediator.load(LoadType.REFRESH, state)
+        val writes = listDao.insertCalls
+        backend = listOf("x", "a", "b")
+
+        mediator.load(LoadType.REFRESH, state)
+
+        assertEquals(writes + 1, listDao.insertCalls)
+        assertEquals(listOf("x", "a"), listDao.itemIds(LIST_KEY))
+    }
+
     private companion object {
         const val LIST_KEY = "test:list"
         const val PAGE_SIZE = 2

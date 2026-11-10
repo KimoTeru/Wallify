@@ -19,6 +19,11 @@ import kotlin.time.Duration
  *
  * `initialLoadSize` equals the page size, so every request has the same size and the page arithmetic of the mediator
  * stays correct.
+ *
+ * Placeholders are on: Room invalidates the source on any write to its tables, and the reloaded source starts at the
+ * refresh key `anchorPosition - initialLoadSize / 2`, which is an offset in the table. Without placeholders the
+ * anchor is counted from the first loaded item, not from the table, so every second reload would start at the wrong
+ * offset and the list would jump. With them the indexes of the list are the offsets, and the scroll position stays.
  */
 @OptIn(ExperimentalPagingApi::class)
 internal fun <E : Any, T : Any> CacheLoader.pager(
@@ -34,7 +39,7 @@ internal fun <E : Any, T : Any> CacheLoader.pager(
         pageSize = DEFAULT_PAGE_SIZE,
         prefetchDistance = DEFAULT_PAGE_SIZE,
         initialLoadSize = DEFAULT_PAGE_SIZE,
-        enablePlaceholders = false
+        enablePlaceholders = true
     ),
     remoteMediator = ListRemoteMediator<E, T>(
         listKey = listKey,

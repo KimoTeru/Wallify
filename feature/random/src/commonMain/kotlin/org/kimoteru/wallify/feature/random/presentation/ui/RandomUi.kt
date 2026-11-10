@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -28,7 +27,12 @@ import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridLayout
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMessage
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridShimmer
+import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
+import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.DefaultPullToRefreshBox
+import org.kimoteru.wallify.core.domain.photo.forQuality
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
+import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.feature.random.presentation.components.RandomComponent
 import org.kimoteru.wallify.core.resources.generated.resources.Res
@@ -41,7 +45,8 @@ object RandomContract {
     data class UiState(
         val photos: List<Photo> = emptyList(),
         val isLoading: Boolean = false,
-        val hasError: Boolean = false
+        val hasError: Boolean = false,
+        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality
     ) : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent {
@@ -75,7 +80,8 @@ fun RandomUi(
     val uiState = component.getUiState()
     val obtainEvent = component::obtainUiEvent
     val screenPadding = rememberScreenPadding()
-    val gridState = rememberLazyStaggeredGridState()
+    // A shuffle brings a new set: it opens at the top, not where the previous one was left.
+    val gridState = rememberPhotoGridState(uiState.photos.firstOrNull()?.id)
 
     FloatingBarScreen(
         modifier = modifier,
@@ -124,24 +130,33 @@ fun RandomUi(
                     onAction = { obtainEvent(RandomContract.UiEvent.Shuffle) }
                 )
 
-                else -> PhotoGridLayout(
+                // Pulling the set down is the same as the shuffle button: a new set.
+                else -> DefaultPullToRefreshBox(
                     modifier = Modifier.fillMaxSize(),
-                    state = gridState,
-                    contentPadding = listPadding
+                    isRefreshing = uiState.isLoading,
+                    onRefresh = { obtainEvent(RandomContract.UiEvent.Shuffle) },
+                    indicatorPadding = PaddingValues(top = topPadding)
                 ) {
-                    items(
-                        items = uiState.photos,
-                        key = { photo -> photo.id }
-                    ) { photo ->
-                        PhotoCard(
-                            imageUrl = photo.urls.regular,
-                            width = photo.width,
-                            height = photo.height,
-                            colorHex = photo.color,
-                            authorName = photo.user?.name,
-                            authorAvatarUrl = photo.user?.profileImage?.small,
-                            onClick = { obtainEvent(RandomContract.UiEvent.OpenPhoto(photo.id)) }
-                        )
+                    PhotoGridLayout(
+                        modifier = Modifier.fillMaxSize(),
+                        state = gridState,
+                        contentPadding = listPadding
+                    ) {
+                        items(
+                            items = uiState.photos,
+                            key = { photo -> photo.id }
+                        ) { photo ->
+                            PhotoCard(
+                                imageUrl = photo.urls.forQuality(uiState.listImageQuality),
+                                lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
+                                width = photo.width,
+                                height = photo.height,
+                                colorHex = photo.color,
+                                authorName = photo.user?.name,
+                                authorAvatarUrl = photo.user?.profileImage?.small,
+                                onClick = { obtainEvent(RandomContract.UiEvent.OpenPhoto(photo.id)) }
+                            )
+                        }
                     }
                 }
             }

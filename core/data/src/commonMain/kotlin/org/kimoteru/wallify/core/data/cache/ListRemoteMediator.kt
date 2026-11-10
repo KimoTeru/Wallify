@@ -18,7 +18,8 @@ import kotlin.time.Duration
  * - Opening the list: a list younger than [ttl] is shown as it is, an older one (or one never loaded) is refreshed.
  *   The screen reads the list from the database only; what [fetch] returns reaches it through [saveItems].
  * - Refresh: the first page replaces the head of the saved list, so the list on screen stays until the new data lands.
- *   If the backend fails, the saved list stays and Paging reports the failure through `LoadState.refresh`.
+ *   If the backend fails, the saved list stays and Paging reports the failure through `LoadState.refresh`. A refresh
+ *   of the user (`LazyPagingItems.refresh()`) always runs, whatever the age of the list.
  * - Append: the next page is derived from how many items are saved, so it works after a restart too.
  * - The last page is the first one shorter than requested.
  */
@@ -34,8 +35,7 @@ internal class ListRemoteMediator<E : Any, T : Any>(
 ) : RemoteMediator<Int, E>() {
 
     override suspend fun initialize(): InitializeAction {
-        val updatedAt = listDao.getUpdatedAt(listKey)
-        val isFresh = updatedAt != null && loader.isFresh(updatedAt, ttl)
+        val isFresh = loader.isFresh(listKey, ttl)
         return if (isFresh) InitializeAction.SKIP_INITIAL_REFRESH else InitializeAction.LAUNCH_INITIAL_REFRESH
     }
 

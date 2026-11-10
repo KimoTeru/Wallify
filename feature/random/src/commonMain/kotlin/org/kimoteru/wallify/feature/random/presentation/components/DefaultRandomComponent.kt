@@ -1,7 +1,6 @@
 package org.kimoteru.wallify.feature.random.presentation.components
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.essenty.instancekeeper.getOrCreate
 import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponent
 import org.kimoteru.wallify.feature.random.presentation.ui.RandomContract.UiEvent
 import org.kimoteru.wallify.feature.random.presentation.ui.RandomContract.UiState
@@ -15,7 +14,7 @@ class DefaultRandomComponent(
 ),
     RandomComponent {
 
-    override val logic: RandomLogic = instanceKeeper.getOrCreate { get<RandomLogic>() }
+    override val logic: RandomLogic = retainedLogic { get<RandomLogic>() }
 
     override fun obtainNavigateEvent(event: RandomNavigationEvent) {
         when (event) {

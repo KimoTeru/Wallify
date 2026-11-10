@@ -36,8 +36,13 @@ import org.kimoteru.wallify.core.designsystem.ui.paging.isEmpty
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
 import org.kimoteru.wallify.core.designsystem.ui.paging.keyAt
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCard
+import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCardPlaceholder
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridLayout
+import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
+import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.DefaultPullToRefreshBox
+import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.common_photos_empty
@@ -61,6 +66,8 @@ fun ProfileGrid(
     contentPadding: PaddingValues,
     obtainEvent: (ProfileContract.UiEvent) -> Unit
 ) {
+    val appRatio = AppTheme.ratio
+
     val openedCollection = uiState.openedCollection?.takeIf {
         uiState.selectedTab != ProfileContract.Tab.Photos
     }
@@ -74,63 +81,90 @@ fun ProfileGrid(
         if (collectionPaging != null) Res.string.profile_collections_empty else Res.string.common_photos_empty
     )
 
-    PhotoGridLayout(contentPadding = contentPadding) {
-        item(key = HEADER_KEY, span = StaggeredGridItemSpan.FullLine) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                ProfileHeader(
-                    uiState = uiState,
-                    obtainEvent = obtainEvent
-                )
-            }
-        }
+    // The photos, the collections and the photos of a collection are three lists in one grid: each opens at the top.
+    val gridState = rememberPhotoGridState(uiState.selectedTab, openedCollection?.id)
 
-        openedCollection?.let { collection ->
-            item(key = SUB_HEADER_KEY, span = StaggeredGridItemSpan.FullLine) {
-                CollectionTitle(
-                    collection = collection,
-                    onBack = { obtainEvent(ProfileContract.UiEvent.CloseCollection) }
-                )
-            }
-        }
+    // Pull to refresh asks the backend for the list on screen, whatever its age.
+    val listPaging = photoPaging ?: collectionPaging
 
-        photoPaging?.let { paging ->
-            items(
-                count = paging.itemCount,
-                key = { index -> paging.keyAt(index) { photo -> photo.id } }
-            ) { index ->
-                paging[index]?.let { photo ->
-                    PhotoCard(
-                        imageUrl = photo.urls.regular,
-                        width = photo.width,
-                        height = photo.height,
-                        colorHex = photo.color,
-                        authorName = null,
-                        authorAvatarUrl = null,
-                        onClick = { obtainEvent(ProfileContract.UiEvent.OpenPhoto(photo.id)) }
+    DefaultPullToRefreshBox(
+        modifier = Modifier.fillMaxSize(),
+        isRefreshing = listPaging?.let { it.isRefreshing && it.itemCount > 0 } == true,
+        onRefresh = { listPaging?.refresh() },
+        indicatorPadding = PaddingValues(top = contentPadding.calculateTopPadding())
+    ) {
+        PhotoGridLayout(
+            modifier = Modifier.fillMaxSize(),
+            state = gridState,
+            contentPadding = contentPadding
+        ) {
+            item(key = HEADER_KEY, span = StaggeredGridItemSpan.FullLine) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    ProfileHeader(
+                        uiState = uiState,
+                        obtainEvent = obtainEvent
                     )
                 }
             }
 
-            statusItems(paging = paging, emptyText = emptyText)
-        }
-
-        collectionPaging?.let { paging ->
-            items(
-                count = paging.itemCount,
-                key = { index -> paging.keyAt(index) { collection -> collection.id } }
-            ) { index ->
-                paging[index]?.let { collection ->
-                    CollectionCard(
+            openedCollection?.let { collection ->
+                item(key = SUB_HEADER_KEY, span = StaggeredGridItemSpan.FullLine) {
+                    CollectionTitle(
                         collection = collection,
-                        onClick = { obtainEvent(ProfileContract.UiEvent.OpenCollection(collection)) }
+                        onBack = { obtainEvent(ProfileContract.UiEvent.CloseCollection) }
                     )
                 }
             }
 
-            statusItems(paging = paging, emptyText = emptyText)
+            photoPaging?.let { paging ->
+                items(
+                    count = paging.itemCount,
+                    key = { index -> paging.keyAt(index) { photo -> photo.id } }
+                ) { index ->
+                    val photo = paging[index]
+
+                    if (photo != null) {
+                        PhotoCard(
+                            imageUrl = photo.urls.forQuality(uiState.listImageQuality),
+                            lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
+                            width = photo.width,
+                            height = photo.height,
+                            colorHex = photo.color,
+                            authorName = null,
+                            authorAvatarUrl = null,
+                            onClick = { obtainEvent(ProfileContract.UiEvent.OpenPhoto(photo.id)) }
+                        )
+                    } else {
+                        PhotoCardPlaceholder()
+                    }
+                }
+
+                statusItems(paging = paging, emptyText = emptyText)
+            }
+
+            collectionPaging?.let { paging ->
+                items(
+                    count = paging.itemCount,
+                    key = { index -> paging.keyAt(index) { collection -> collection.id } }
+                ) { index ->
+                    val collection = paging[index]
+
+                    if (collection != null) {
+                        CollectionCard(
+                            collection = collection,
+                            imageQuality = uiState.listImageQuality,
+                            onClick = { obtainEvent(ProfileContract.UiEvent.OpenCollection(collection)) }
+                        )
+                    } else {
+                        PhotoCardPlaceholder(aspectRatio = appRatio.image.landscape)
+                    }
+                }
+
+                statusItems(paging = paging, emptyText = emptyText)
+            }
         }
     }
 }
@@ -206,6 +240,7 @@ private fun CollectionTitle(
 @Composable
 private fun CollectionCard(
     collection: PhotoCollection,
+    imageQuality: ImageQuality,
     onClick: () -> Unit
 ) {
     val appColor = AppTheme.color
@@ -225,7 +260,7 @@ private fun CollectionCard(
     ) {
         CachedAsyncImage(
             modifier = Modifier.fillMaxSize(),
-            model = collection.coverPhoto?.urls?.small
+            model = collection.coverPhoto?.urls?.forQuality(imageQuality)
         )
 
         Column(

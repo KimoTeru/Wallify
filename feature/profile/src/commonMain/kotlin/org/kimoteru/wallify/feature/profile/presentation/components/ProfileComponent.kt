@@ -21,6 +21,8 @@ import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.handleResponse
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
+import org.kimoteru.wallify.core.domain.usecase.invoke
+import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.stats.Statistics
@@ -63,7 +65,8 @@ interface ProfileComponent : BaseComponentCore<UiState, UiEvent, ComponentEvent>
 class ProfileLogic(
     @InjectedParam private val target: ProfileTarget,
     private val userRepository: UserRepository,
-    private val collectionRepository: CollectionRepository
+    private val collectionRepository: CollectionRepository,
+    private val observeUserSettings: ObserveUserSettingsUseCase
 ) : BaseLogicCore<UiState, UiEvent, ProfileNavigationEvent, ComponentEvent>() {
 
     override val uiState: StateFlow<UiState>
@@ -97,6 +100,14 @@ class ProfileLogic(
     private var isUploadPending = false
 
     override fun onCreate() {
+        coroutineScope.launch {
+            launch {
+                observeUserSettings()
+                    .mapDistinctBy { settings -> settings.listImageQuality }
+                    .collect { quality -> uiState.update { it.copy(listImageQuality = quality) } }
+            }
+        }
+
         showSavedUser()
         load()
     }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -37,9 +38,19 @@ import org.kimoteru.wallify.core.designsystem.ui.paging.isEmpty
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
 import org.kimoteru.wallify.core.designsystem.ui.paging.keyAt
 import org.kimoteru.wallify.core.designsystem.ui.paging.refreshError
+import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.DefaultPullToRefreshBox
 import org.kimoteru.wallify.core.designsystem.ui.shimmer.ShimmerBox
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.common_retry
+
+/**
+ * Scroll state of a grid that shows one list at a time. It survives a rotation and the screen leaving the stack, and
+ * starts again at the top when any of [keys] changes: the list is another one (a topic, a search, a tab, a new set),
+ * and the position in the old one means nothing there. Without the keys a new list opens already scrolled.
+ */
+@Composable
+fun rememberPhotoGridState(vararg keys: Any?): LazyStaggeredGridState =
+    rememberSaveable(*keys, saver = LazyStaggeredGridState.Saver) { LazyStaggeredGridState() }
 
 /**
  * Grid of photo cards: columns by window width and by the chosen [PhotoGridMode], cards separated by the grid
@@ -117,8 +128,10 @@ fun PhotoGridShimmer(
 }
 
 /**
- * Photo masonry over a paged list with every state: shimmer while loading, an error with retry, an empty message
- * and a loader under the list while the next page loads. [itemContent] draws one item, usually a [PhotoCard].
+ * Photo masonry over a paged list with every state: shimmer while loading, an error with retry, an empty message,
+ * a loader under the list while the next page loads and pull to refresh, which asks the backend whatever the age of
+ * the list. [itemContent] draws one item, usually a [PhotoCard]; an item that is not loaded yet is a
+ * [PhotoCardPlaceholder].
  */
 @Composable
 fun <T : Any> PagingPhotoGrid(
@@ -157,27 +170,36 @@ fun <T : Any> PagingPhotoGrid(
             title = emptyText
         )
 
-        else -> PhotoGridLayout(
+        else -> DefaultPullToRefreshBox(
             modifier = modifier,
-            state = state,
-            contentPadding = contentPadding
+            isRefreshing = paging.isRefreshing,
+            onRefresh = { paging.refresh() },
+            indicatorPadding = PaddingValues(top = contentPadding.calculateTopPadding())
         ) {
-            items(
-                count = paging.itemCount,
-                key = { index -> paging.keyAt(index) { itemKey(it) } }
-            ) { index ->
-                paging[index]?.let { itemContent(it) }
-            }
+            PhotoGridLayout(
+                modifier = Modifier.fillMaxSize(),
+                state = state,
+                contentPadding = contentPadding
+            ) {
+                items(
+                    count = paging.itemCount,
+                    key = { index -> paging.keyAt(index) { itemKey(it) } }
+                ) { index ->
+                    val item = paging[index]
 
-            if (paging.isAppending) {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(appPadding.medium),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        DefaultProgressIndicator()
+                    if (item != null) itemContent(item) else PhotoCardPlaceholder()
+                }
+
+                if (paging.isAppending) {
+                    item(span = StaggeredGridItemSpan.FullLine) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(appPadding.medium),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            DefaultProgressIndicator()
+                        }
                     }
                 }
             }

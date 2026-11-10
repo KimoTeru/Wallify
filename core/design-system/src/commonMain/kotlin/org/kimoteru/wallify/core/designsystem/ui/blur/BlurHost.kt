@@ -23,9 +23,9 @@ object BlurSourceZIndex {
 }
 
 /**
- * Creates the blur scope for everything inside it. Place it once, at the root of the app, then mark the content
- * that has to be blurred with [blurSource] and draw dialogs, sheets and similar overlays next to that content,
- * not inside it. See `docs/design/foundations.md`.
+ * Creates the blur scope for everything inside it. Place it once per screen (the root stack wraps every screen in
+ * one), then mark the content that has to be blurred with [blurSource] and draw dialogs, sheets and similar overlays
+ * next to that content, not inside it. See `docs/design/foundations.md`.
  */
 @Composable
 fun BlurHost(

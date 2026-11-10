@@ -2,6 +2,7 @@ package org.kimoteru.wallify.core.data.remote
 
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.map
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.RandomPhotoQuery
 import org.kimoteru.wallify.core.model.photo.UpdatePhotoParams
@@ -9,6 +10,7 @@ import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.network.api.PhotosApi
 import org.kimoteru.wallify.core.network.model.request.photo.toRequest
 import org.kimoteru.wallify.core.network.model.response.photo.toDomain
+import org.kimoteru.wallify.core.network.model.response.photo.toFileUrl
 import org.kimoteru.wallify.core.network.model.response.stats.toDomain
 import org.koin.core.annotation.Singleton
 
@@ -42,9 +44,9 @@ class PhotoRemoteDataSourceImpl(
             .map { it.toDomain() }
     }
 
-    override suspend fun trackDownload(id: String): Response<String> {
+    override suspend fun trackDownload(id: String, quality: ImageQuality): Response<String> {
         return photosApi.trackDownload(id = id)
-            .map { it.url }
+            .map { it.toFileUrl(photoId = id, quality = quality) }
     }
 
     override suspend fun updatePhoto(id: String, params: UpdatePhotoParams): Response<Photo> {

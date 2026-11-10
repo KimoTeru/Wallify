@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.HazePerformanceMode
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.hazeBlur
@@ -56,9 +57,12 @@ fun Modifier.frostedBackdrop(level: BlurLevel = BlurLevel.Large): Modifier {
         }
     }
 
+    // A bar sits over scrolling content and redraws every frame; at this radius the lowest input quality looks the
+    // same and costs much less.
     return this.hazeBlur(
         input = HazeInput.Backdrop(hazeState),
-        style = style
+        style = style,
+        performanceMode = HazePerformanceMode.Performance
     )
 }
 

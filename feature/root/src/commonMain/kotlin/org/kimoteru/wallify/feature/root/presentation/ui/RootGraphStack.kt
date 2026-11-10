@@ -11,14 +11,13 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.scale
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.LocalWindowTypeOverride
 import org.kimoteru.wallify.core.designsystem.ui.blur.BlurHost
-import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
 import org.kimoteru.wallify.core.designsystem.ui.network.LocalIsOnline
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridColumns
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
 import org.kimoteru.wallify.feature.auth.presentation.ui.AuthUi
+import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphUi
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileUi
-import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
 import org.kimoteru.wallify.feature.splash.presentation.ui.SplashUi
@@ -29,8 +28,8 @@ import org.kimoteru.wallify.feature.splash.presentation.ui.SplashUi
  *
  * Every screen is its own [BlurHost] (the Haze way: the state lives where the source and its bars are). During a
  * transition the leaving and the arriving screens are both on the stage, and with one blur state for the whole stack
- * the bars of the leaving screen would blur the arriving one. The stack itself is the source of the blur host of
- * [RootGraphUi], which the dialogs above the stack use.
+ * the bars of the leaving screen would blur the arriving one. Nothing above the stack blurs it, so the stack is no
+ * blur source itself.
  */
 @Composable
 internal fun RootGraphStack(
@@ -46,7 +45,7 @@ internal fun RootGraphStack(
     ) {
         Children(
             stack = component.stack,
-            modifier = modifier.blurSource(),
+            modifier = modifier,
             animation = stackAnimation { fade() + scale() }
         ) { child ->
             BlurHost(modifier = Modifier.fillMaxSize()) {

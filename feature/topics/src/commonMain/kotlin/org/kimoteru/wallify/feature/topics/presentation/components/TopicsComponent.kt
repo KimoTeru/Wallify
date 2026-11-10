@@ -9,8 +9,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.domain.repository.TopicRepository
+import org.kimoteru.wallify.core.domain.usecase.invoke
+import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.topic.Topic
 import org.kimoteru.wallify.core.model.topic.TopicsOrder
@@ -28,7 +31,8 @@ interface TopicsComponent : BaseComponent<UiState, UiEvent> {
 /** Topics as a row of choices and the photos of the chosen topic below; the screen picks the first topic itself. */
 @Factory
 class TopicsLogic(
-    topicRepository: TopicRepository
+    topicRepository: TopicRepository,
+    private val observeUserSettings: ObserveUserSettingsUseCase
 ) : BaseLogic<UiState, UiEvent, TopicsNavigationEvent>() {
 
     override val uiState: StateFlow<UiState>
@@ -45,6 +49,16 @@ class TopicsLogic(
             if (slug == null) flowOf(PagingData.empty<Photo>()) else topicRepository.getTopicPhotosFlow(slug)
         }
         .cachedIn(coroutineScope)
+
+    override fun onCreate() {
+        coroutineScope.launch {
+            launch {
+                observeUserSettings()
+                    .mapDistinctBy { settings -> settings.listImageQuality }
+                    .collect { quality -> uiState.update { it.copy(listImageQuality = quality) } }
+            }
+        }
+    }
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {

@@ -6,6 +6,7 @@ import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.data.cache.CacheLoader
 import org.kimoteru.wallify.core.data.cache.CacheStore
 import org.kimoteru.wallify.core.data.cache.CacheTtl
+import org.kimoteru.wallify.core.data.cache.ItemKeys
 import org.kimoteru.wallify.core.data.cache.ListKeys
 import org.kimoteru.wallify.core.data.cache.pager
 import org.kimoteru.wallify.core.data.cache.refreshableFlow
@@ -47,6 +48,9 @@ class TopicRepositoryImpl(
 
     override fun getTopicFlow(idOrSlug: String): Flow<Resource<Topic>> {
         return refreshableFlow(
+            loader = cacheLoader,
+            key = ItemKeys.topic(idOrSlug),
+            ttl = CacheTtl.Item,
             roomFlow = { topicDao.observeByIdOrSlug(idOrSlug) },
             remoteCall = { topicRemoteDataSource.getTopic(idOrSlug = idOrSlug) },
             save = cacheStore::saveTopic,

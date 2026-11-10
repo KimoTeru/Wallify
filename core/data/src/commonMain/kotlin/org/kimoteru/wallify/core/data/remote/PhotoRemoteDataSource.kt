@@ -1,6 +1,7 @@
 package org.kimoteru.wallify.core.data.remote
 
 import org.kimoteru.wallify.core.common.response.Response
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.RandomPhotoQuery
 import org.kimoteru.wallify.core.model.photo.UpdatePhotoParams
@@ -18,7 +19,7 @@ interface PhotoRemoteDataSource {
 
     suspend fun getPhotoStatistics(id: String, quantity: Int?): Response<Statistics>
 
-    suspend fun trackDownload(id: String): Response<String>
+    suspend fun trackDownload(id: String, quality: ImageQuality): Response<String>
 
     suspend fun updatePhoto(id: String, params: UpdatePhotoParams): Response<Photo>
 }

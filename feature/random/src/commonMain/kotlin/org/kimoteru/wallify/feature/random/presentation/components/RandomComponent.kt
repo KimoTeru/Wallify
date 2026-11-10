@@ -5,8 +5,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.handleResponse
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
+import org.kimoteru.wallify.core.domain.usecase.invoke
+import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
@@ -18,10 +21,14 @@ private const val RANDOM_PHOTOS_COUNT = 30
 
 interface RandomComponent : BaseComponent<UiState, UiEvent>
 
-/** One set of random photos, loaded when the screen is created and replaced by the shuffle button. */
+/**
+ * One set of random photos. Opening the screen shows the set saved a few minutes ago; the shuffle button (and the
+ * retry after a failure) always asks for a new one.
+ */
 @Factory
 class RandomLogic(
-    private val photoRepository: PhotoRepository
+    private val photoRepository: PhotoRepository,
+    private val observeUserSettings: ObserveUserSettingsUseCase
 ) : BaseLogic<UiState, UiEvent, RandomNavigationEvent>() {
 
     private var loadJob: Job? = null
@@ -29,22 +36,32 @@ class RandomLogic(
     override val uiState: StateFlow<UiState>
         field = MutableStateFlow(UiState())
 
-    override fun onCreate() = load()
+    override fun onCreate() {
+        coroutineScope.launch {
+            launch {
+                observeUserSettings()
+                    .mapDistinctBy { settings -> settings.listImageQuality }
+                    .collect { quality -> uiState.update { it.copy(listImageQuality = quality) } }
+            }
+        }
+
+        load(forceRefresh = false)
+    }
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {
-            is UiEvent.Shuffle -> load()
+            is UiEvent.Shuffle -> load(forceRefresh = true)
             is UiEvent.OpenPhoto -> navigate(RandomNavigationEvent.OpenPhoto(event.photoId))
         }
     }
 
-    private fun load() {
+    private fun load(forceRefresh: Boolean) {
         if (loadJob?.isActive == true) return
 
         loadJob = coroutineScope.launch {
             updateIsLoading(true)
 
-            photoRepository.getRandomPhotos(count = RANDOM_PHOTOS_COUNT).handleResponse(
+            photoRepository.getRandomPhotos(count = RANDOM_PHOTOS_COUNT, forceRefresh = forceRefresh).handleResponse(
                 onSuccess = { photos -> updatePhotos(photos) },
                 onError = { updateHasError(true) }
             )

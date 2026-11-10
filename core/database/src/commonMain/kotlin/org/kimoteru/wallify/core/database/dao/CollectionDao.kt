@@ -18,6 +18,9 @@ interface CollectionDao {
     @Query("SELECT * FROM `collection` WHERE id = :id")
     fun observe(id: Int): Flow<CollectionEntity?>
 
+    @Query("SELECT * FROM `collection` WHERE id IN (:ids)")
+    suspend fun getByIds(ids: List<Int>): List<CollectionEntity>
+
     /** The first [limit] collections of the list [listKey] in the list's order. */
     @Query(
         "SELECT `collection`.* FROM list_entry " +
@@ -35,6 +38,10 @@ interface CollectionDao {
 
     @Query("DELETE FROM `collection` WHERE id = :id")
     suspend fun delete(id: Int)
+
+    /** Drops the collections that no saved list holds any more (their lists were pruned). */
+    @Query("DELETE FROM `collection` WHERE CAST(id AS TEXT) NOT IN (SELECT itemId FROM list_entry)")
+    suspend fun deleteUnlisted()
 
     @Query("DELETE FROM `collection`")
     suspend fun deleteAll()

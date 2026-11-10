@@ -1,6 +1,7 @@
 package org.kimoteru.wallify.feature.root.presentation.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -8,15 +9,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
-import org.kimoteru.wallify.core.designsystem.ui.blur.BlurHost
 import org.kimoteru.wallify.core.designsystem.ui.image.ClearImageCacheEffect
 import org.kimoteru.wallify.core.model.settings.SupportedLanguages
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerContract
+import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerUi
 import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ScreenLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ThemeModeUi
-import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerContract
-import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.NotifierManagerUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
 
@@ -57,7 +57,7 @@ fun RootGraphUi(
     // The sign-in screen means there is no session: the images of the last user go with the rest of the data.
     ClearImageCacheEffect(isCleared = stack.active.instance is Child.Auth)
 
-    BlurHost(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(appColor.basic.background)
@@ -67,10 +67,10 @@ fun RootGraphUi(
             component = component,
             uiState = uiState
         )
-
-        NotifierManagerUi(
-            uiState = uiState.notifierManagerState,
-            obtainUiEvent = { obtainUiEvent(RootGraphContract.UiEvent.NotifierManagerEvent(it)) }
-        )
     }
+
+    NotifierManagerUi(
+        uiState = uiState.notifierManagerState,
+        obtainUiEvent = { obtainUiEvent(RootGraphContract.UiEvent.NotifierManagerEvent(it)) }
+    )
 }

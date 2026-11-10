@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -38,7 +37,11 @@ import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCard
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMessage
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridShimmer
+import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
+import org.kimoteru.wallify.core.domain.photo.forQuality
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
+import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.topic.Topic
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.feature.topics.presentation.components.TopicsComponent
@@ -50,7 +53,8 @@ import org.kimoteru.wallify.core.resources.generated.resources.nav_topics
 object TopicsContract {
     @Immutable
     data class UiState(
-        val selectedSlug: String? = null
+        val selectedSlug: String? = null,
+        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality
     ) : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent {
@@ -100,7 +104,8 @@ fun TopicsUi(
         }
     }
 
-    val gridState = rememberLazyStaggeredGridState()
+    // Another topic is another list: it opens at the top, not at the place where the previous one was left.
+    val gridState = rememberPhotoGridState(uiState.selectedSlug)
 
     FloatingBarScreen(
         modifier = modifier,
@@ -181,7 +186,8 @@ fun TopicsUi(
                     contentPadding = contentPadding
                 ) { photo ->
                     PhotoCard(
-                        imageUrl = photo.urls.regular,
+                        imageUrl = photo.urls.forQuality(uiState.listImageQuality),
+                        lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
                         width = photo.width,
                         height = photo.height,
                         colorHex = photo.color,

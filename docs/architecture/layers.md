@@ -45,6 +45,7 @@ Ui (Compose)
 |---|---|
 | Интерфейс репозитория (любой, включая `SessionRepository`, `ConnectivityRepository`) | `core/domain/.../repository/` |
 | Use case | `core/domain/.../usecase/<область>/` |
+| Правило предметной области над моделью без состояния, нужное и экранам, и данным (адрес фото по качеству — `PhotoUrls.forQuality`) | функция-расширение в `core/domain/.../<область>/` (`photo/PhotoUrlsExt.kt`); `core:model` остаётся данными |
 | Интерфейс фонового сервиса данных, наружу которого нужно показать состояние (`UserSessionManager`) | `core/domain/.../manager/`, реализация — `core/data/.../<область>/` |
 | Реализация репозитория (`XxxRepositoryImpl`) | `core/data/.../repository/` |
 | Источник данных | `core/data/.../<область>/` (например, `settings/`) |

@@ -5,7 +5,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.value.Value
-import com.arkivanov.essenty.instancekeeper.getOrCreate
+import com.arkivanov.essenty.backhandler.BackCallback
 import kotlinx.serialization.Serializable
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationDefaultComponentCore
 import org.kimoteru.wallify.feature.feed.presentation.components.DefaultFeedComponent
@@ -45,15 +45,27 @@ class DefaultMainGraphComponent(
             source = navigation,
             serializer = Config.serializer(),
             initialConfiguration = Config.Feed,
-            handleBackButton = true,
             childFactory = ::child
         )
 
-    override val logic: MainGraphLogic = instanceKeeper.getOrCreate { get<MainGraphLogic>() }
+    override val logic: MainGraphLogic = retainedLogic { get<MainGraphLogic>() }
+
+    /** Back from any tab but the start one leads to the start tab, not through the history of the switches. */
+    private val backToFeedCallback = BackCallback(isEnabled = false) {
+        navigation.bringToFront(Config.Feed)
+    }
+
+    init {
+        backHandler.register(backToFeedCallback)
+        stack.subscribe { state -> backToFeedCallback.isEnabled = state.active.configuration !is Config.Feed }
+    }
 
     override fun obtainNavigateEvent(event: MainGraphNavigationEvent) {
         when (event) {
-            is MainGraphNavigationEvent.SelectTab -> navigation.bringToFront(event.tab.toConfig())
+            is MainGraphNavigationEvent.SelectTab -> {
+                val config = event.tab.toConfig()
+                if (stack.value.active.configuration != config) navigation.bringToFront(config)
+            }
         }
     }
 

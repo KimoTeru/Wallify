@@ -12,10 +12,9 @@ import com.arkivanov.decompose.defaultComponentContext
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.locale.ProvideAppLocale
 import org.kimoteru.wallify.core.platform.managers.auth.AuthRedirectBus
+import org.kimoteru.wallify.core.presentation.settings.isDarkTheme
 import org.kimoteru.wallify.feature.root.presentation.components.DefaultRootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphUi
-import org.kimoteru.wallify.feature.root.presentation.ui.isDarkTheme
-import org.kimoteru.wallify.feature.root.presentation.ui.languageTag
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
@@ -32,7 +31,8 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            val isDarkTheme = rootComponent.isDarkTheme()
+            val uiState = rootComponent.getUiState()
+            val isDarkTheme = uiState.themeMode.isDarkTheme()
 
             // The system bars follow the scheme chosen in the app, not the one of the device.
             DisposableEffect(isDarkTheme) {
@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
 
-            ProvideAppLocale(languageTag = rootComponent.languageTag()) {
+            ProvideAppLocale(languageTag = uiState.languageTag) {
                 AppTheme(isDarkTheme = isDarkTheme) {
                     RootGraphUi(component = rootComponent)
                 }

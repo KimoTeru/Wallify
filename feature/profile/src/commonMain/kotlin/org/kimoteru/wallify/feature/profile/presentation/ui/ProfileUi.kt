@@ -29,7 +29,9 @@ import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
+import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseContract
@@ -53,7 +55,8 @@ object ProfileContract {
         /** The profile form while it is open, `null` while it is closed. */
         val editForm: EditForm? = null,
         val isSaving: Boolean = false,
-        val hasSaveError: Boolean = false
+        val hasSaveError: Boolean = false,
+        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality
     ) : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent {
@@ -159,16 +162,17 @@ fun ProfileUi(
             )
         }
 
-        uiState.editForm?.let { form ->
-            ScreenOverlay {
-                ProfileEditOverlay(
-                    isSheet = isSheet,
-                    form = form,
-                    isSaving = uiState.isSaving,
-                    hasSaveError = uiState.hasSaveError,
-                    obtainEvent = obtainEvent
-                )
-            }
+    }
+
+    uiState.editForm?.let { form ->
+        ScreenOverlay {
+            ProfileEditOverlay(
+                isSheet = isSheet,
+                form = form,
+                isSaving = uiState.isSaving,
+                hasSaveError = uiState.hasSaveError,
+                obtainEvent = obtainEvent
+            )
         }
     }
 }

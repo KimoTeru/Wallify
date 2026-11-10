@@ -1,7 +1,6 @@
 package org.kimoteru.wallify.feature.splash.presentation.components
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.essenty.instancekeeper.getOrCreate
 import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponent
 import org.kimoteru.wallify.feature.splash.presentation.ui.SplashContract
 import org.koin.core.component.get
@@ -14,7 +13,7 @@ class DefaultSplashComponent(
 ),
     SplashComponent {
 
-    override val logic: SplashLogic = instanceKeeper.getOrCreate { get<SplashLogic>() }
+    override val logic: SplashLogic = retainedLogic { get<SplashLogic>() }
 
     override fun obtainNavigateEvent(event: SplashNavigationEvent) {
         when (event) {

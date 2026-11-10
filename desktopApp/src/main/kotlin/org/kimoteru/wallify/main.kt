@@ -29,14 +29,11 @@ import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.theme.compositions.AppSizes
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.WindowType
 import org.kimoteru.wallify.core.designsystem.ui.locale.ProvideAppLocale
+import org.kimoteru.wallify.core.presentation.settings.isDarkTheme
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.app_name
 import org.kimoteru.wallify.feature.root.presentation.components.DefaultRootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphUi
-import org.kimoteru.wallify.feature.root.presentation.ui.isDarkTheme
-import org.kimoteru.wallify.feature.root.presentation.ui.isSettingsLoaded
-import org.kimoteru.wallify.feature.root.presentation.ui.languageTag
-import org.kimoteru.wallify.feature.root.presentation.ui.requestedWindowType
 import org.koin.core.annotation.KoinApplication
 import org.koin.plugin.module.dsl.startKoin
 
@@ -80,8 +77,9 @@ fun main() {
 
         // Picking a screen layout in the settings gives the window a width of that layout. The first value read from
         // the settings is only the starting point, so the saved window size is kept at the start.
-        val isSettingsLoaded = rootComponent.isSettingsLoaded()
-        val requestedWindowType = rootComponent.requestedWindowType()
+        val uiState = rootComponent.getUiState()
+        val isSettingsLoaded = uiState.isSettingsLoaded
+        val requestedWindowType = uiState.screenLayout.windowType
         val windowSizes = AppTheme.size.window
         var appliedWindowType by remember { mutableStateOf<WindowType?>(null) }
         var isBaselineSet by remember { mutableStateOf(false) }
@@ -151,7 +149,7 @@ fun main() {
                 windowInfo = LocalWindowInfo.current
             )
 
-            val isDarkTheme = rootComponent.isDarkTheme()
+            val isDarkTheme = uiState.themeMode.isDarkTheme()
 
             // On macOS the title bar is transparent and the app draws under it (hence the inset), with the window
             // buttons in the tone of the scheme.
@@ -167,7 +165,7 @@ fun main() {
                 }
             }
 
-            ProvideAppLocale(languageTag = rootComponent.languageTag()) {
+            ProvideAppLocale(languageTag = uiState.languageTag) {
                 AppTheme(isDarkTheme = isDarkTheme) {
                     val appColor = AppTheme.color
 

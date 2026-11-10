@@ -4,14 +4,13 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.value.Value
-import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.serialization.Serializable
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationDefaultComponentCore
 import org.kimoteru.wallify.feature.auth.presentation.components.DefaultAuthComponent
+import org.kimoteru.wallify.feature.main.presentation.components.DefaultMainGraphComponent
 import org.kimoteru.wallify.feature.photo.presentation.components.DefaultPhotoComponent
 import org.kimoteru.wallify.feature.profile.presentation.components.DefaultProfileComponent
 import org.kimoteru.wallify.feature.profile.presentation.components.ProfileTarget
-import org.kimoteru.wallify.feature.main.presentation.components.DefaultMainGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract
 import org.kimoteru.wallify.feature.splash.presentation.components.DefaultSplashComponent
 import org.koin.core.component.get
@@ -43,7 +42,7 @@ class DefaultRootGraphComponent(
             childFactory = ::child
         )
 
-    override val logic: RootGraphLogic = instanceKeeper.getOrCreate { get<RootGraphLogic>() }
+    override val logic: RootGraphLogic = retainedLogic { get<RootGraphLogic>() }
 
     init {
         // The app restored past the splash has no splash to wait for: the session decides the screen at once.
@@ -53,9 +52,16 @@ class DefaultRootGraphComponent(
     }
 
     override fun obtainNavigateEvent(event: RootGraphNavigationEvent) {
+        val active = stack.value.active.configuration
         when (event) {
-            is RootGraphNavigationEvent.Main -> navigateClearBackStack(Config.Main)
-            is RootGraphNavigationEvent.Auth -> navigateClearBackStack(Config.Auth)
+            // The session repeats itself (a restore): the photo or the profile over the tabs stays where it is.
+            is RootGraphNavigationEvent.Main -> if (active is Config.Splash || active is Config.Auth) {
+                navigateClearBackStack(Config.Main)
+            }
+
+            is RootGraphNavigationEvent.Auth -> if (active !is Config.Auth) {
+                navigateClearBackStack(Config.Auth)
+            }
         }
     }
 

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
@@ -33,11 +32,15 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.scrolledPx
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.photo.PagingPhotoGrid
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCard
+import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
+import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.model.photo.ContentFilter
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.PhotoColor
 import org.kimoteru.wallify.core.model.photo.PhotoOrientation
 import org.kimoteru.wallify.core.model.photo.SearchOrder
+import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.photo.ContentFilterUi
 import org.kimoteru.wallify.core.presentation.photo.PhotoColorUi
@@ -59,7 +62,8 @@ object FeedContract {
         val orientations: List<PhotoOrientationUi> = PhotoOrientationUi.entries,
         val colors: List<PhotoColorUi> = PhotoColorUi.entries,
         val orders: List<SearchOrderUi> = SearchOrderUi.entries,
-        val contentFilters: List<ContentFilterUi> = ContentFilterUi.entries
+        val contentFilters: List<ContentFilterUi> = ContentFilterUi.entries,
+        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality
     ) : BaseContract.UiState
 
     /** Search filters; `null` leaves the value to the backend default. */
@@ -119,7 +123,8 @@ fun FeedUi(
     val photos = component.photos.collectAsLazyPagingItems()
     val screenPadding = rememberScreenPadding()
     val isSheet = rememberWindowType() == WindowType.Compact
-    val gridState = rememberLazyStaggeredGridState()
+    // Another search is another list: it opens at the top, not at the place where the previous one was left.
+    val gridState = rememberPhotoGridState(uiState.query, uiState.filters)
 
     FloatingBarScreen(
         modifier = modifier,
@@ -173,7 +178,8 @@ fun FeedUi(
             )
         ) { photo ->
             PhotoCard(
-                imageUrl = photo.urls.regular,
+                imageUrl = photo.urls.forQuality(uiState.listImageQuality),
+                lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
                 width = photo.width,
                 height = photo.height,
                 colorHex = photo.color,

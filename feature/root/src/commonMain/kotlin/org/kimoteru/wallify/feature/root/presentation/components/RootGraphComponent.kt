@@ -1,14 +1,14 @@
 package org.kimoteru.wallify.feature.root.presentation.components
 
+import androidx.compose.material3.SnackbarDuration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import androidx.compose.material3.SnackbarDuration
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.kimoteru.wallify.core.common.flow.combineState
-import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.domain.manager.UserSessionManager
 import org.kimoteru.wallify.core.domain.repository.AuthRepository
 import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
@@ -25,9 +25,9 @@ import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.error_dialog_description
 import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet
 import org.kimoteru.wallify.feature.auth.presentation.components.AuthComponent
+import org.kimoteru.wallify.feature.main.presentation.components.MainGraphComponent
 import org.kimoteru.wallify.feature.photo.presentation.components.PhotoComponent
 import org.kimoteru.wallify.feature.profile.presentation.components.ProfileComponent
-import org.kimoteru.wallify.feature.main.presentation.components.MainGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract.UiEvent
 import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract.UiState
 import org.kimoteru.wallify.feature.splash.presentation.components.SplashComponent
@@ -45,7 +45,8 @@ interface RootGraphComponent : BaseNavigationComponentCore<UiState, UiEvent, Roo
 
 /**
  * Root-level logic shared by every screen:
- * - hosts the snackbar: no internet while the device is offline, and a failed load of the signed-in user while it is online,
+ * - hosts the snackbar: no internet while the device is offline, and a failed load of the signed-in user while it
+ *   is online,
  * - tracks internet availability while the app is in the foreground,
  * - passes the color scheme, the screen layout and the photo layout chosen in the settings to the apps and
  *   screens,
@@ -74,7 +75,7 @@ class RootGraphLogic(
         coroutineScope,
         notifierManagerLogic.uiState,
         connectivityRepository.isOnline,
-        observeUserSettings().mapDistinctBy { settings -> settings },
+        observeUserSettings(),
         initialValue = UiState()
     ) { notifierManagerState, isOnline, settings ->
         UiState(
@@ -132,7 +133,7 @@ class RootGraphLogic(
             launch {
                 isSplashFinished.first { it }
 
-                authRepository.isSignedIn.collectLatest { isSignedIn ->
+                authRepository.isSignedIn.distinctUntilChanged().collectLatest { isSignedIn ->
                     navigate(if (isSignedIn) RootGraphNavigationEvent.Main else RootGraphNavigationEvent.Auth)
                 }
             }
