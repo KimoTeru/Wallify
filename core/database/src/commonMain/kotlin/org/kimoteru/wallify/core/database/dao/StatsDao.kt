@@ -28,6 +28,10 @@ interface StatsDao {
     @Query("SELECT * FROM month_stats LIMIT 1")
     fun observeMonth(): Flow<MonthStatsEntity?>
 
+    /** Drops the statistics whose freshness (`item:` + key in `list_state`) was pruned. */
+    @Query("DELETE FROM statistics WHERE 'item:' || `key` NOT IN (SELECT listKey FROM list_state)")
+    suspend fun deleteStatisticsWithoutState()
+
     @Query("DELETE FROM statistics")
     suspend fun deleteAllStatistics()
 

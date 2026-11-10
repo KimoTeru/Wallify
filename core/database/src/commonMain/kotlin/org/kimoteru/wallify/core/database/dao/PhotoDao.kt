@@ -37,6 +37,10 @@ interface PhotoDao {
     @Query("UPDATE photo SET currentUserCollectionIds = :collectionIds WHERE id = :id")
     suspend fun updateCollectionIds(id: String, collectionIds: List<Int>)
 
+    /** Drops the photos that no saved list holds any more (their lists were pruned). */
+    @Query("DELETE FROM photo WHERE id NOT IN (SELECT itemId FROM list_entry)")
+    suspend fun deleteUnlisted()
+
     @Query("DELETE FROM photo")
     suspend fun deleteAll()
 }

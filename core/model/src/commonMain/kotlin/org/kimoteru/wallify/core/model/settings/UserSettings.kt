@@ -2,6 +2,7 @@ package org.kimoteru.wallify.core.model.settings
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 
 @Serializable
 data class UserSettings(
@@ -20,7 +21,19 @@ data class UserSettings(
     val photoColumns: Int? = null,
 
     @SerialName("screen_layout")
-    val screenLayout: ScreenLayout = ScreenLayout.Auto
+    val screenLayout: ScreenLayout = ScreenLayout.Auto,
+
+    /** Quality of the images in photo lists. */
+    @SerialName("list_image_quality")
+    val listImageQuality: ImageQuality = ImageQuality.Medium,
+
+    /** Quality of the photo on its own screen. */
+    @SerialName("detail_image_quality")
+    val detailImageQuality: ImageQuality = ImageQuality.High,
+
+    /** Quality of the file the user downloads. */
+    @SerialName("download_image_quality")
+    val downloadImageQuality: ImageQuality = ImageQuality.Original
 ) {
     companion object {
         val Default: UserSettings = UserSettings()

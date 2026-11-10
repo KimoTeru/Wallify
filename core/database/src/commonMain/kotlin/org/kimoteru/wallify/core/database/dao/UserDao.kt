@@ -43,6 +43,10 @@ interface UserDao {
     )
     fun pagingSource(listKey: String): PagingSource<Int, UserEntity>
 
+    /** Drops the users that no saved list holds any more; the signed-in user stays. */
+    @Query("DELETE FROM user WHERE isCurrent = 0 AND id NOT IN (SELECT itemId FROM list_entry)")
+    suspend fun deleteUnlisted()
+
     @Query("DELETE FROM user")
     suspend fun deleteAll()
 }

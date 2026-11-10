@@ -29,10 +29,11 @@ feature/<name>/src/commonMain/kotlin/.../feature/<name>/
 Создание компонента и логики:
 
 ```kotlin
-override val logic: XxxLogic = instanceKeeper.getOrCreate { get<XxxLogic>() }
+override val logic: XxxLogic = retainedLogic { get<XxxLogic>() }
 ```
 
-`instanceKeeper` сохраняет логику при пересоздании компонента.
+`retainedLogic` (базовый компонент) держит логику в `instanceKeeper`, как ViewModel, и вызывает её `onCreate()` один
+раз — когда логика создаётся, а не на каждый пересозданный компонент. `instanceKeeper.getOrCreate` напрямую не пишем.
 
 ## Правила
 
@@ -61,7 +62,31 @@ override val logic: XxxLogic = instanceKeeper.getOrCreate { get<XxxLogic>() }
 7. Работа с данными — на `dispatchers.io` внутри use case'а или репозитория; `Logic` лишь запускает её в
    `coroutineScope`.
 8. Жизненный цикл — переопределяем `onCreate/onStart/onResume/onPause/onStop` в `Logic` (подписки, мониторинг сети),
-   отписка — в симметричном методе. Свои подписки с `Component` не пишем.
+   отписка — в симметричном методе. Свои подписки с `Component` не пишем. `Logic` — retained instance, аналог
+   ViewModel: переживает пересоздание компонента (поворот), а компонент и его lifecycle создаются заново. Поэтому
+   `onCreate()` — это `init` логики: его вызывает фабрика `retainedLogic`, один раз при создании экземпляра, а
+   `onStart/onResume/onPause/onStop` идут по циклу текущего компонента. Подписки и запросы на всю жизнь логики — в
+   `onCreate()` в `coroutineScope` (он отменяется в `InstanceKeeper.onDestroy`); то, что привязано к виду экрана, —
+   в `onStart/onStop`. `onLifecycleDestroy()` вызывается и при повороте: окончательную очистку в нём не делаем.
+   Подписки на потоки пишем прямо в теле `onCreate()`, раскрыто: один `coroutineScope.launch { … }`, внутри —
+   отдельный `launch { … }` на каждую подписку, и уже в нём `observeXxx()…collect { … }` (образец —
+   `RootGraphLogic.onCreate`). `override fun onCreate() = observeXxx()` и подписку в отдельной приватной функции
+   не пишем: всё, на что подписан экран, должно быть видно в одном месте. Разовые вызовы (`load()`) идут после
+   этого блока.
+
+   ```kotlin
+   override fun onCreate() {
+       coroutineScope.launch {
+           launch {
+               observeUserSettings()
+                   .mapDistinctBy { settings -> settings.listImageQuality }
+                   .collect { quality -> uiState.update { it.copy(listImageQuality = quality) } }
+           }
+       }
+
+       load()
+   }
+   ```
 9. Базовые алиасы (`BaseDefaultComponent`, `BaseLogic`, `BaseComponent`) подходят, когда у графа или экрана нет
    `ComponentEvent` и своего состояния; иначе берём `…Core` с явными типами (как `feature:root`).
 10. Для списка с подгрузкой `Logic` держит `Flow<PagingData<T>>.cachedIn(coroutineScope)`

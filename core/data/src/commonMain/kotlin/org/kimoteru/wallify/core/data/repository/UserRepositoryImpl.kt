@@ -16,6 +16,7 @@ import org.kimoteru.wallify.core.common.response.onSuccess
 import org.kimoteru.wallify.core.data.cache.CacheLoader
 import org.kimoteru.wallify.core.data.cache.CacheStore
 import org.kimoteru.wallify.core.data.cache.CacheTtl
+import org.kimoteru.wallify.core.data.cache.ItemKeys
 import org.kimoteru.wallify.core.data.cache.ListKeys
 import org.kimoteru.wallify.core.data.cache.StatisticsKeys
 import org.kimoteru.wallify.core.data.cache.pager
@@ -73,6 +74,9 @@ class UserRepositoryImpl(
 
     override fun getUserFlow(username: String): Flow<Resource<User>> {
         return refreshableFlow(
+            loader = cacheLoader,
+            key = ItemKeys.user(username),
+            ttl = CacheTtl.Item,
             roomFlow = { userDao.observeByUsername(username) },
             remoteCall = { userRemoteDataSource.getUser(username = username) },
             save = cacheStore::saveUser,
@@ -108,6 +112,7 @@ class UserRepositoryImpl(
 
     override suspend fun invalidateUserPhotos(username: String) {
         cacheStore.invalidateLists(ListKeys.userPhotosPrefix(username))
+        cacheStore.invalidateLists(ItemKeys.userPrefix(username))
     }
 
     override fun getUserCollectionsFlow(username: String): Flow<PagingData<PhotoCollection>> {
@@ -130,6 +135,9 @@ class UserRepositoryImpl(
         val listKey = ListKeys.userCollections(username)
 
         return refreshableListFlow(
+            loader = cacheLoader,
+            key = listKey,
+            ttl = CacheTtl.Feed,
             roomFlow = { collectionDao.observeList(listKey = listKey, limit = DEFAULT_PAGE_SIZE) },
             remoteCall = {
                 userRemoteDataSource.getUserCollections(
@@ -145,8 +153,11 @@ class UserRepositoryImpl(
 
     override fun getUserStatisticsFlow(username: String, quantity: Int?): Flow<Resource<Statistics>> {
         val key = StatisticsKeys.user(username, quantity)
-        
+
         return refreshableFlow(
+            loader = cacheLoader,
+            key = ItemKeys.userStatistics(username, quantity),
+            ttl = CacheTtl.Stats,
             roomFlow = { statsDao.observeStatistics(key) },
             remoteCall = { userRemoteDataSource.getUserStatistics(username = username, quantity = quantity) },
             save = { statistics -> cacheStore.saveStatistics(key, statistics) },

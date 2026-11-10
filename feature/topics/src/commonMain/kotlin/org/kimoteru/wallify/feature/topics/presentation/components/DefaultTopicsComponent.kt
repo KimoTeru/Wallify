@@ -2,7 +2,6 @@ package org.kimoteru.wallify.feature.topics.presentation.components
 
 import androidx.paging.PagingData
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.coroutines.flow.Flow
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.topic.Topic
@@ -19,7 +18,7 @@ class DefaultTopicsComponent(
 ),
     TopicsComponent {
 
-    override val logic: TopicsLogic = instanceKeeper.getOrCreate { get<TopicsLogic>() }
+    override val logic: TopicsLogic = retainedLogic { get<TopicsLogic>() }
 
     override val topics: Flow<PagingData<Topic>> = logic.topics
 

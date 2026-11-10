@@ -3,15 +3,19 @@ package org.kimoteru.wallify.feature.photo.presentation.components
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
+import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.handleResponse
 import org.kimoteru.wallify.core.common.response.onError
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
+import org.kimoteru.wallify.core.domain.usecase.invoke
+import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.stats.Statistics
@@ -42,7 +46,8 @@ class PhotoLogic(
     private val photoRepository: PhotoRepository,
     private val userRepository: UserRepository,
     private val collectionRepository: CollectionRepository,
-    private val notifierManager: NotifierManager
+    private val notifierManager: NotifierManager,
+    private val observeUserSettings: ObserveUserSettingsUseCase
 ) : BaseLogicCore<UiState, UiEvent, PhotoNavigationEvent, ComponentEvent>() {
 
     override val uiState: StateFlow<UiState>
@@ -51,6 +56,16 @@ class PhotoLogic(
     private var photoJob: Job? = null
 
     override fun onCreate() {
+        coroutineScope.launch {
+            launch {
+                observeUserSettings()
+                    .mapDistinctBy { settings -> settings.detailImageQuality to settings.listImageQuality }
+                    .collect { (detailQuality, listQuality) ->
+                        uiState.update { it.copy(detailImageQuality = detailQuality, listImageQuality = listQuality) }
+                    }
+            }
+        }
+
         loadPhoto()
         loadStatistics()
         loadCollections()
@@ -117,7 +132,9 @@ class PhotoLogic(
         coroutineScope.launch {
             updateIsDownloading(true)
 
-            photoRepository.trackDownload(photoId).handleResponse(
+            val quality = observeUserSettings().first().downloadImageQuality
+
+            photoRepository.trackDownload(photoId, quality).handleResponse(
                 onSuccess = { url -> sendComponentEvent(ComponentEvent.OpenUrl(url)) },
                 onError = { showRequestError() }
             )

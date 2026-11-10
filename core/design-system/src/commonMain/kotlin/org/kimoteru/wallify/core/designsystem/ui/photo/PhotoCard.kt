@@ -7,30 +7,30 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.theme.withAlpha
 import org.kimoteru.wallify.core.designsystem.ui.avatar.UserAvatar
 import org.kimoteru.wallify.core.designsystem.ui.click.debouncedClickable
-import org.kimoteru.wallify.core.designsystem.ui.image.CachedAsyncImage
+import org.kimoteru.wallify.core.designsystem.ui.image.ProgressiveAsyncImage
+import org.kimoteru.wallify.core.designsystem.ui.shimmer.ShimmerBox
 
 private const val MIN_ASPECT_RATIO = 0.6f
 private const val MAX_ASPECT_RATIO = 1.6f
-private const val HEX_RADIX = 16
 
 /**
  * Pebble card of the photo masonry: the photo with the author in a pill on the bottom edge.
- * [colorHex] is the dominant color of the photo (`#RRGGBB`), shown until the image is loaded.
+ * [colorHex] is the dominant color of the photo (`#RRGGBB`), shown first; then [lowImageUrl] (the smallest version),
+ * then [imageUrl] (see [ProgressiveAsyncImage]).
  * The card takes the proportions of the photo ([width] and [height] in pixels); extreme ones are limited,
  * so one very tall or wide photo does not break the grid.
  */
@@ -38,6 +38,7 @@ private const val HEX_RADIX = 16
 fun PhotoCard(
     modifier: Modifier = Modifier,
     imageUrl: String,
+    lowImageUrl: String?,
     width: Int,
     height: Int,
     colorHex: String?,
@@ -54,7 +55,6 @@ fun PhotoCard(
     val appSize = AppTheme.size
     val appTypography = AppTheme.typography
 
-    val placeholderColor = remember(colorHex) { colorHex?.toColorOrNull() } ?: appColor.glass.standard
     val naturalRatio = if (width > 0 && height > 0) width / height.toFloat() else appRatio.image.square
     val aspectRatio = when (LocalPhotoGridMode.current) {
         PhotoGridMode.Grid -> appRatio.image.portrait
@@ -65,12 +65,13 @@ fun PhotoCard(
         modifier = modifier
             .aspectRatio(aspectRatio.coerceIn(MIN_ASPECT_RATIO, MAX_ASPECT_RATIO))
             .clip(RoundedCornerShape(appCorner.large + appCorner.smallSpecial))
-            .background(placeholderColor)
             .debouncedClickable(onClick = onClick)
     ) {
-        CachedAsyncImage(
+        ProgressiveAsyncImage(
             modifier = Modifier.fillMaxSize(),
-            model = imageUrl
+            colorHex = colorHex,
+            lowUrl = lowImageUrl,
+            highUrl = imageUrl
         )
 
         if (authorName != null) {
@@ -108,9 +109,30 @@ fun PhotoCard(
     }
 }
 
-/** `#RRGGBB` to an opaque color, or `null` for anything else. */
-private fun String.toColorOrNull(): Color? =
-    removePrefix("#")
-        .takeIf { it.length == 6 }
-        ?.toLongOrNull(HEX_RADIX)
-        ?.let { rgb -> Color(0xFF000000 or rgb) }
+/**
+ * Card-sized stand-in for an item of a paged list that is not loaded yet (the list from the database has `null`
+ * items in place of unloaded ones). An item with no height would let a staggered grid place hundreds of them into
+ * the visible area and load the whole list; the stand-in has the height of a card, so only the visible ones are
+ * drawn. [aspectRatio] is the proportion of the real card when the list knows it, otherwise the default of the
+ * current [PhotoGridMode].
+ */
+@Composable
+fun PhotoCardPlaceholder(
+    modifier: Modifier = Modifier,
+    aspectRatio: Float? = null
+) {
+    val appCorner = AppTheme.corner
+    val appRatio = AppTheme.ratio
+
+    val defaultRatio = when (LocalPhotoGridMode.current) {
+        PhotoGridMode.Grid -> appRatio.image.portrait
+        PhotoGridMode.Masonry, PhotoGridMode.List -> appRatio.image.square
+    }
+
+    ShimmerBox(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(aspectRatio ?: defaultRatio),
+        shape = RoundedCornerShape(appCorner.large + appCorner.smallSpecial)
+    )
+}

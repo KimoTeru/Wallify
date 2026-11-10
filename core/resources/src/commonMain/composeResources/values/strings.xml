@@ -245,6 +245,24 @@
     <string name="settings_language">Language</string>
     <!-- Note under the language choice: what the language changes -->
     <string name="settings_language_description">Language of the app and of your photo search queries. Search in languages other than English is a beta feature of the photo service and may not work for every app.</string>
+    <!-- Section title of the settings: quality of the images -->
+    <string name="settings_image_quality">Image quality</string>
+    <!-- Label of the choice of the image quality in photo lists -->
+    <string name="settings_image_quality_list">In lists</string>
+    <!-- Label of the choice of the image quality on the photo screen -->
+    <string name="settings_image_quality_detail">Photo screen</string>
+    <!-- Label of the choice of the quality of the downloaded file -->
+    <string name="settings_image_quality_download">Download</string>
+    <!-- Choice of the image quality: the smallest file, loads fastest -->
+    <string name="settings_image_quality_low">Low</string>
+    <!-- Choice of the image quality: a small file with fair detail -->
+    <string name="settings_image_quality_medium">Medium</string>
+    <!-- Choice of the image quality: a large file with good detail -->
+    <string name="settings_image_quality_high">High</string>
+    <!-- Choice of the image quality: the original file, the largest -->
+    <string name="settings_image_quality_original">Original</string>
+    <!-- Note under the image quality choice: what higher quality costs -->
+    <string name="settings_image_quality_description">Higher quality takes more traffic, time and memory. Lists and the photo screen first show a small version of the photo, then the chosen one.</string>
     <!-- Section title of the settings: numbers of the whole photo service -->
     <string name="settings_service_title">Unsplash in numbers</string>
     <!-- Caption of the total number of photos of the service -->

@@ -23,6 +23,9 @@ import org.koin.core.annotation.Singleton
  * Every write of backend data into the database goes through here, because the database is what the screens read.
  * It also holds the merge rules that keep the cache correct: a summary (what list endpoints send) never wipes the
  * details of the same photo or user that were loaded before.
+ *
+ * A row is written only when it differs from the saved one: Room invalidates every list that reads a table on any
+ * write to it, equal rows included, and a list that reloads loses its scroll position.
  */
 @Singleton
 class CacheStore(
@@ -39,23 +42,22 @@ class CacheStore(
     suspend fun savePhotoSummaries(photos: List<Photo>) {
         if (photos.isEmpty()) return
         val saved = photoDao.getByIds(photos.map { it.id }).associateBy { it.id }
-        photoDao.upsertAll(
-            photos.map { photo ->
-                val old = saved[photo.id]
-                val summary = photo.toEntity(isDetailed = false).keepingUrlsOf(old)
-                if (old != null && old.isDetailed) {
-                    summary.copy(
-                        tags = old.tags,
-                        downloads = old.downloads,
-                        exif = old.exif,
-                        currentUserCollectionIds = old.currentUserCollectionIds,
-                        isDetailed = true
-                    )
-                } else {
-                    summary
-                }
+        val changed = photos.map { photo ->
+            val old = saved[photo.id]
+            val summary = photo.toEntity(isDetailed = false).keepingUrlsOf(old)
+            if (old != null && old.isDetailed) {
+                summary.copy(
+                    tags = old.tags,
+                    downloads = old.downloads,
+                    exif = old.exif,
+                    currentUserCollectionIds = old.currentUserCollectionIds,
+                    isDetailed = true
+                )
+            } else {
+                summary
             }
-        )
+        }.filter { entity -> entity != saved[entity.id] }
+        if (changed.isNotEmpty()) photoDao.upsertAll(changed)
     }
 
     /** Saves a short list of photos loaded in one request under [listKey], replacing what that list held. */
@@ -72,7 +74,8 @@ class CacheStore(
 
     suspend fun savePhoto(photo: Photo) {
         val old = photoDao.get(photo.id)
-        photoDao.upsertAll(listOf(photo.toEntity(isDetailed = true).keepingUrlsOf(old)))
+        val entity = photo.toEntity(isDetailed = true).keepingUrlsOf(old)
+        if (entity != old) photoDao.upsertAll(listOf(entity))
     }
 
     /**
@@ -145,11 +148,13 @@ class CacheStore(
 
     suspend fun saveCollections(collections: List<PhotoCollection>) {
         if (collections.isEmpty()) return
-        collectionDao.upsertAll(collections.map { it.toEntity() })
+        val saved = collectionDao.getByIds(collections.map { it.id }).associateBy { it.id }
+        val changed = collections.map { it.toEntity() }.filter { entity -> entity != saved[entity.id] }
+        if (changed.isNotEmpty()) collectionDao.upsertAll(changed)
     }
 
     suspend fun saveCollection(collection: PhotoCollection) {
-        collectionDao.upsert(collection.toEntity())
+        saveCollections(listOf(collection))
     }
 
     /** Saves a short list loaded in one request under [listKey], replacing what that list held. */
@@ -166,11 +171,13 @@ class CacheStore(
 
     suspend fun saveTopics(topics: List<Topic>) {
         if (topics.isEmpty()) return
-        topicDao.upsertAll(topics.map { it.toEntity() })
+        val saved = topicDao.getByIds(topics.map { it.id }).associateBy { it.id }
+        val changed = topics.map { it.toEntity() }.filter { entity -> entity != saved[entity.id] }
+        if (changed.isNotEmpty()) topicDao.upsertAll(changed)
     }
 
     suspend fun saveTopic(topic: Topic) {
-        topicDao.upsert(topic.toEntity())
+        saveTopics(listOf(topic))
     }
 
     suspend fun saveStatistics(key: String, statistics: Statistics) {
@@ -185,7 +192,10 @@ class CacheStore(
         statsDao.upsertMonth(stats.toEntity())
     }
 
-    /** The lists whose key starts with [prefix] are loaded again the next time they open; what they hold stays shown. */
+    /**
+     * The lists and items whose key starts with [prefix] (`ListKeys`, `ItemKeys`) are loaded again the next time they
+     * open; what they hold stays shown.
+     */
     suspend fun invalidateLists(prefix: String) {
         listDao.deleteStatesByPrefix(prefix)
     }

@@ -2,7 +2,6 @@ package org.kimoteru.wallify.feature.profile.presentation.components
 
 import androidx.paging.PagingData
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlinx.coroutines.flow.Flow
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
@@ -24,7 +23,7 @@ class DefaultProfileComponent(
 ),
     ProfileComponent {
 
-    override val logic: ProfileLogic = instanceKeeper.getOrCreate { get<ProfileLogic> { parametersOf(target) } }
+    override val logic: ProfileLogic = retainedLogic { get<ProfileLogic> { parametersOf(target) } }
 
     override val canNavigateBack: Boolean = navigateBack != null
 

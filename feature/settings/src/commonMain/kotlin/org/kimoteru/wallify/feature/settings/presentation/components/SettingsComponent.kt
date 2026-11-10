@@ -20,6 +20,7 @@ import org.kimoteru.wallify.core.model.stats.TotalStats
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
+import org.kimoteru.wallify.core.presentation.settings.ImageQualityUi
 import org.kimoteru.wallify.core.presentation.settings.PhotoColumnsUi
 import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ScreenLayoutUi
@@ -63,6 +64,9 @@ class SettingsLogic(
             photoLayout = userSettings.photoLayout.toPresentation(),
             photoColumns = userSettings.photoColumns.toPhotoColumns(),
             screenLayout = userSettings.screenLayout.toPresentation(),
+            listImageQuality = userSettings.listImageQuality.toPresentation(),
+            detailImageQuality = userSettings.detailImageQuality.toPresentation(),
+            downloadImageQuality = userSettings.downloadImageQuality.toPresentation(),
             languageTag = userSettings.languageTag,
             totalStats = stats.total,
             monthStats = stats.month
@@ -89,6 +93,9 @@ class SettingsLogic(
             is UiEvent.SelectPhotoLayout -> selectPhotoLayout(event.photoLayout)
             is UiEvent.SelectPhotoColumns -> selectPhotoColumns(event.columns)
             is UiEvent.SelectScreenLayout -> selectScreenLayout(event.screenLayout)
+            is UiEvent.SelectListImageQuality -> selectListImageQuality(event.quality)
+            is UiEvent.SelectDetailImageQuality -> selectDetailImageQuality(event.quality)
+            is UiEvent.SelectDownloadImageQuality -> selectDownloadImageQuality(event.quality)
             is UiEvent.SelectLanguage -> selectLanguage(event.languageTag)
             is UiEvent.SignOut -> coroutineScope.launch { authRepository.signOut() }
         }
@@ -115,6 +122,24 @@ class SettingsLogic(
     private fun selectScreenLayout(screenLayout: ScreenLayoutUi) {
         coroutineScope.launch {
             updateUserSettings(settings.value.copy(screenLayout = screenLayout.toDomain()))
+        }
+    }
+
+    private fun selectListImageQuality(quality: ImageQualityUi) {
+        coroutineScope.launch {
+            updateUserSettings(settings.value.copy(listImageQuality = quality.toDomain()))
+        }
+    }
+
+    private fun selectDetailImageQuality(quality: ImageQualityUi) {
+        coroutineScope.launch {
+            updateUserSettings(settings.value.copy(detailImageQuality = quality.toDomain()))
+        }
+    }
+
+    private fun selectDownloadImageQuality(quality: ImageQualityUi) {
+        coroutineScope.launch {
+            updateUserSettings(settings.value.copy(downloadImageQuality = quality.toDomain()))
         }
     }
 

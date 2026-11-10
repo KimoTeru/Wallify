@@ -9,6 +9,7 @@ import org.kimoteru.wallify.core.common.response.onSuccess
 import org.kimoteru.wallify.core.data.cache.CacheLoader
 import org.kimoteru.wallify.core.data.cache.CacheStore
 import org.kimoteru.wallify.core.data.cache.CacheTtl
+import org.kimoteru.wallify.core.data.cache.ItemKeys
 import org.kimoteru.wallify.core.data.cache.ListKeys
 import org.kimoteru.wallify.core.data.cache.pager
 import org.kimoteru.wallify.core.data.cache.refreshableFlow
@@ -48,6 +49,9 @@ class CollectionRepositoryImpl(
 
     override fun getCollectionFlow(id: Int): Flow<Resource<PhotoCollection>> {
         return refreshableFlow(
+            loader = cacheLoader,
+            key = ItemKeys.collection(id),
+            ttl = CacheTtl.Item,
             roomFlow = { collectionDao.observe(id) },
             remoteCall = { collectionRemoteDataSource.getCollection(id = id) },
             save = cacheStore::saveCollection,
@@ -83,6 +87,9 @@ class CollectionRepositoryImpl(
     override fun getRelatedCollectionsFlow(id: Int): Flow<Resource<List<PhotoCollection>>> {
         val listKey = ListKeys.relatedCollections(id)
         return refreshableListFlow(
+            loader = cacheLoader,
+            key = listKey,
+            ttl = CacheTtl.Feed,
             roomFlow = { collectionDao.observeList(listKey = listKey, limit = DEFAULT_PAGE_SIZE) },
             remoteCall = { collectionRemoteDataSource.getRelatedCollections(id = id) },
             save = { collections -> cacheStore.saveCollectionList(listKey, collections) },

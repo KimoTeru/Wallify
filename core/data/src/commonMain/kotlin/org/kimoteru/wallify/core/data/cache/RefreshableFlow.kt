@@ -9,18 +9,23 @@ import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.ResponseError
+import kotlin.time.Duration
 
 /**
  * One item with the database as the single source of truth: the screen only ever sees what the database holds.
  *
- * The saved row is emitted at once ([Resource.Success]) or, if there is none yet, [Resource.Loading]. In parallel
- * [remoteCall] asks the backend and [save] writes the answer into the database, which makes [roomFlow] emit the new
- * row. Every later change of the row (a refresh, a write from another screen) is emitted the same way.
+ * The saved row is emitted at once ([Resource.Success]) or, if there is none yet, [Resource.Loading]. Unless the row
+ * was loaded less than [ttl] ago (its age is kept under [key], see [ItemKeys]), [remoteCall] asks the backend and
+ * [save] writes the answer into the database, which makes [roomFlow] emit the new row. Every later change of the row
+ * (a refresh, a write from another screen) is emitted the same way.
  *
  * A failing backend does not touch what is shown: with a saved row the screen keeps it (offline works), without one
  * it gets [Resource.Error] and retries by collecting the flow again.
  */
 internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableFlow(
+    loader: CacheLoader,
+    key: String,
+    ttl: Duration,
     roomFlow: () -> Flow<Entity?>,
     remoteCall: suspend () -> Response<Remote>,
     save: suspend (Remote) -> Unit,
@@ -32,7 +37,17 @@ internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableFlow(
         if (isFirst) {
             isFirst = false
             send(entity?.let { Resource.Success(toDomain(it)) } ?: Resource.Loading)
-            launch { refresh(hasSaved = entity != null, remoteCall = remoteCall, save = save) }
+            if (entity != null && loader.isFresh(key, ttl)) return@collect
+            launch {
+                refresh(
+                    hasSaved = entity != null,
+                    remoteCall = remoteCall,
+                    save = { remote ->
+                        save(remote)
+                        loader.markLoaded(key)
+                    }
+                )
+            }
         } else if (entity != null) {
             send(Resource.Success(toDomain(entity)))
         }
@@ -41,9 +56,13 @@ internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableFlow(
 
 /**
  * A short list with the database as the single source of truth, the same way as [refreshableFlow]. An empty saved
- * list counts as "nothing yet" until the backend has answered; an empty answer is then emitted as an empty list.
+ * list counts as "nothing yet" until the backend has answered, unless the empty list itself is fresh; an empty answer
+ * is then emitted as an empty list.
  */
 internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableListFlow(
+    loader: CacheLoader,
+    key: String,
+    ttl: Duration,
     roomFlow: () -> Flow<List<Entity>>,
     remoteCall: suspend () -> Response<List<Remote>>,
     save: suspend (List<Remote>) -> Unit,
@@ -54,13 +73,16 @@ internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableListFlow(
     roomFlow().distinctUntilChanged().collect { entities ->
         if (isFirst) {
             isFirst = false
-            send(if (entities.isEmpty()) Resource.Loading else Resource.Success(entities.map(toDomain)))
+            val isFresh = loader.isFresh(key, ttl)
+            send(if (entities.isEmpty() && !isFresh) Resource.Loading else Resource.Success(entities.map(toDomain)))
+            if (isFresh) return@collect
             launch {
                 refresh(
                     hasSaved = entities.isNotEmpty(),
                     remoteCall = remoteCall,
                     save = { remote ->
                         save(remote)
+                        loader.markLoaded(key)
                         // Saving an empty list changes no row, so the database stays silent: tell the screen.
                         if (remote.isEmpty() && entities.isEmpty()) send(Resource.Success(emptyList()))
                     }

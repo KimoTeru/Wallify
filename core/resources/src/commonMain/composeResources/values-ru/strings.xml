@@ -245,6 +245,24 @@
     <string name="settings_language">Язык</string>
     <!-- Note under the language choice: what the language changes -->
     <string name="settings_language_description">Язык приложения и поисковых запросов. Поиск не на английском — бета-функция сервиса фото, и она может работать не для всех приложений.</string>
+    <!-- Section title of the settings: quality of the images -->
+    <string name="settings_image_quality">Качество изображений</string>
+    <!-- Label of the choice of the image quality in photo lists -->
+    <string name="settings_image_quality_list">В списках</string>
+    <!-- Label of the choice of the image quality on the photo screen -->
+    <string name="settings_image_quality_detail">Экран фото</string>
+    <!-- Label of the choice of the quality of the downloaded file -->
+    <string name="settings_image_quality_download">Скачивание</string>
+    <!-- Choice of the image quality: the smallest file, loads fastest -->
+    <string name="settings_image_quality_low">Низкое</string>
+    <!-- Choice of the image quality: a small file with fair detail -->
+    <string name="settings_image_quality_medium">Среднее</string>
+    <!-- Choice of the image quality: a large file with good detail -->
+    <string name="settings_image_quality_high">Высокое</string>
+    <!-- Choice of the image quality: the original file, the largest -->
+    <string name="settings_image_quality_original">Оригинал</string>
+    <!-- Note under the image quality choice: what higher quality costs -->
+    <string name="settings_image_quality_description">Чем выше качество, тем больше трафика, времени и памяти. В списках и на экране фото сначала показывается маленькая версия, затем выбранная.</string>
     <!-- Section title of the settings: numbers of the whole photo service -->
     <string name="settings_service_title">Unsplash в цифрах</string>
     <!-- Caption of the total number of photos of the service -->

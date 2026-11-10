@@ -3,6 +3,7 @@ package org.kimoteru.wallify.feature.root.presentation.components
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import androidx.compose.material3.SnackbarDuration
 import kotlinx.coroutines.launch
@@ -132,7 +133,7 @@ class RootGraphLogic(
             launch {
                 isSplashFinished.first { it }
 
-                authRepository.isSignedIn.collectLatest { isSignedIn ->
+                authRepository.isSignedIn.distinctUntilChanged().collectLatest { isSignedIn ->
                     navigate(if (isSignedIn) RootGraphNavigationEvent.Main else RootGraphNavigationEvent.Auth)
                 }
             }

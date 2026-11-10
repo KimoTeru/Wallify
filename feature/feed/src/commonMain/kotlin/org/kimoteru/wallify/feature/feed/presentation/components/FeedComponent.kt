@@ -8,10 +8,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.extensions.Empty
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.repository.SearchRepository
+import org.kimoteru.wallify.core.domain.usecase.invoke
+import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.SearchPhotosQuery
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
@@ -33,7 +36,8 @@ interface FeedComponent : BaseComponent<UiState, UiEvent> {
 @Factory
 class FeedLogic(
     private val photoRepository: PhotoRepository,
-    private val searchRepository: SearchRepository
+    private val searchRepository: SearchRepository,
+    private val observeUserSettings: ObserveUserSettingsUseCase
 ) : BaseLogic<UiState, UiEvent, FeedNavigationEvent>() {
 
     override val uiState: StateFlow<UiState>
@@ -50,6 +54,16 @@ class FeedLogic(
             }
         }
         .cachedIn(coroutineScope)
+
+    override fun onCreate() {
+        coroutineScope.launch {
+            launch {
+                observeUserSettings()
+                    .mapDistinctBy { settings -> settings.listImageQuality }
+                    .collect { quality -> uiState.update { it.copy(listImageQuality = quality) } }
+            }
+        }
+    }
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {

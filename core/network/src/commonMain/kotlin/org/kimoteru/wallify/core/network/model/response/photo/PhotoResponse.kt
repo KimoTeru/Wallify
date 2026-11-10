@@ -1,10 +1,12 @@
 package org.kimoteru.wallify.core.network.model.response.photo
 
+import io.ktor.http.URLBuilder
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.kimoteru.wallify.core.common.extensions.CommaSpace
 import org.kimoteru.wallify.core.common.extensions.Empty
 import org.kimoteru.wallify.core.common.extensions.nullIfBlank
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.PhotoExif
 import org.kimoteru.wallify.core.model.photo.PhotoUrls
@@ -13,6 +15,14 @@ import org.kimoteru.wallify.core.network.model.response.stats.PhotoStatisticsRes
 import org.kimoteru.wallify.core.network.model.response.user.UserResponse
 import org.kimoteru.wallify.core.network.model.response.user.toDomain
 import org.kimoteru.wallify.core.network.model.response.withReferral
+
+private const val IMAGE_WIDTH = "w"
+private const val IMAGE_FORMAT = "fm"
+private const val IMAGE_FORMAT_JPG = "jpg"
+private const val IMAGE_DOWNLOAD = "dl"
+private const val THUMB_WIDTH = 200
+private const val SMALL_WIDTH = 400
+private const val REGULAR_WIDTH = 1080
 
 /**
  * Photo as the backend sends it. List endpoints return a summary, so the detail-only fields are `null` there.
@@ -174,6 +184,26 @@ data class PhotoDownloadResponse(
     @SerialName("url")
     val url: String
 )
+
+/**
+ * Address of the file of [photoId] in [quality]: the original as the backend answers it, the other levels scaled
+ * down by the image service to the widths of the hotlinked sizes. `dl` makes the browser save the file instead of
+ * showing it.
+ */
+fun PhotoDownloadResponse.toFileUrl(photoId: String, quality: ImageQuality): String =
+    URLBuilder(url).apply {
+        quality.toWidth()?.let { width -> parameters.append(IMAGE_WIDTH, width.toString()) }
+        parameters.append(IMAGE_FORMAT, IMAGE_FORMAT_JPG)
+        parameters.append(IMAGE_DOWNLOAD, "$photoId.$IMAGE_FORMAT_JPG")
+    }.buildString()
+
+/** Widths of `thumb`, `small` and `regular`; the original keeps its own size. */
+private fun ImageQuality.toWidth(): Int? = when (this) {
+    ImageQuality.Low -> THUMB_WIDTH
+    ImageQuality.Medium -> SMALL_WIDTH
+    ImageQuality.High -> REGULAR_WIDTH
+    ImageQuality.Original -> null
+}
 
 fun PhotoResponse.toDomain(): Photo = Photo(
     id = id,

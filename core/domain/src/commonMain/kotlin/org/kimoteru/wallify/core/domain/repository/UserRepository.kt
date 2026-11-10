@@ -35,7 +35,7 @@ interface UserRepository {
      */
     val uploadPageUrl: String
 
-    /** Behaves like `PhotoRepository.getPhotoFlow`: the database first, refreshed from the backend. */
+    /** Behaves like `PhotoRepository.getPhotoFlow`: the database first, refreshed from the backend if not fresh. */
     fun getUserFlow(username: String): Flow<Resource<User>>
 
     fun getUserPhotosFlow(
@@ -45,8 +45,9 @@ interface UserRepository {
     ): Flow<PagingData<Photo>>
 
     /**
-     * Makes the saved photo lists of the user stale: the next [getUserPhotosFlow] collected loads the first page
-     * again, while the saved photos stay on screen until the new ones arrive.
+     * Makes the saved photo lists of the user, the profile and its statistics stale: the next [getUserPhotosFlow],
+     * [getUserFlow] and [getUserStatisticsFlow] collected load again, while the saved data stays on screen until the
+     * new one arrives.
      */
     suspend fun invalidateUserPhotos(username: String)
 

@@ -16,7 +16,8 @@ import org.kimoteru.wallify.core.domain.repository.UserRepository
  *
  * It follows the stored token, so every way out is covered at once: signing out, an expired session (401) and a token
  * removed by anything else. It also runs at the start of an app that has no session, which is cheap and finishes a
- * wipe that an earlier run was stopped in. The settings of the app (theme, layouts, language) are not user data and
+ * wipe that an earlier run was stopped in. At the start it also drops what was not loaded for a long time
+ * ([CacheDatabaseCleaner.pruneStale]). The settings of the app (theme, layouts, language) are not user data and
  * stay. Cached images are not here: the image loader belongs to the UI, which clears it when the sign-in screen
  * shows up (`ClearImageCacheEffect`).
  */
@@ -33,6 +34,7 @@ class SessionDataCleaner(
     fun start() {
         if (job?.isActive == true) return
         job = scope.launch {
+            attempt { databaseCleaner.pruneStale() }
             session.authToken
                 .mapDistinctBy { token -> !token.isNullOrBlank() }
                 .collect { isSignedIn ->

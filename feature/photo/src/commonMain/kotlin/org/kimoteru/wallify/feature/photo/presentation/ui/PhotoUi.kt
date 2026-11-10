@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -32,14 +33,17 @@ import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
 import org.kimoteru.wallify.core.designsystem.ui.full_screen_loader.DefaultFullScreenLoader
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
-import org.kimoteru.wallify.core.designsystem.ui.image.CachedAsyncImage
+import org.kimoteru.wallify.core.designsystem.ui.image.ProgressiveAsyncImage
 import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorDescription
 import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorTitle
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMessage
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
+import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
+import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.feature.photo.presentation.components.PhotoComponent
@@ -59,7 +63,11 @@ object PhotoContract {
         val pendingCollectionIds: Set<Int> = emptySet(),
         val isLoading: Boolean = true,
         val hasError: Boolean = false,
-        val isDownloading: Boolean = false
+        val isDownloading: Boolean = false,
+        val detailImageQuality: ImageQuality = UserSettings.Default.detailImageQuality,
+
+        /** Quality of the lists: the image already loaded there stands in while the chosen one loads. */
+        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality
     ) : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent {
@@ -158,6 +166,27 @@ fun PhotoUi(
     }
 }
 
+/**
+ * The photo in the quality chosen for this screen: its color, then the small version, then the chosen one. While it
+ * loads, the image from the list the photo was opened from (already in memory) stands in.
+ */
+@Composable
+private fun PhotoImage(
+    modifier: Modifier = Modifier,
+    photo: Photo,
+    uiState: PhotoContract.UiState,
+    contentScale: ContentScale
+) {
+    ProgressiveAsyncImage(
+        modifier = modifier,
+        colorHex = photo.color,
+        lowUrl = photo.urls.forQuality(ImageQuality.Low),
+        highUrl = photo.urls.forQuality(uiState.detailImageQuality),
+        placeholderKey = photo.urls.forQuality(uiState.listImageQuality),
+        contentScale = contentScale
+    )
+}
+
 /** Phone: the photo at the top, everything else under it in one scroll. */
 @Composable
 private fun PhotoCompactContent(
@@ -166,7 +195,6 @@ private fun PhotoCompactContent(
     scroll: ScrollState,
     obtainEvent: (PhotoContract.UiEvent) -> Unit
 ) {
-    val appColor = AppTheme.color
     val appCorner = AppTheme.corner
     val appPadding = AppTheme.padding
 
@@ -177,7 +205,7 @@ private fun PhotoCompactContent(
             .fillMaxSize()
             .verticalScroll(scroll)
     ) {
-        CachedAsyncImage(
+        PhotoImage(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(imageRatio.coerceIn(COMPACT_MIN_IMAGE_RATIO, COMPACT_MAX_IMAGE_RATIO))
@@ -187,9 +215,10 @@ private fun PhotoCompactContent(
                         bottomEnd = appCorner.large + appCorner.small
                     )
                 )
-                .background(appColor.glass.sub)
                 .blurSource(BlurSourceZIndex.Screen),
-            model = photo.urls.regular
+            photo = photo,
+            uiState = uiState,
+            contentScale = ContentScale.Crop
         )
 
         PhotoDetails(
@@ -229,9 +258,15 @@ private fun PhotoWideContent(
                 .clip(RoundedCornerShape(appCorner.large + appCorner.smallSpecial))
                 .background(appColor.basic.background)
         ) {
-            CachedAsyncImage(
-                modifier = Modifier.fillMaxSize(),
-                model = photo.urls.regular,
+            val imageRatio = if (photo.width > 0 && photo.height > 0) photo.width / photo.height.toFloat() else 1f
+
+            // The color of the photo fills the shape of the photo, not the whole panel around it.
+            PhotoImage(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .aspectRatio(imageRatio),
+                photo = photo,
+                uiState = uiState,
                 contentScale = ContentScale.Fit
             )
         }

@@ -43,6 +43,7 @@ import org.kimoteru.wallify.core.model.stats.MonthStats
 import org.kimoteru.wallify.core.model.stats.TotalStats
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.presentation.settings.ImageQualityUi
 import org.kimoteru.wallify.core.presentation.settings.PhotoColumnsUi
 import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ScreenLayoutUi
@@ -57,6 +58,11 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_account
 import org.kimoteru.wallify.core.resources.generated.resources.settings_appearance
 import org.kimoteru.wallify.core.resources.generated.resources.settings_columns
 import org.kimoteru.wallify.core.resources.generated.resources.settings_columns_auto
+import org.kimoteru.wallify.core.resources.generated.resources.settings_image_quality
+import org.kimoteru.wallify.core.resources.generated.resources.settings_image_quality_description
+import org.kimoteru.wallify.core.resources.generated.resources.settings_image_quality_detail
+import org.kimoteru.wallify.core.resources.generated.resources.settings_image_quality_download
+import org.kimoteru.wallify.core.resources.generated.resources.settings_image_quality_list
 import org.kimoteru.wallify.core.resources.generated.resources.settings_language
 import org.kimoteru.wallify.core.resources.generated.resources.settings_language_description
 import org.kimoteru.wallify.core.resources.generated.resources.settings_layout
@@ -83,6 +89,12 @@ object SettingsContract {
         val photoColumns: PhotoColumnsUi = PhotoColumnsUi.Auto,
         val screenLayouts: List<ScreenLayoutUi> = ScreenLayoutUi.entries,
         val screenLayout: ScreenLayoutUi = ScreenLayoutUi.Auto,
+        /** The original is only for downloads: on screen it is a huge file for no visible gain. */
+        val viewImageQualities: List<ImageQualityUi> = ImageQualityUi.entries - ImageQualityUi.Original,
+        val downloadImageQualities: List<ImageQualityUi> = ImageQualityUi.entries,
+        val listImageQuality: ImageQualityUi = ImageQualityUi.Medium,
+        val detailImageQuality: ImageQualityUi = ImageQualityUi.High,
+        val downloadImageQuality: ImageQualityUi = ImageQualityUi.Original,
         val languages: List<AppLanguage> = SupportedLanguages,
 
         val languageTag: String = SupportedLanguages.first().tag,
@@ -98,6 +110,12 @@ object SettingsContract {
         data class SelectPhotoColumns(val columns: PhotoColumnsUi) : UiEvent
 
         data class SelectScreenLayout(val screenLayout: ScreenLayoutUi) : UiEvent
+
+        data class SelectListImageQuality(val quality: ImageQualityUi) : UiEvent
+
+        data class SelectDetailImageQuality(val quality: ImageQualityUi) : UiEvent
+
+        data class SelectDownloadImageQuality(val quality: ImageQualityUi) : UiEvent
 
         data class SelectLanguage(val languageTag: String) : UiEvent
 
@@ -298,6 +316,35 @@ fun SettingsUi(
                 )
             }
 
+            SettingsSection(title = stringResource(Res.string.settings_image_quality)) {
+                ImageQualityChoice(
+                    title = stringResource(Res.string.settings_image_quality_list),
+                    qualities = uiState.viewImageQualities,
+                    selected = uiState.listImageQuality,
+                    onSelect = { obtainEvent(SettingsContract.UiEvent.SelectListImageQuality(it)) }
+                )
+
+                ImageQualityChoice(
+                    title = stringResource(Res.string.settings_image_quality_detail),
+                    qualities = uiState.viewImageQualities,
+                    selected = uiState.detailImageQuality,
+                    onSelect = { obtainEvent(SettingsContract.UiEvent.SelectDetailImageQuality(it)) }
+                )
+
+                ImageQualityChoice(
+                    title = stringResource(Res.string.settings_image_quality_download),
+                    qualities = uiState.downloadImageQualities,
+                    selected = uiState.downloadImageQuality,
+                    onSelect = { obtainEvent(SettingsContract.UiEvent.SelectDownloadImageQuality(it)) }
+                )
+
+                Text(
+                    text = stringResource(Res.string.settings_image_quality_description),
+                    style = appTypography.h7.regular,
+                    color = appColor.text.subtitle
+                )
+            }
+
             if (uiState.totalStats != null || uiState.monthStats != null) {
                 SettingsSection(title = stringResource(Res.string.settings_service_title)) {
                     uiState.totalStats?.let { total ->
@@ -361,6 +408,34 @@ private fun SettingsSection(
         ) {
             content()
         }
+    }
+}
+
+/** A caption over a segmented choice of an image quality. */
+@Composable
+private fun ImageQualityChoice(
+    title: String,
+    qualities: List<ImageQualityUi>,
+    selected: ImageQualityUi,
+    onSelect: (ImageQualityUi) -> Unit
+) {
+    val appColor = AppTheme.color
+    val appPadding = AppTheme.padding
+    val appTypography = AppTheme.typography
+
+    Column(verticalArrangement = Arrangement.spacedBy(appPadding.small)) {
+        Text(
+            text = title.uppercase(),
+            style = appTypography.caps.semiBold,
+            color = appColor.text.subtitle
+        )
+
+        GlassSegmentedControl(
+            modifier = Modifier.fillMaxWidth(),
+            options = qualities.map { quality -> stringResource(quality.label) },
+            selectedIndex = qualities.indexOf(selected),
+            onSelect = { index -> onSelect(qualities[index]) }
+        )
     }
 }
 

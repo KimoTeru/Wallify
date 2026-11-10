@@ -1,7 +1,6 @@
 package org.kimoteru.wallify.feature.photo.presentation.components
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.essenty.instancekeeper.getOrCreate
 import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponentCore
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.ComponentEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiEvent
@@ -20,7 +19,7 @@ class DefaultPhotoComponent(
 ),
     PhotoComponent {
 
-    override val logic: PhotoLogic = instanceKeeper.getOrCreate { get<PhotoLogic> { parametersOf(photoId) } }
+    override val logic: PhotoLogic = retainedLogic { get<PhotoLogic> { parametersOf(photoId) } }
 
     override fun obtainNavigateEvent(event: PhotoNavigationEvent) {
         when (event) {

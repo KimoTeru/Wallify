@@ -21,6 +21,17 @@ interface ListDao {
     @Query("SELECT COUNT(*) FROM list_entry WHERE listKey = :listKey")
     suspend fun countEntries(listKey: String): Int
 
+    /**
+     * Ids saved at the positions [fromPosition] until [toPosition] of the list, in order. A write compares them with
+     * the new ones first: Room invalidates every reader of `list_entry` on any write, even of equal rows.
+     */
+    @Query(
+        "SELECT itemId FROM list_entry WHERE listKey = :listKey AND position >= :fromPosition " +
+            "AND position < :toPosition ORDER BY position ASC"
+    )
+    suspend fun getItemIds(listKey: String, fromPosition: Int, toPosition: Int): List<String>
+
+    /** Freshness of a list or of a single item (see [ListStateEntity]). */
     @Upsert
     suspend fun upsertState(state: ListStateEntity)
 
@@ -34,6 +45,16 @@ interface ListDao {
      */
     @Query("DELETE FROM list_state WHERE substr(listKey, 1, length(:prefix)) = :prefix")
     suspend fun deleteStatesByPrefix(prefix: String)
+
+    /** Drops the order of the lists last loaded before [threshold]; their states go with [deleteStatesBefore]. */
+    @Query(
+        "DELETE FROM list_entry WHERE listKey IN " +
+            "(SELECT listKey FROM list_state WHERE updatedAtEpochMillis < :threshold)"
+    )
+    suspend fun deleteEntriesOfStatesBefore(threshold: Long)
+
+    @Query("DELETE FROM list_state WHERE updatedAtEpochMillis < :threshold")
+    suspend fun deleteStatesBefore(threshold: Long)
 
     @Query("DELETE FROM list_entry")
     suspend fun deleteAllEntries()

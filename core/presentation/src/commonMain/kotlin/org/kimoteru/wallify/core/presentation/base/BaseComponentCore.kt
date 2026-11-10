@@ -5,8 +5,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
+import com.arkivanov.essenty.instancekeeper.retainedInstance
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
-import com.arkivanov.essenty.lifecycle.doOnCreate
 import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.essenty.lifecycle.doOnPause
 import com.arkivanov.essenty.lifecycle.doOnResume
@@ -17,7 +17,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.flow.MutableStateEventFlowWithContent
@@ -70,7 +69,6 @@ abstract class BaseDefaultComponentCore<
     init {
         coroutineScope.launch {
             logic.apply {
-                doOnCreate { onCreate() }
                 doOnStart { onStart() }
                 doOnResume { onResume() }
                 doOnPause { onPause() }
@@ -103,6 +101,14 @@ abstract class BaseDefaultComponentCore<
     fun navigateBack(result: ScreenBackResult? = null) {
         navigateBack?.invoke()
     }
+
+    /**
+     * The logic of the screen, kept across configuration changes like a ViewModel. [factory] runs only when there is
+     * no kept instance yet, so [BaseLogicCore.onCreate] runs there, once per logic, and not on every recreated
+     * component.
+     */
+    protected inline fun <reified L : Logic> retainedLogic(factory: () -> L): L =
+        retainedInstance { factory().apply { onCreate() } }
 
     @Composable
     override fun getUiState(): UiState {
@@ -156,6 +162,10 @@ abstract class BaseLogicCore<
 
     protected open val defaultBackResult: ScreenBackResult? = null
 
+    /**
+     * Runs once, when the logic is created (`retainedLogic`), like the `init` of a ViewModel: the logic outlives a
+     * recreated component. The other callbacks follow the lifecycle of the current component.
+     */
     open fun onCreate() = Unit
     open fun onStart() = Unit
     open fun onResume() = Unit
