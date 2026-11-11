@@ -5,15 +5,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
-import org.kimoteru.wallify.core.common.response.onError
 import org.kimoteru.wallify.core.domain.repository.AuthRepository
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
-import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.domain.NotifierManager
-import org.kimoteru.wallify.core.resources.generated.resources.Res
-import org.kimoteru.wallify.core.resources.generated.resources.error_dialog_description
+import org.kimoteru.wallify.core.presentation.errors.AuthApiError
 import org.kimoteru.wallify.feature.auth.presentation.ui.AuthContract
 import org.kimoteru.wallify.feature.auth.presentation.ui.AuthContract.UiEvent
 import org.koin.core.annotation.Factory
@@ -27,7 +23,6 @@ interface AuthComponent : BaseComponent<AuthContract.UiState, UiEvent>
 @Factory
 class AuthLogic(
     private val authRepository: AuthRepository,
-    private val notifierManager: NotifierManager
 ) : BaseLogic<AuthContract.UiState, UiEvent, AuthNavigationEvent>() {
 
     private var signInJob: Job? = null
@@ -49,8 +44,11 @@ class AuthLogic(
             updateIsSigningIn(true)
 
             try {
-                authRepository.signIn()
-                    .onError { notifierManager.showLong(getString(Res.string.error_dialog_description)) }
+                // The repeat is a new sign-in with a new browser page: the code of the failed one is already used.
+                handleResponse<Boolean, AuthApiError>(
+                    request = { authRepository.signIn() },
+                    onRetry = { signIn() }
+                )
             } finally {
                 updateIsSigningIn(false)
             }

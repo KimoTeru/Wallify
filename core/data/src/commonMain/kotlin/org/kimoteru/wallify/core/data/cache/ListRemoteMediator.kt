@@ -31,7 +31,7 @@ internal class ListRemoteMediator<E : Any, T : Any>(
     private val listDao: ListDao,
     private val fetch: suspend (page: Int, size: Int) -> Response<List<T>>,
     private val itemId: (T) -> String,
-    private val saveItems: suspend (items: List<T>) -> Unit
+    private val saveItems: suspend (items: List<T>) -> Unit,
 ) : RemoteMediator<Int, E>() {
 
     override suspend fun initialize(): InitializeAction {
@@ -48,9 +48,8 @@ internal class ListRemoteMediator<E : Any, T : Any>(
             val page = if (isRefresh) FIRST_PAGE else listDao.countEntries(listKey) / pageSize + FIRST_PAGE
 
             when (val response = fetch(page, pageSize)) {
-                is Response.Error -> MediatorResult.Error(
-                    PagingLoadException(message = response.errorData.message, code = response.errorData.code)
-                )
+                is Response.Error -> MediatorResult.Error(PagingLoadException(response.errorData))
+
                 is Response.Success -> {
                     val items = response.data
                     val now = loader.now()

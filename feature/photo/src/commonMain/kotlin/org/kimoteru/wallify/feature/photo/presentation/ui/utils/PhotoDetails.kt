@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.feature.photo.presentation.ui
+package org.kimoteru.wallify.feature.photo.presentation.ui.utils
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -52,10 +52,11 @@ import org.kimoteru.wallify.core.resources.generated.resources.photo_stats_downl
 import org.kimoteru.wallify.core.resources.generated.resources.photo_stats_title
 import org.kimoteru.wallify.core.resources.generated.resources.photo_stats_views
 import org.kimoteru.wallify.core.resources.generated.resources.photo_tags
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract
 
 /** Everything about the photo except the image: author, actions, statistics, camera data, tags, collections. */
 @Composable
-fun PhotoDetails(
+internal fun PhotoDetails(
     modifier: Modifier = Modifier,
     photo: Photo,
     uiState: PhotoContract.UiState,

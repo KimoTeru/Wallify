@@ -54,16 +54,25 @@ Android-приложение дополнительно переключает �
 ## Нет сети
 
 Отсутствие сети — состояние, а не событие, поэтому его не показываем модальным окном (так в Material и в гайдах по
-офлайну): снекбар `error_no_internet` держит `RootGraphLogic`, пока сети нет, а у экрана с
-неудавшейся загрузкой — инлайн-ошибка с «повторить».
+офлайну): снекбар `error_no_internet` держит `RootGraphLogic`, пока сети нет. Модальных окон у сбоев нет вообще.
+Сбой с контентом на экране — снекбар с «Повторить», без контента — лейаут ошибки на весь контент фичи
+(`code/presentation.md` § Ошибка действия).
 
-1. Текст ошибки списка или экрана берём из `networkErrorTitle()` / `networkErrorDescription()`: без сети это «нет
-   интернета» и обещание, что загрузится само, иначе общий сбой. Корень кладёт состояние сети в `LocalIsOnline`.
-2. Экран, который читает данные, подключает `RetryOnReconnect(isFailed) { retry }`: загрузка повторяется сама, когда
-   сеть вернулась, и только тогда (сбой при сети в цикле не повторяем). Запись (скачать, добавить в коллекцию) так не
-   повторяем: неизвестно, дошёл ли первый запрос, повтор остаётся за пользователем.
-3. Неудавшаяся запись без сети отдельного окна не открывает: снекбар про интернет уже виден. Та же запись при сети
-   показывает `error_dialog_description` тем же снекбаром и прячется сама.
+1. Без контента — `ErrorContentLayout(error, onRetry)` (`ui/layout`): заголовок и описание из
+   `networkErrorTitle(error)` / `networkErrorDescription(error)` (`ui/network`) и кнопка «Повторить». Заголовок по
+   `ResponseErrorType`, описание с HTTP-кодом («Ошибка 404: …»); ошибка без кода без сети — «нет интернета» и
+   обещание, что загрузится само, при сети — общий сбой. Строки типов — `title` /
+   `description` экранного `ResponseErrorTypeUi` (`ui/network`, `toPresentation()`), своих строк ошибок экраны не
+   заводят. Ошибка списка — `refreshError?.responseError`. Пустой
+   список — `ContentMessageLayout(title)`, то же оформление без кнопки; третьего варианта не верстаем. Корень кладёт
+   состояние сети в `LocalIsOnline`.
+2. С контентом — `GlassSnackbar` корня с текстом `ResponseErrorTypeUi.description` и «Повторить» (`handleResponse`,
+   `showErrorWithRetry`, `ListRefreshErrors`). Лимит запросов — тот же снекбар без кнопки. Обычные сообщения
+   (`showShort` / `showLong`, «нет интернета») рисует тот же `GlassSnackbar` без кнопки: вид снекбара в проекте один.
+3. Экран, который читает данные, подключает `RetryOnReconnect(isFailed) { retry }`: загрузка без контента
+   повторяется сама, когда сеть вернулась, и только тогда (сбой при сети в цикле не повторяем). Запись (скачать,
+   добавить в коллекцию) так не повторяем: неизвестно, дошёл ли первый запрос, повтор остаётся за пользователем.
+4. Без сети снекбары экранов не показываются: снекбар про интернет уже виден, а данные догрузит `RetryOnReconnect`.
 
 ## Заголовок окна Desktop
 
@@ -90,9 +99,10 @@ Android-приложение дополнительно переключает �
 | Поиск | `GlassSearchField`: отправка клавишей поиска, крестик очистки |
 | Ввод в форме | `GlassTextField`: подпись над полем, утопленная панель (`GlassLevel.Sub`); `maxLines > 1` — многострочное поле. Форма лежит в `GlassOverlay` |
 | Навигация | `GlassDock` (телефон), `GlassRail` (планшет), `GlassDrawer` (большое окно); пункты — `GlassNavItem` |
+| Снекбар | `GlassSnackbar(message, actionLabel, onAction)`: непрозрачное стекло (`GlassLevel.Solid`, над корнем блюра нет), не шире `dialogMaxWidth`, кнопка — `GlassButton` `Solid`. Экраны его не вызывают: рисует только `NotifierManagerUi` корня (`code/presentation.md` § Общие блоки) |
 | Шторка / диалог | `GlassOverlay(isSheet, onDismiss) { close -> … }`: шторка на `Compact`, диалог на остальных. Экран вкладки кладёт её в `ScreenOverlay { … }`: навигация рисует её над доком и размывает всё под ней. Стекло шторки уходит под системную панель, содержимое остаётся выше неё, нижняя линия выключена |
 | Прячущиеся панели | `LocalNavigationVisibility` + `rememberHideOnScrollConnection`: список вешает на себя `nestedScroll`, док и верхняя панель экрана скрываются при прокрутке вниз и возвращаются при прокрутке вверх |
-| Цифры | `GlassStat` (значение и подпись), `Sparkline` (график ряда без осей) |
+| Цифры | `GlassStat` (значение и подпись), `Sparkline` (график ряда без осей), `ShareBar` (полоса доли 0…1), `BarChart` (столбцы ряда от максимума, подсвечен последний, подписи краёв и максимума параметрами, для доступности — один `contentDescription`) |
 | Фото | `PhotoCard` (карточка с автором), `PhotoGridLayout` (колонки по ширине окна), `PagingPhotoGrid<T>` (постраничная сетка со всеми состояниями), `UserAvatar`; компоновку (`PhotoGridMode`: мозаика, сетка, список) и число колонок берут из `LocalPhotoGridMode` и `LocalPhotoGridColumns`, их задаёт корень по настройкам пользователя — экран их не выбирает; выбор компоновки рисует `PhotoLayoutCard` (миниатюра раскладки вместо текстового переключателя). Выбор пользователя действует на ленту; «Кураторские», «Случайные» и профиль всегда показывают сетку одинаковых карточек (`LocalPhotoGridMode provides PhotoGridMode.Grid` в самом экране) |
 
 Правила:
@@ -280,7 +290,10 @@ BlurLayout(
 - индикаторы и загрузчики (`indicator`, `full_screen_loader`), скелетон-заглушка (`shimmer`: `ShimmerBox`),
   pull-to-refresh (`pull_to_refresh`);
 - изображения (`image`), иконки (`icon`: `AppIcons`, `iconContainer`), тени (`shadow`), модификаторы и анимации
-  (`modifier`, `animation`, `compose`), раскладки (`layout`);
+  (`modifier`, `animation`, `compose`), раскладки (`layout`: ошибка и пустое состояние на весь контент —
+  `ErrorContentLayout`, `ContentMessageLayout`);
+- снекбар (`glass`: `GlassSnackbar`, рисует только корень), текст ошибки по типу (`network`: `networkErrorTitle`,
+  `networkErrorDescription`, `RetryOnReconnect`);
 - клики (`click`), тексты с ссылками (`text`), информационные блоки (`info`).
 
 ## Списки
@@ -292,6 +305,11 @@ BlurLayout(
   `isEmpty`; повтор после ошибки — `paging.retry()`.
 - Список фото — `PagingPhotoGrid` (все состояния внутри); если сетке нужен свой заголовок или смешанные элементы,
   берём `PhotoGridLayout` и добавляем `item(span = StaggeredGridItemSpan.FullLine)` (образец — `feature:profile`).
+- Ошибка обновления списка: пока элементов нет — `ErrorContentLayout` на месте списка (`PagingPhotoGrid` делает это
+  сам); над показанными элементами список остаётся, а сбой идёт в снекбар с «Повторить»: `PagingPhotoGrid` делает это
+  сам, свой список подключает `RefreshErrorEffect(paging)` (`ui/paging`). Обработчик они берут из
+  `LocalRefreshErrorHandler`, его даёт `ListRefreshErrors(retries, onChange)` вокруг списков экрана; без обёртки сбой над
+  элементами не показывается (`code/presentation.md` § Ошибка действия).
   Текст из ресурсов (`stringResource`) вычисляем до лямбды `LazyStaggeredGridScope`: она не composable.
 - Пока список грузится, показываем `ShimmerBox`, а не пустой экран.
 - Состояние прокрутки сетки — `rememberPhotoGridState(keys…)`: в ключах всё, что заменяет список целиком (тема,

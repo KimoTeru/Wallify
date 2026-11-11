@@ -15,6 +15,7 @@ import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.repository.SearchRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.SearchPhotosQuery
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
@@ -60,7 +61,7 @@ class FeedLogic(
             launch {
                 observeUserSettings()
                     .mapDistinctBy { settings -> settings.listImageQuality }
-                    .collect { quality -> uiState.update { it.copy(listImageQuality = quality) } }
+                    .collect { quality -> updateListImageQuality(quality) }
             }
         }
     }
@@ -83,6 +84,7 @@ class FeedLogic(
             is UiEvent.ResetFilters -> updateDraftFilters(SearchFilters())
             is UiEvent.ApplyFilters -> updateFilters(uiState.value.draftFilters)
             is UiEvent.OpenPhoto -> navigate(FeedNavigationEvent.OpenPhoto(event.photoId))
+            is UiEvent.ListRefreshError -> showListRefreshError(event.list, event.error) { addListRetry() }
         }
     }
 
@@ -113,6 +115,15 @@ class FeedLogic(
 
     private fun updateFilters(filters: SearchFilters) {
         uiState.update { it.copy(filters = filters) }
+    }
+
+    private fun updateListImageQuality(quality: ImageQuality) {
+        uiState.update { it.copy(listImageQuality = quality) }
+    }
+
+    /** «Повторить» on a failed refresh of the photos: the list on screen repeats itself when the count grows. */
+    private fun addListRetry() {
+        uiState.update { it.copy(listRetries = it.listRetries + 1) }
     }
 
     private data class SearchRequest(

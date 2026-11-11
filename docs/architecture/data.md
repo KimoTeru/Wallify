@@ -10,6 +10,11 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 `Response.Error(ResponseError(message, code))`. Второго типа результата нет.
 
 - `code` — HTTP-статус; `ResponseError.DEBUG_ERROR_CODE` (`-1`), если кода нет (сеть недоступна, ошибка разбора).
+- Тип ошибки — `ResponseError.type` (`ResponseErrorType`, `core:common`): `Network` (нет кода), `BadRequest`,
+  `Unauthorized`, `Forbidden`, `RateLimited`, `NotFound`, `Server` (5xx), `Unknown`. Он не зависит от бэкенда; решения
+  по ошибке (`isUnauthorized`, `canUseStaleData`, текст на экране) принимаем по типу, а не сравнением `code` с
+  числами. Лимит запросов, который бэкенд шлёт тем же статусом, что и другую ошибку (403), распознаёт `core:network`
+  и ставит `ResponseError.isRateLimited`; 429 — `RateLimited` без флага.
 - Обработка: `map`, `flatMap`, `onSuccess`, `onError`, `handleResponse`, `getOrNull`; зависимые вызовы подряд —
   `combineResponse` (до пяти шагов), независимые — `combineResponses`.
 - Блок, который может бросить исключение, оборачивается в `responseOf { … }`: `CancellationException`
@@ -31,7 +36,8 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 `core:network`. Один `HttpClient` из Koin, собирается `HttpClientFactory`.
 
 - Запрос — `executeRequest<XxxResponse> { client.get("path") }`, возвращает `Response<XxxResponse>`. Не-2xx превращается в
-  `Response.Error` с HTTP-кодом; текст берётся из тела (`ApiErrorBody`: `errors`, `message` или `error`).
+  `Response.Error` с HTTP-кодом; текст берётся из тела (`ApiErrorBody`: `errors`, `message` или `error`). 403 с
+  `X-Ratelimit-Remaining: 0` или текстом `Rate Limit Exceeded` получает `isRateLimited` (`toResponse`).
 - API-класс — маленький класс с `HttpClient` в конструкторе и методами по эндпоинтам; относительные пути, без
   базового адреса.
 - Базовый адрес, таймауты, логирование и статические заголовки приходят из `NetworkConfig`. Адрес и всё, что
@@ -59,7 +65,13 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   `debuggable` приложения, на Desktop — свойство `wallify.debug`, которое задают только задачи `run` и `hotRun`
   (`build-logic`). Заголовок `Authorization` в логах скрыт (`sensitiveHeaders`).
 - Динамические заголовки (токен пользователя, язык) добавляет `AuthHeadersPlugin` из `HeadersCollectorRepository`;
-  вручную в запросах их не ставим.
+  вручную в запросах их не ставим. Он же сообщает об отвергнутом токене пользователя (§ Сессия).
+- Учёт запросов — `RequestStatsPlugin` клиента API (`DownloadHttpClient` не считается): на каждый ответ бэкенда кладёт
+  в очередь `RequestStatsCollector` шаблон эндпоинта (`GET /photos/{id}`) и лимит из заголовков ответа. Шаблоны путей
+  — `EndpointTemplates` в `api/`, имена заголовков лимита — в плагине; новый путь в API-классе добавляется и в
+  шаблоны (иначе он считается как `GET /<первый сегмент>/*`). Считает и хранит `RequestStatsRepository`
+  (`core:data`, стартует с Koin): один `StateFlow`, сохранение в DataStore через секунду после последнего изменения.
+  Экран видит только `RequestStats` из `core:model`.
 - Для скачивания произвольных файлов используется отдельный `DownloadHttpClient` без базового адреса и без
   заголовков API — ключ не уходит на сторонние хосты.
 - Состояние сети — `NetworkMonitor`; фичи видят его только как `ConnectivityRepository` из `core:domain`.
@@ -99,8 +111,14 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   работает как анонимный клиент со статическим ключом.
 - `SessionHeadersSynchronizer` стартует вместе с Koin и сводит токен и язык (из `UserSettings` или системный) в
   `HeadersCollectorRepository`. Токен уходит как `Bearer <token>`, заменяя статический заголовок авторизации.
-- Истёкшая сессия: 401 (`ResponseError.isUnauthorized`) на загрузке текущего пользователя очищает сессию в
-  `UserSessionSynchronizer` (`session.clear()`), и корневой граф показывает экран входа.
+- Истёкшая сессия — дело слоя данных, один механизм на любой запрос. `AuthHeadersPlugin` (`core:network`) замечает
+  ответ 401 на запрос, ушедший с токеном пользователя (`Authorization: Bearer …`), и кладёт этот заголовок в
+  `SessionExpiryCollector` (очередь, как у `RequestStatsCollector`). `UserSessionSynchronizer` (`core:data`, стартует с
+  Koin) читает очередь и очищает сессию `session.clear()`, если заголовок всё ещё текущий (поздний ответ на запрос со
+  старым токеном не выкидывает нового пользователя); дальше `SessionDataCleaner` стирает данные, а корневой граф по
+  `isSignedIn` показывает вход. 401 анонимного клиента (статический ключ) и страниц OAuth (обмен кода на токен идёт
+  без `Bearer`, его 401 — отказ приложению, `AuthApiError`) сессию не трогают. Экран, корень и `handleResponse` на
+  401 ничего не делают и не показывают; свою очистку при 401 рядом не пишем.
 - Данные, нужные многим экранам (вошедший пользователь), экраны не загружают. Их грузит слой сессии и держит
   репозиторий в `StateFlow`: `UserSessionSynchronizer` следит за `Authorization` из `HeadersCollectorRepository` (а не
   за сохранённым токеном: запрос должен уйти уже с новым токеном), при новом токене вызывает
@@ -111,8 +129,9 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   Синхронизаторы стартуют вместе с Koin (`@Singleton(createdAtStart = true)` в `DataModule`).
 - Слой данных не показывает диалоги, но и не прячет сбои: фоновая работа открывает их в домене интерфейсом
   (`UserSessionManager.loadError`), а корень (`RootGraphLogic`) решает, что показать. Так сбой загрузки пользователя
-  (не 401) даёт снекбар, но только пока устройство в сети: без сети уже виден снекбар про интернет, а загрузка повторяется сама
-  при каждом возврате сети. Фоновой повтор ждёт возврата сети, а не крутится по таймеру.
+  (не 401) даёт снекбар с «Повторить» (`UserSessionManager.retryLoad()`), но только пока устройство в сети: без сети
+  уже виден снекбар про интернет, а загрузка повторяется сама при каждом возврате сети. Фоновой повтор ждёт возврата
+  сети или кнопки пользователя, а не крутится по таймеру.
 - Вход пользователя — `AuthRepository.signIn()` (OAuth, код авторизации, системный браузер): одним вызовом
   открывает страницу входа, ждёт возврата пользователя, меняет код на токен и кладёт его в `SessionRepository`;
   экран токен не видит. Результат — `Response<Boolean>`: `true` вошёл, `false` отказался или не вернулся за 5 минут,
@@ -139,6 +158,12 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   нет.
 - Пользовательские настройки — `UserSettings` (`core:model`) через `UserSettingsRepository`; язык и другие поля
   читают оттуда, а не из DataStore напрямую.
+- Счётчики запросов (`RequestStats`) лежат в DataStore и стираются вместе с сессией (§ Кэш, Очистка). Лимит запросов не сохраняется — через час он устарел, до первого ответа после запуска его нет.
+  История по дням (`RequestStats.daily`) считается по локальному дню пользователя: «сейчас» из `TimeProvider`, смещение
+  пояса из `TimeZoneProvider` (`core:platform`), библиотеки дат для этого не нужно. Хранится только 31 последний день
+  (старые обрезаются при записи), в истории лишь дни с запросами; ряд ровно на N дней с нулями отдаёт
+  `RequestStatsRepository.lastDays`, «сегодня» он берёт в момент вызова. Новое поле сохраняемой модели — со значением
+  по умолчанию, чтобы прежний JSON читался.
 
 ## Кэш
 
@@ -176,7 +201,7 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 - Случайные фото (`getRandomPhoto`, `getRandomPhotos`): вызов с `forceRefresh` (shuffle, повтор после сбоя)
   спрашивает бэкенд за новым набором и сохраняет его в `photo` и в список `photos:random:…`; открытие экрана
   (`forceRefresh = false`) показывает набор моложе `CacheTtl.Feed`. Если бэкенд не ответил так, что подойдёт
-  сохранённое (`canUseStaleData`: нет сети или ошибка разбора, 5xx, 403/429 как лимит запросов), показывается
+  сохранённое (`canUseStaleData` по типу: `Network`, `Server`, `RateLimited` и любой 403), показывается
   последний сохранённый набор для того же запроса. 401, 400 и 404 сохранённым не прячем.
 - Действие `trackDownload` в базу не пишется: бэкенд требует сообщать о каждом скачивании, пропустить или
   подменить вызов нельзя. Адрес файла в выбранном `UserSettings.downloadImageQuality` и с принудительным сохранением
@@ -192,8 +217,8 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 - `UserRepository.currentUser` — `StateFlow`, собранный из таблицы `user` (строка с `isCurrent`), поэтому приложение
   стартует с сохранённым пользователем, пока бэкенд не ответил.
 - Очистка. Когда сессия закончилась (выход, 401 или токен убран другим способом), `SessionDataCleaner` стирает всё
-  пользовательское: каждую таблицу (`CacheDatabaseCleaner`), скачанные файлы (`FileDownloader.clear()`) и
-  вошедшего пользователя; кэши картинок чистит UI при показе экрана входа (`ClearImageCacheEffect`). Настройки
+  пользовательское: каждую таблицу (`CacheDatabaseCleaner`), скачанные файлы (`FileDownloader.clear()`),
+  вошедшего пользователя и счётчики запросов (`RequestStatsRepository.reset()`); кэши картинок чистит UI при показе экрана входа (`ClearImageCacheEffect`). Настройки
   приложения (тема, компоновка, язык) остаются. Room KMP не умеет `clearAllTables`, поэтому новая таблица
   обязательно добавляется в `CacheDatabaseCleaner.clearAll()`.
 - Рост базы. При старте приложения `CacheDatabaseCleaner.pruneStale()` удаляет то, что не загружалось дольше
@@ -219,7 +244,8 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   базы, для данных, которые не кэшируем.
   Первая страница — 1; страница короче запрошенной — последняя. `initialLoadSize` равен `pageSize`, не меняем:
   иначе арифметика номеров страниц ломается.
-- Ошибка страницы приходит как `PagingLoadException` с HTTP-кодом.
+- Ошибка страницы приходит как `PagingLoadException(error: ResponseError)` (`code`, `type`); Ui достаёт её из
+  `LoadState` через `Throwable.responseError` (брошенное исключение — ошибка без кода).
 - Компромисс, принятый сознательно: доменные интерфейсы (`core:domain`) отдают `Flow<PagingData<T>>` из AndroidX
   Paging, поэтому `paging-common` объявлен в `core:common` как `api` и виден `core:domain`, `core:data` и фичам. Свой
   доменный тип страницы не вводим: он дублировал бы `PagingData`, а `cachedIn` и `collectAsLazyPagingItems()` всё
@@ -231,5 +257,5 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   таблице, и без заглушек позиция после сброса источника сбивается, список «прыгает». `null`-элемент Ui рисует
   заглушкой `PhotoCardPlaceholder` (`design/foundations.md` § Списки).
 - Pull-to-refresh списка — `LazyPagingItems.refresh()`: REFRESH медиатора идёт в сеть при любом возрасте списка.
-- Ошибка `RemoteMediator` тоже приходит как `PagingLoadException` с HTTP-кодом: экран показывает её, только если
+- Ошибка `RemoteMediator` тоже приходит как `PagingLoadException` с `ResponseError`: экран показывает её, только если
   в списке ещё нет сохранённых элементов.

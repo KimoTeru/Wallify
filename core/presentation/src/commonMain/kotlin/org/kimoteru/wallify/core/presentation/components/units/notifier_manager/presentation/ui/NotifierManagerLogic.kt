@@ -41,9 +41,27 @@ class NotifierManagerLogic(
         }
     }
 
+    override fun obtainUiEvent(event: UiEvent) {
+        when (event) {
+            is UiEvent.PerformAction -> performAction()
+        }
+    }
+
     fun show(notifierModel: NotifierModel) = updateNotifierModel(notifierModel)
 
     fun dismiss() = updateNotifierModel(null)
+
+    /** Closes [notifierModel] only while it is the one on screen. */
+    fun dismiss(notifierModel: NotifierModel) {
+        if (uiState.value.notifierModel === notifierModel) updateNotifierModel(null)
+    }
+
+    /** The snackbar closes first: its action may show the next one (a repeat that failed again). */
+    private fun performAction() {
+        val notifierModel = uiState.value.notifierModel ?: return
+        updateNotifierModel(null)
+        notifierModel.onAction?.invoke()
+    }
 
     private fun updateNotifierModel(notifierModel: NotifierModel?) {
         uiState.update { it.copy(notifierModel = notifierModel) }

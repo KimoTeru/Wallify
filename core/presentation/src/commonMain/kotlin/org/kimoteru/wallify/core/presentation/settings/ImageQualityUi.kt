@@ -10,24 +10,15 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_image_qu
 
 /** Label of an image quality. */
 enum class ImageQualityUi(
-    val label: StringResource
+    internal val domain: ImageQuality,
+    val label: StringResource,
 ) {
-    Low(Res.string.settings_image_quality_low),
-    Medium(Res.string.settings_image_quality_medium),
-    High(Res.string.settings_image_quality_high),
-    Original(Res.string.settings_image_quality_original)
+    Low(ImageQuality.Low, Res.string.settings_image_quality_low),
+    Medium(ImageQuality.Medium, Res.string.settings_image_quality_medium),
+    High(ImageQuality.High, Res.string.settings_image_quality_high),
+    Original(ImageQuality.Original, Res.string.settings_image_quality_original),
 }
 
-fun ImageQualityUi.toDomain(): ImageQuality = when (this) {
-    ImageQualityUi.Low -> ImageQuality.Low
-    ImageQualityUi.Medium -> ImageQuality.Medium
-    ImageQualityUi.High -> ImageQuality.High
-    ImageQualityUi.Original -> ImageQuality.Original
-}
+fun ImageQualityUi.toDomain(): ImageQuality = domain
 
-fun ImageQuality.toPresentation(): ImageQualityUi = when (this) {
-    ImageQuality.Low -> ImageQualityUi.Low
-    ImageQuality.Medium -> ImageQualityUi.Medium
-    ImageQuality.High -> ImageQualityUi.High
-    ImageQuality.Original -> ImageQualityUi.Original
-}
+fun ImageQuality.toPresentation(): ImageQualityUi = ImageQualityUi.entries.first { it.domain == this }

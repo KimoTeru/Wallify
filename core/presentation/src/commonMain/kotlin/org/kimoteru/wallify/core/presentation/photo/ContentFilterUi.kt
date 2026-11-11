@@ -8,18 +8,13 @@ import org.kimoteru.wallify.core.resources.generated.resources.content_filter_lo
 
 /** Label of a content filter. */
 enum class ContentFilterUi(
-    val label: StringResource
+    internal val domain: ContentFilter,
+    val label: StringResource,
 ) {
-    Low(Res.string.content_filter_low),
-    High(Res.string.content_filter_high)
+    Low(ContentFilter.Low, Res.string.content_filter_low),
+    High(ContentFilter.High, Res.string.content_filter_high),
 }
 
-fun ContentFilterUi.toDomain(): ContentFilter = when (this) {
-    ContentFilterUi.Low -> ContentFilter.Low
-    ContentFilterUi.High -> ContentFilter.High
-}
+fun ContentFilterUi.toDomain(): ContentFilter = domain
 
-fun ContentFilter.toPresentation(): ContentFilterUi = when (this) {
-    ContentFilter.Low -> ContentFilterUi.Low
-    ContentFilter.High -> ContentFilterUi.High
-}
+fun ContentFilter.toPresentation(): ContentFilterUi = ContentFilterUi.entries.first { it.domain == this }

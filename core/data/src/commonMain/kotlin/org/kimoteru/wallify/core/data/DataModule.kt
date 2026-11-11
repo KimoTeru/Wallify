@@ -10,12 +10,14 @@ import org.kimoteru.wallify.core.data.session.SessionHeadersSynchronizer
 import org.kimoteru.wallify.core.data.session.UserSessionSynchronizer
 import org.kimoteru.wallify.core.domain.manager.UserSessionManager
 import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
+import org.kimoteru.wallify.core.domain.repository.RequestStatsRepository
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.repository.UserSettingsRepository
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.domain.usecase.settings.UpdateUserSettingsUseCase
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
+import org.kimoteru.wallify.core.network.session.SessionExpiryCollector
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Factory
@@ -53,12 +55,14 @@ class DataModule {
     @Singleton(createdAtStart = true)
     fun userSessionManager(
         headersCollector: HeadersCollectorRepository,
+        sessionExpiry: SessionExpiryCollector,
         userRepository: UserRepository,
         session: SessionRepository,
         connectivityRepository: ConnectivityRepository,
         scope: CoroutineScope
     ): UserSessionManager = UserSessionSynchronizer(
         headersCollector = headersCollector,
+        sessionExpiry = sessionExpiry,
         userRepository = userRepository,
         session = session,
         connectivityRepository = connectivityRepository,
@@ -71,12 +75,14 @@ class DataModule {
         databaseCleaner: CacheDatabaseCleaner,
         fileDownloader: FileDownloader,
         userRepository: UserRepository,
+        requestStatsRepository: RequestStatsRepository,
         scope: CoroutineScope
     ): SessionDataCleaner = SessionDataCleaner(
         session = session,
         databaseCleaner = databaseCleaner,
         fileDownloader = fileDownloader,
         userRepository = userRepository,
+        requestStatsRepository = requestStatsRepository,
         scope = scope
     ).also { it.start() }
 

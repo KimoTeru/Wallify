@@ -13,14 +13,23 @@ Related: `architecture/overview.md`, `architecture/data.md`, `code/presentation.
 3. **Use case** — одна ответственность, один публичный `invoke`, базовые классы в
    `core:domain/.../usecase` (`UseCase`, `SuspendUseCase`, `FlowUseCase`). Заводим, когда логика нужна нескольким
    экранам или это не одиночный вызов репозитория. Однострочная обёртка над репозиторием — не use case.
-4. Результат операции, которая может упасть, — `Response<T>` (`architecture/data.md` § Response). В presentation —
-   `.onSuccess` / `.onError` / `handleResponse`.
+4. Результат операции, которая может упасть, — `Response<T>` (`architecture/data.md` § Response). В presentation
+   разовое действие — `handleResponse` базовой логики (`code/presentation.md` § Ошибка действия), загрузка в
+   состояние экрана — `.onSuccess` / `.onError` / `handleResponse` из `core:common`.
 5. Состояние экрана живёт в `Logic` (`code/presentation.md`). Репозитории, use case'ы и менеджеры данных своего
    состояния экрана не держат: у них только зависимости из конструктора и (у репозиториев) источники данных.
 6. Модели `core:model` не знают про UI и сеть. Модели запроса и ответа (`XxxRequest` / `XxxResponse`) — рядом с API в
    `core:network`; маппер `toDomain()` / `toRequest()` лежит в файле своей модели, отдельных файлов мапперов нет.
    Если у значения есть доменный enum, экранный называется `XxxUi`: `toDomain()` и `toPresentation()` лежат в его
    файле. Образец — `ContentFilter` и `ContentFilterUi`. Доменный enum про экранный не знает.
+   Первый параметр `XxxUi` — его доменное значение (`internal val domain: Xxx`), маппер — одна строка без
+   перечисления и без `when`: `toDomain() = domain`, `toPresentation() = XxxUi.entries.first { it.domain == this }`.
+   `domain` — `internal`: фичи переходят между слоями только через `toDomain()` / `toPresentation()`. Новый вариант
+   добавляем только в enum. Пропущенное значение компилятор не поймает (`first` упадёт в рантайме), поэтому у
+   каждого `XxxUi` есть тест «каждое значение туда и обратно» (образец — `SettingsUiTest`). Если соответствие не
+   один к одному (`PhotoColumnsUi`: `Auto` — это `null`), маппер пишем под свой случай.
+   `XxxUi`, который рисует компонент дизайн-системы, лежит в `core:design-system` рядом с ним
+   (`ResponseErrorTypeUi`): `core:presentation` дизайн-системе не виден.
 
 ## Цепочка
 

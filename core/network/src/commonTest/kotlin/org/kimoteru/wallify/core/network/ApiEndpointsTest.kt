@@ -40,6 +40,8 @@ import org.kimoteru.wallify.core.network.model.response.photo.PhotoResponse
 import org.kimoteru.wallify.core.network.model.response.search.SearchPhotosResponse
 import org.kimoteru.wallify.core.network.model.response.stats.TotalStatsResponse
 import org.kimoteru.wallify.core.network.model.response.topic.TopicResponse
+import org.kimoteru.wallify.core.network.session.SessionExpiryCollectorImpl
+import org.kimoteru.wallify.core.network.stats.RequestStatsCollectorImpl
 
 class ApiEndpointsTest {
 
@@ -286,7 +288,9 @@ class ApiEndpointsTest {
 private fun client(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): HttpClient =
     HttpClientFactory(
         networkConfig = StaticNetworkConfig(baseUrl = "https://api.example.com/"),
-        headersCollector = HeadersCollectorRepositoryImpl()
+        headersCollector = HeadersCollectorRepositoryImpl(),
+        requestStatsCollector = RequestStatsCollectorImpl(),
+        sessionExpiryCollector = SessionExpiryCollectorImpl()
     ).create(engine = MockEngine(handler))
 
 private fun MockRequestHandleScope.json(content: String): HttpResponseData =

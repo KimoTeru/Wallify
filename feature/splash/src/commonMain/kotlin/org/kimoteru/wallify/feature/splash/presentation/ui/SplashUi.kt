@@ -15,10 +15,9 @@ import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.feature.splash.presentation.components.SplashComponent
+import org.kimoteru.wallify.feature.splash.presentation.ui.utils.SPLASH_DURATION_MS
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.app_name
-
-private const val SPLASH_DURATION_MS = 1_500L
 
 sealed interface SplashContract {
     class UiState : BaseContract.UiState

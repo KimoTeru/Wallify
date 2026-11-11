@@ -18,22 +18,24 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
-import org.kimoteru.wallify.core.common.response.handleResponse
+import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseComponentCore
 import org.kimoteru.wallify.core.presentation.base.BaseLogicCore
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
+import org.kimoteru.wallify.core.presentation.errors.ProfileApiError
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract
-import org.kimoteru.wallify.feature.profile.presentation.ui.EditField
-import org.kimoteru.wallify.feature.profile.presentation.ui.EditForm
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.ComponentEvent
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditField
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditForm
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiState
 import org.koin.core.annotation.Factory
@@ -104,7 +106,7 @@ class ProfileLogic(
             launch {
                 observeUserSettings()
                     .mapDistinctBy { settings -> settings.listImageQuality }
-                    .collect { quality -> uiState.update { it.copy(listImageQuality = quality) } }
+                    .collect { quality -> updateListImageQuality(quality) }
             }
         }
 
@@ -131,6 +133,7 @@ class ProfileLogic(
             is UiEvent.HideEdit -> updateEditForm(null)
             is UiEvent.ChangeEditField -> changeEditField(event.field, event.value)
             is UiEvent.SaveEdit -> saveEdit()
+            is UiEvent.ListRefreshError -> showListRefreshError(event.list, event.error) { addListRetry() }
         }
     }
 
@@ -166,7 +169,7 @@ class ProfileLogic(
                                 updateIsLoading(false)
                             }
                             is Resource.Error -> {
-                                updateHasError(true)
+                                updateError(resource.error)
                                 updateIsLoading(false)
                             }
                         }
@@ -191,7 +194,6 @@ class ProfileLogic(
 
     private fun showEdit() {
         val user = uiState.value.user ?: return
-        updateHasSaveError(false)
         updateEditForm(EditForm.of(user))
     }
 
@@ -208,11 +210,13 @@ class ProfileLogic(
 
         coroutineScope.launch {
             updateIsSaving(true)
-            updateHasSaveError(false)
 
-            userRepository.updateCurrentUser(form.changesTo(user)).handleResponse(
+            // A failure keeps the form open with what was typed; the snackbar over it names the failure, and its
+            // repeat saves the form as it is then.
+            handleResponse<User, ProfileApiError>(
+                request = { userRepository.updateCurrentUser(form.changesTo(user)) },
                 onSuccess = { updateEditForm(null) },
-                onError = { updateHasSaveError(true) }
+                onRetry = { saveEdit() }
             )
 
             updateIsSaving(false)
@@ -223,14 +227,14 @@ class ProfileLogic(
         uiState.update { it.copy(isLoading = isLoading) }
     }
 
-    private fun updateHasError(hasError: Boolean) {
-        uiState.update { it.copy(hasError = hasError) }
+    private fun updateError(error: ResponseError?) {
+        uiState.update { it.copy(error = error) }
     }
 
     /** A loaded user also clears an earlier failure and tells whether the profile is the signed-in user's own. */
     private fun showUser(user: User) {
         val isOwn = target is ProfileTarget.CurrentUser || user.id == userRepository.currentUser.value?.id
-        uiState.update { it.copy(user = user, isOwn = isOwn, hasError = false) }
+        uiState.update { it.copy(user = user, isOwn = isOwn, error = null) }
     }
 
     private fun updateStatistics(statistics: Statistics) {
@@ -253,8 +257,13 @@ class ProfileLogic(
         uiState.update { it.copy(isSaving = isSaving) }
     }
 
-    private fun updateHasSaveError(hasSaveError: Boolean) {
-        uiState.update { it.copy(hasSaveError = hasSaveError) }
+    private fun updateListImageQuality(quality: ImageQuality) {
+        uiState.update { it.copy(listImageQuality = quality) }
+    }
+
+    /** «Повторить» on a failed refresh of the list of the tab: it repeats itself when the count grows. */
+    private fun addListRetry() {
+        uiState.update { it.copy(listRetries = it.listRetries + 1) }
     }
 }
 

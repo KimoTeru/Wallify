@@ -2,6 +2,8 @@ package org.kimoteru.wallify.feature.profile.presentation.ui
 
 import org.kimoteru.wallify.core.model.user.UpdateUserParams
 import org.kimoteru.wallify.core.model.user.User
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditField
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditForm
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

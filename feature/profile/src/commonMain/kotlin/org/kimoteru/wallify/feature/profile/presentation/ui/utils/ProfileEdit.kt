@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.feature.profile.presentation.ui
+package org.kimoteru.wallify.feature.profile.presentation.ui.utils
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,10 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
-import org.kimoteru.wallify.core.designsystem.ui.animation.compose.animatedHeight
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButtonStyle
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassIconButton
@@ -26,7 +24,6 @@ import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_bio
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_email
-import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_error
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_first_name
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_instagram
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_last_name
@@ -35,27 +32,28 @@ import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_port
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_save
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_title
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit_username
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditField
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditForm
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiEvent
 
 private const val BIO_MIN_LINES = 3
 private const val BIO_MAX_LINES = 6
 
 /** Form to change the own profile: a bottom sheet on phones, a dialog on wider windows. */
 @Composable
-fun ProfileEditOverlay(
+internal fun ProfileEditOverlay(
     isSheet: Boolean,
     form: EditForm,
     isSaving: Boolean,
-    hasSaveError: Boolean,
-    obtainEvent: (ProfileContract.UiEvent) -> Unit
+    obtainEvent: (UiEvent) -> Unit
 ) {
     GlassOverlay(
         isSheet = isSheet,
-        onDismiss = { obtainEvent(ProfileContract.UiEvent.HideEdit) }
+        onDismiss = { obtainEvent(UiEvent.HideEdit) }
     ) { close ->
         ProfileEditContent(
             form = form,
             isSaving = isSaving,
-            hasSaveError = hasSaveError,
             obtainEvent = obtainEvent,
             close = close
         )
@@ -66,17 +64,12 @@ fun ProfileEditOverlay(
 private fun ColumnScope.ProfileEditContent(
     form: EditForm,
     isSaving: Boolean,
-    hasSaveError: Boolean,
-    obtainEvent: (ProfileContract.UiEvent) -> Unit,
+    obtainEvent: (UiEvent) -> Unit,
     close: () -> Unit
 ) {
     val appColor = AppTheme.color
     val appPadding = AppTheme.padding
     val appTypography = AppTheme.typography
-
-    val change: (EditField) -> (String) -> Unit = { field ->
-        { value -> obtainEvent(ProfileContract.UiEvent.ChangeEditField(field, value)) }
-    }
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(bottom = appPadding.medium),
@@ -105,7 +98,9 @@ private fun ColumnScope.ProfileEditContent(
         GlassTextField(
             modifier = Modifier.fillMaxWidth(),
             value = form.username,
-            onValueChange = change(EditField.Username),
+            onValueChange = { value ->
+                obtainEvent(UiEvent.ChangeEditField(EditField.Username, value))
+            },
             label = stringResource(Res.string.profile_edit_username),
             enabled = !isSaving
         )
@@ -113,7 +108,9 @@ private fun ColumnScope.ProfileEditContent(
         GlassTextField(
             modifier = Modifier.fillMaxWidth(),
             value = form.firstName,
-            onValueChange = change(EditField.FirstName),
+            onValueChange = { value ->
+                obtainEvent(UiEvent.ChangeEditField(EditField.FirstName, value))
+            },
             label = stringResource(Res.string.profile_edit_first_name),
             enabled = !isSaving
         )
@@ -121,7 +118,9 @@ private fun ColumnScope.ProfileEditContent(
         GlassTextField(
             modifier = Modifier.fillMaxWidth(),
             value = form.lastName,
-            onValueChange = change(EditField.LastName),
+            onValueChange = { value ->
+                obtainEvent(UiEvent.ChangeEditField(EditField.LastName, value))
+            },
             label = stringResource(Res.string.profile_edit_last_name),
             enabled = !isSaving
         )
@@ -129,7 +128,9 @@ private fun ColumnScope.ProfileEditContent(
         GlassTextField(
             modifier = Modifier.fillMaxWidth(),
             value = form.email,
-            onValueChange = change(EditField.Email),
+            onValueChange = { value ->
+                obtainEvent(UiEvent.ChangeEditField(EditField.Email, value))
+            },
             label = stringResource(Res.string.profile_edit_email),
             enabled = !isSaving,
             keyboardType = KeyboardType.Email
@@ -138,7 +139,9 @@ private fun ColumnScope.ProfileEditContent(
         GlassTextField(
             modifier = Modifier.fillMaxWidth(),
             value = form.portfolio,
-            onValueChange = change(EditField.Portfolio),
+            onValueChange = { value ->
+                obtainEvent(UiEvent.ChangeEditField(EditField.Portfolio, value))
+            },
             label = stringResource(Res.string.profile_edit_portfolio),
             enabled = !isSaving,
             keyboardType = KeyboardType.Uri
@@ -147,7 +150,9 @@ private fun ColumnScope.ProfileEditContent(
         GlassTextField(
             modifier = Modifier.fillMaxWidth(),
             value = form.location,
-            onValueChange = change(EditField.Location),
+            onValueChange = { value ->
+                obtainEvent(UiEvent.ChangeEditField(EditField.Location, value))
+            },
             label = stringResource(Res.string.profile_edit_location),
             enabled = !isSaving
         )
@@ -155,7 +160,9 @@ private fun ColumnScope.ProfileEditContent(
         GlassTextField(
             modifier = Modifier.fillMaxWidth(),
             value = form.instagram,
-            onValueChange = change(EditField.Instagram),
+            onValueChange = { value ->
+                obtainEvent(UiEvent.ChangeEditField(EditField.Instagram, value))
+            },
             label = stringResource(Res.string.profile_edit_instagram),
             enabled = !isSaving
         )
@@ -163,24 +170,15 @@ private fun ColumnScope.ProfileEditContent(
         GlassTextField(
             modifier = Modifier.fillMaxWidth(),
             value = form.bio,
-            onValueChange = change(EditField.Bio),
+            onValueChange = { value ->
+                obtainEvent(UiEvent.ChangeEditField(EditField.Bio, value))
+            },
             label = stringResource(Res.string.profile_edit_bio),
             enabled = !isSaving,
             minLines = BIO_MIN_LINES,
             maxLines = BIO_MAX_LINES
         )
     }
-
-    Text(
-        modifier = Modifier
-            .animatedHeight(visible = hasSaveError)
-            .padding(vertical = appPadding.medium)
-            .align(Alignment.CenterHorizontally),
-        text = stringResource(Res.string.profile_edit_error),
-        style = appTypography.h7.medium,
-        color = appColor.basic.error,
-        textAlign = TextAlign.Center
-    )
 
     GlassButton(
         modifier = Modifier
@@ -189,6 +187,6 @@ private fun ColumnScope.ProfileEditContent(
         text = stringResource(Res.string.profile_edit_save),
         style = GlassButtonStyle.Solid,
         enabled = form.isValid && !isSaving,
-        onClick = { obtainEvent(ProfileContract.UiEvent.SaveEdit) }
+        onClick = { obtainEvent(UiEvent.SaveEdit) }
     )
 }

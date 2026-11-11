@@ -3,7 +3,7 @@
     <string name="app_name">Wallify</string>
     <!-- Confirm button of informational dialogs -->
     <string name="action_ok">OK</string>
-    <!-- Button that repeats a failed request, shown under an error message -->
+    <!-- Button that repeats a failed request, shown under an error message and in the failure snackbar -->
     <string name="common_retry">Повторить</string>
     <!-- Button of a filter dialog that applies the chosen values -->
     <string name="common_apply">Применить</string>
@@ -20,6 +20,44 @@
     <string name="error_no_internet">Нет подключения к интернету</string>
     <!-- Description of an error state shown while the device is offline -->
     <string name="error_no_internet_description">Проверьте соединение. Содержимое загрузится снова, как только появится интернет.</string>
+    <!-- Title of an error state when the backend rejected the request parameters (HTTP 400) -->
+    <string name="error_bad_request_title">Запрос не принят</string>
+    <!-- Error state description and failure snackbar for HTTP 400; %1$s is the HTTP status code -->
+    <string name="error_bad_request_description">Ошибка %1$s: запрос не принят. Попробуйте ещё раз.</string>
+    <!-- Title of an error state when the session is not accepted (HTTP 401) -->
+    <string name="error_unauthorized_title">Нужно войти</string>
+    <!-- Error state description and failure snackbar for HTTP 401; %1$s is the HTTP status code -->
+    <string name="error_unauthorized_description">Ошибка %1$s: сессия истекла. Войдите снова.</string>
+    <!-- Title of an error state when the user has no rights for the action (HTTP 403) -->
+    <string name="error_forbidden_title">Нет доступа</string>
+    <!-- Error state description and failure snackbar for HTTP 403; %1$s is the HTTP status code -->
+    <string name="error_forbidden_description">Ошибка %1$s: недостаточно прав для этого действия.</string>
+    <!-- Title of an error state when the request limit of the backend is exhausted -->
+    <string name="error_rate_limited_title">Превышен лимит запросов</string>
+    <!-- Error state description and failure snackbar when the request limit is exhausted; %1$s is the HTTP status code -->
+    <string name="error_rate_limited_description">Ошибка %1$s: превышен лимит запросов, попробуйте позже.</string>
+    <!-- Title of an error state when the requested item does not exist (HTTP 404) -->
+    <string name="error_not_found_title">Не найдено</string>
+    <!-- Error state description and failure snackbar for HTTP 404; %1$s is the HTTP status code -->
+    <string name="error_not_found_description">Ошибка %1$s: ничего не найдено. Возможно, это удалили.</string>
+    <!-- Title of an error state when the backend failed (HTTP 5xx) -->
+    <string name="error_server_title">Ошибка сервера</string>
+    <!-- Error state description and failure snackbar for HTTP 5xx; %1$s is the HTTP status code -->
+    <string name="error_server_description">Ошибка %1$s: сервер не отвечает. Попробуйте позже.</string>
+    <!-- Error state description and failure snackbar for any other HTTP status; %1$s is the HTTP status code -->
+    <string name="error_unknown_description">Ошибка %1$s: что-то пошло не так. Попробуйте позже.</string>
+    <!-- Failure snackbar of adding or removing a photo: the collection belongs to someone else (HTTP 403) -->
+    <string name="error_collection_forbidden">Менять можно только свои коллекции.</string>
+    <!-- Failure snackbar of adding or removing a photo: the collection or the photo no longer exists (HTTP 404) -->
+    <string name="error_collection_not_found">Этой коллекции или фото больше нет.</string>
+    <!-- Failure snackbar of saving the profile: some fields were not accepted (HTTP 400 or 422) -->
+    <string name="error_profile_invalid">Некоторые поля не приняты. Проверьте их и попробуйте ещё раз.</string>
+    <!-- Failure snackbar of saving the profile: the session has no right to change the profile (HTTP 403) -->
+    <string name="error_profile_forbidden">У приложения нет права менять профиль. Войдите снова.</string>
+    <!-- Failure snackbar of the sign-in: the backend did not accept the code from the browser (HTTP 400) -->
+    <string name="error_auth_code_rejected">Вход не завершён. Попробуйте ещё раз.</string>
+    <!-- Failure snackbar of the sign-in: the backend did not accept the app itself (HTTP 401) -->
+    <string name="error_auth_client_rejected">Фотосервис не принял приложение. Вход недоступен.</string>
 
     <!-- Legal consent text; %1$s, %2$s and %3$s are the link names below, in this order -->
     <string name="legal_consent">Продолжая, вы принимаете %1$s, %2$s и %3$s.</string>
@@ -202,8 +240,6 @@
     <string name="profile_edit_instagram">Имя в Instagram</string>
     <!-- Button of the profile form: saves the changes -->
     <string name="profile_edit_save">Сохранить</string>
-    <!-- Message in the profile form when the changes were not saved -->
-    <string name="profile_edit_error">Не удалось сохранить профиль.\nПроверьте поля и попробуйте ещё раз.</string>
 
     <!-- Section title of the settings: the signed-in account -->
     <string name="settings_account">Аккаунт</string>
@@ -277,6 +313,38 @@
     <string name="settings_stat_new_photos">Новые фото, 30 дней</string>
     <!-- Caption of the number of photographers who joined in the last 30 days -->
     <string name="settings_stat_new_photographers">Новые фотографы, 30 дней</string>
+    <!-- Section title of the settings: requests the app sent to the photo service -->
+    <string name="settings_requests_title">Запросы приложения</string>
+    <!-- Caption of the number of all requests the app sent since the last reset -->
+    <string name="settings_requests_total">Запросов</string>
+    <!-- Caption of the number of requests left in the current hour -->
+    <string name="settings_requests_remaining">Осталось на час</string>
+    <!-- Value of the requests left: %1$s is how many are left, %2$s is the hourly limit -->
+    <string name="settings_requests_remaining_value">%1$s из %2$s</string>
+    <!-- Value of the requests left before the first answer of the photo service -->
+    <string name="settings_requests_remaining_unknown">—</string>
+    <!-- Label over the chart of requests per day for the last 30 days -->
+    <string name="settings_requests_days_title">За 30 дней</string>
+    <!-- Sum of the requests in the last 30 days next to the chart label: %1$s is the number of requests -->
+    <string name="settings_requests_days_total">Всего %1$s</string>
+    <!-- Caption over the chart of requests per day: %1$s is the largest number of requests in one day -->
+    <string name="settings_requests_days_max">До %1$s в день</string>
+    <!-- Caption under the first (left) bar of the chart of requests per day -->
+    <string name="settings_requests_days_start">30 дней назад</string>
+    <!-- Caption under the last (right, highlighted) bar of the chart of requests per day -->
+    <string name="settings_requests_days_end">Сегодня</string>
+    <!-- Accessibility description of the chart: %1$s is the sum for 30 days, %2$s is the largest number in one day -->
+    <string name="settings_requests_days_description">Запросы по дням за последние 30 дней: всего %1$s, до %2$s в день</string>
+    <!-- Label over the list of the most requested endpoints -->
+    <string name="settings_requests_top">Чаще всего</string>
+    <!-- Count of one endpoint: %1$s is the number of requests, %2$s is its share of all requests in percent -->
+    <string name="settings_requests_share">%1$s · %2$s%</string>
+    <!-- Shown instead of the list of endpoints when nothing was requested yet -->
+    <string name="settings_requests_empty">Запросов пока не было</string>
+    <!-- Button that sets the request counters to zero -->
+    <string name="settings_requests_reset">Сбросить статистику</string>
+    <!-- Note under the request statistics: where they are counted and where the limit comes from -->
+    <string name="settings_requests_description">Считаются на этом устройстве с последнего сброса или выхода из аккаунта. Фотосервис разрешает ограниченное число запросов в час; сколько осталось, приходит с каждым ответом.</string>
     <!-- Section title of the settings: about the photo source -->
     <string name="settings_about">О приложении</string>
     <!-- Text of the about section: all photos come from the photo service -->

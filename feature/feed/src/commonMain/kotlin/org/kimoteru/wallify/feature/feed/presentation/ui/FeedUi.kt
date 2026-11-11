@@ -18,6 +18,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.flow.flowOf
 import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.common.extensions.Empty
+import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.WindowType
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberWindowType
@@ -30,6 +31,7 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.ScreenOverlay
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.glass.scrolledPx
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
+import org.kimoteru.wallify.core.designsystem.ui.paging.ListRefreshErrors
 import org.kimoteru.wallify.core.designsystem.ui.photo.PagingPhotoGrid
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCard
 import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
@@ -47,6 +49,7 @@ import org.kimoteru.wallify.core.presentation.photo.PhotoColorUi
 import org.kimoteru.wallify.core.presentation.photo.PhotoOrientationUi
 import org.kimoteru.wallify.core.presentation.photo.SearchOrderUi
 import org.kimoteru.wallify.feature.feed.presentation.components.FeedComponent
+import org.kimoteru.wallify.feature.feed.presentation.ui.utils.FeedFiltersOverlay
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.common_photos_empty
 import org.kimoteru.wallify.core.resources.generated.resources.feed_search_hint
@@ -63,7 +66,9 @@ object FeedContract {
         val colors: List<PhotoColorUi> = PhotoColorUi.entries,
         val orders: List<SearchOrderUi> = SearchOrderUi.entries,
         val contentFilters: List<ContentFilterUi> = ContentFilterUi.entries,
-        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality
+        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality,
+        /** Presses of «Повторить» on a failed refresh of the photos ([UiEvent.ListRefreshError]). */
+        val listRetries: Int = 0
     ) : BaseContract.UiState
 
     /** Search filters; `null` leaves the value to the backend default. */
@@ -91,6 +96,9 @@ object FeedContract {
         data object ResetFilters : UiEvent
         data object ApplyFilters : UiEvent
         data class OpenPhoto(val photoId: String) : UiEvent
+
+        /** The refresh of a list on screen failed over shown photos, or its failure is over (`null`). */
+        data class ListRefreshError(val list: Long, val error: ResponseError?) : UiEvent
     }
 }
 
@@ -164,29 +172,34 @@ fun FeedUi(
             }
         }
     ) { topPadding ->
-        PagingPhotoGrid(
-            modifier = Modifier.fillMaxSize(),
-            paging = photos,
-            itemKey = { photo -> photo.id },
-            emptyText = stringResource(Res.string.common_photos_empty),
-            state = gridState,
-            contentPadding = PaddingValues(
-                start = screenPadding.start,
-                top = topPadding,
-                end = screenPadding.end,
-                bottom = screenPadding.bottom
-            )
-        ) { photo ->
-            PhotoCard(
-                imageUrl = photo.urls.forQuality(uiState.listImageQuality),
-                lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
-                width = photo.width,
-                height = photo.height,
-                colorHex = photo.color,
-                authorName = photo.user?.name,
-                authorAvatarUrl = photo.user?.profileImage?.small,
-                onClick = { obtainEvent(FeedContract.UiEvent.OpenPhoto(photo.id)) }
-            )
+        ListRefreshErrors(
+            retries = uiState.listRetries,
+            onChange = { list, error -> obtainEvent(FeedContract.UiEvent.ListRefreshError(list, error)) }
+        ) {
+            PagingPhotoGrid(
+                modifier = Modifier.fillMaxSize(),
+                paging = photos,
+                itemKey = { photo -> photo.id },
+                emptyText = stringResource(Res.string.common_photos_empty),
+                state = gridState,
+                contentPadding = PaddingValues(
+                    start = screenPadding.start,
+                    top = topPadding,
+                    end = screenPadding.end,
+                    bottom = screenPadding.bottom
+                )
+            ) { photo ->
+                PhotoCard(
+                    imageUrl = photo.urls.forQuality(uiState.listImageQuality),
+                    lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
+                    width = photo.width,
+                    height = photo.height,
+                    colorHex = photo.color,
+                    authorName = photo.user?.name,
+                    authorAvatarUrl = photo.user?.profileImage?.small,
+                    onClick = { obtainEvent(FeedContract.UiEvent.OpenPhoto(photo.id)) }
+                )
+            }
         }
     }
 

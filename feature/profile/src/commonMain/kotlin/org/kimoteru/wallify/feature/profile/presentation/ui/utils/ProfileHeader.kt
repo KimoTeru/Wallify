@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.feature.profile.presentation.ui
+package org.kimoteru.wallify.feature.profile.presentation.ui.utils
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,10 +25,9 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButtonStyle
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassSegmentedControl
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassStat
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
-import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorTitle
+import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
 import org.kimoteru.wallify.core.designsystem.ui.shimmer.ShimmerBox
 import org.kimoteru.wallify.core.resources.generated.resources.Res
-import org.kimoteru.wallify.core.resources.generated.resources.common_retry
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit
 import org.kimoteru.wallify.core.resources.generated.resources.profile_stat_collections
 import org.kimoteru.wallify.core.resources.generated.resources.profile_stat_downloads
@@ -36,10 +35,11 @@ import org.kimoteru.wallify.core.resources.generated.resources.profile_stat_phot
 import org.kimoteru.wallify.core.resources.generated.resources.profile_tab_collections
 import org.kimoteru.wallify.core.resources.generated.resources.profile_tab_photos
 import org.kimoteru.wallify.core.resources.generated.resources.profile_upload
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract
 
 /** Avatar, name, short bio, counters and the tab switch of a profile. */
 @Composable
-fun ProfileHeader(
+internal fun ProfileHeader(
     modifier: Modifier = Modifier,
     uiState: ProfileContract.UiState,
     obtainEvent: (ProfileContract.UiEvent) -> Unit
@@ -61,16 +61,11 @@ fun ProfileHeader(
         verticalArrangement = Arrangement.spacedBy(appPadding.medium)
     ) {
         if (user == null) {
-            if (uiState.hasError && !uiState.isLoading) {
-                Text(
-                    text = networkErrorTitle(),
-                    style = appTypography.h4.semiBold,
-                    color = appColor.text.title
-                )
-
-                GlassButton(
-                    text = stringResource(Res.string.common_retry),
-                    onClick = { obtainEvent(ProfileContract.UiEvent.Retry) }
+            if (uiState.error != null && !uiState.isLoading) {
+                // Without the user the profile has nothing to show: the failure takes the place of the header.
+                ErrorContentLayout(
+                    error = uiState.error,
+                    onRetry = { obtainEvent(ProfileContract.UiEvent.Retry) }
                 )
             } else {
                 ShimmerBox(

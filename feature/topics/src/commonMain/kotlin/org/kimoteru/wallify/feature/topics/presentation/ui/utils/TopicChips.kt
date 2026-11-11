@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.feature.topics.presentation.ui
+package org.kimoteru.wallify.feature.topics.presentation.ui.utils
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,10 +10,11 @@ import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassChip
 import org.kimoteru.wallify.core.designsystem.ui.paging.keyAt
 import org.kimoteru.wallify.core.model.topic.Topic
+import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsContract
 
 /** Horizontal list of topic chips. The selected slug is highlighted. */
 @Composable
-fun TopicChips(
+internal fun TopicChips(
     modifier: Modifier = Modifier,
     topics: LazyPagingItems<Topic>,
     selectedSlug: String?,

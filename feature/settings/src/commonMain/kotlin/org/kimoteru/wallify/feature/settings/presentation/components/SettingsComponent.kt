@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.combineState
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.domain.repository.AuthRepository
+import org.kimoteru.wallify.core.domain.repository.RequestStatsRepository
 import org.kimoteru.wallify.core.domain.repository.StatsRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
@@ -30,14 +31,16 @@ import org.koin.core.annotation.Factory
 interface SettingsComponent : BaseComponent<UiState, UiEvent>
 
 /**
- * The account, the color scheme and the numbers of the photo service. The scheme is kept in the user settings and
- * the root graph applies it; signing out needs no navigation here: the root graph sees the missing session.
+ * The account, the color scheme, the numbers of the photo service and of the app's requests to it. The scheme is
+ * kept in the user settings and the root graph applies it; signing out needs no navigation here: the root graph sees
+ * the missing session.
  */
 @Factory
 class SettingsLogic(
     private val authRepository: AuthRepository,
     private val statsRepository: StatsRepository,
     private val updateUserSettings: UpdateUserSettingsUseCase,
+    private val requestStatsRepository: RequestStatsRepository,
     userRepository: UserRepository,
     observeUserSettings: ObserveUserSettingsUseCase
 ) : BaseLogic<UiState, UiEvent, SettingsNavigationEvent>() {
@@ -52,8 +55,11 @@ class SettingsLogic(
         userRepository.currentUser,
         settings,
         serviceStats,
+        requestStatsRepository.stats,
         initialValue = UiState(user = userRepository.currentUser.value)
-    ) { user, userSettings, stats ->
+    ) { user, userSettings, stats, requestStats ->
+        val requestDays = requestStatsRepository.lastDays(requestStats, REQUEST_DAYS).map { it.count }
+
         UiState(
             user = user,
             themeMode = userSettings.themeMode.toPresentation(),
@@ -65,7 +71,13 @@ class SettingsLogic(
             downloadImageQuality = userSettings.downloadImageQuality.toPresentation(),
             languageTag = userSettings.languageTag,
             totalStats = stats.total,
-            monthStats = stats.month
+            monthStats = stats.month,
+            requestTotal = requestStats.total,
+            topEndpoints = requestStats.endpoints.take(TOP_ENDPOINTS),
+            rateLimit = requestStats.rateLimit,
+            requestDays = requestDays,
+            requestDaysTotal = requestDays.sum(),
+            requestDaysMax = requestDays.maxOrNull() ?: 0L
         )
     }
 
@@ -98,6 +110,7 @@ class SettingsLogic(
             }
             is UiEvent.SelectLanguage -> saveSettings { copy(languageTag = event.languageTag) }
             is UiEvent.SignOut -> signOut()
+            is UiEvent.ResetRequestStats -> resetRequestStats()
         }
     }
 
@@ -114,6 +127,12 @@ class SettingsLogic(
         }
     }
 
+    private fun resetRequestStats() {
+        coroutineScope.launch {
+            handleResponseDefault(request = { requestStatsRepository.reset() })
+        }
+    }
+
     private fun updateTotalStats(total: TotalStats) {
         serviceStats.update { it.copy(total = total) }
     }
@@ -126,6 +145,14 @@ class SettingsLogic(
         val total: TotalStats? = null,
         val month: MonthStats? = null
     )
+
+    private companion object {
+        /** How many of the most requested endpoints the screen lists. */
+        const val TOP_ENDPOINTS = 8
+
+        /** How many local days, today included, the chart of the requests shows. */
+        const val REQUEST_DAYS = 30
+    }
 }
 
 sealed interface SettingsNavigationEvent : BaseNavigationEvent

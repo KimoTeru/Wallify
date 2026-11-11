@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.flowOf
+import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.WindowType
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberWindowType
@@ -26,6 +27,7 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.rememberHideOnScrollConne
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
+import org.kimoteru.wallify.core.designsystem.ui.paging.ListRefreshErrors
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
@@ -33,12 +35,77 @@ import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.stats.Statistics
+import org.kimoteru.wallify.core.model.user.UpdateUserParams
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.feature.profile.presentation.components.ProfileComponent
+import org.kimoteru.wallify.feature.profile.presentation.ui.utils.ProfileEditOverlay
+import org.kimoteru.wallify.feature.profile.presentation.ui.utils.ProfileGrid
 
 object ProfileContract {
     enum class Tab { Photos, Collections }
+
+    /** Fields of the profile form. */
+    enum class EditField { Username, FirstName, LastName, Email, Portfolio, Location, Bio, Instagram }
+
+    /** Text of the profile form: every field is a string, an empty one means "not set". */
+    @Immutable
+    data class EditForm(
+        val username: String,
+        val firstName: String,
+        val lastName: String,
+        val email: String,
+        val portfolio: String,
+        val location: String,
+        val bio: String,
+        val instagram: String
+    ) {
+
+        /** The backend refuses a profile without a username. */
+        val isValid: Boolean
+            get() = username.isNotBlank()
+
+        fun with(field: EditField, value: String): EditForm = when (field) {
+            EditField.Username -> copy(username = value)
+            EditField.FirstName -> copy(firstName = value)
+            EditField.LastName -> copy(lastName = value)
+            EditField.Email -> copy(email = value)
+            EditField.Portfolio -> copy(portfolio = value)
+            EditField.Location -> copy(location = value)
+            EditField.Bio -> copy(bio = value)
+            EditField.Instagram -> copy(instagram = value)
+        }
+
+        /** Only the fields that differ from [user] are sent; the others stay as they are on the backend. */
+        fun changesTo(user: User): UpdateUserParams = UpdateUserParams(
+            username = changedOf(username, user.username),
+            firstName = changedOf(firstName, user.firstName),
+            lastName = changedOf(lastName, user.lastName),
+            email = changedOf(email, user.email),
+            portfolioUrl = changedOf(portfolio, user.portfolioUrl),
+            location = changedOf(location, user.location),
+            bio = changedOf(bio, user.bio),
+            instagramUsername = changedOf(instagram, user.instagramUsername)
+        )
+
+        private fun changedOf(text: String, saved: String?): String? {
+            val trimmed = text.trim()
+            return trimmed.takeIf { it != saved.orEmpty() }
+        }
+
+        companion object {
+            fun of(user: User): EditForm = EditForm(
+                username = user.username,
+                firstName = user.firstName.orEmpty(),
+                lastName = user.lastName.orEmpty(),
+                email = user.email.orEmpty(),
+                portfolio = user.portfolioUrl.orEmpty(),
+                location = user.location.orEmpty(),
+                bio = user.bio.orEmpty(),
+                instagram = user.instagramUsername.orEmpty()
+            )
+        }
+    }
 
     @Immutable
     data class UiState(
@@ -47,7 +114,8 @@ object ProfileContract {
         val selectedTab: Tab = Tab.Photos,
         val openedCollection: PhotoCollection? = null,
         val isLoading: Boolean = true,
-        val hasError: Boolean = false,
+        /** Failure of the profile load; the screen picks its text by the type and shows the code. */
+        val error: ResponseError? = null,
 
         /** The profile is the signed-in user's own: it can be edited and photos can be uploaded. */
         val isOwn: Boolean = false,
@@ -55,8 +123,9 @@ object ProfileContract {
         /** The profile form while it is open, `null` while it is closed. */
         val editForm: EditForm? = null,
         val isSaving: Boolean = false,
-        val hasSaveError: Boolean = false,
-        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality
+        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality,
+        /** Presses of «Повторить» on a failed refresh of the list of the tab ([UiEvent.ListRefreshError]). */
+        val listRetries: Int = 0
     ) : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent {
@@ -70,6 +139,9 @@ object ProfileContract {
         data object HideEdit : UiEvent
         data class ChangeEditField(val field: EditField, val value: String) : UiEvent
         data object SaveEdit : UiEvent
+
+        /** The refresh of a list on screen failed over shown items, or its failure is over (`null`). */
+        data class ListRefreshError(val list: Long, val error: ResponseError?) : UiEvent
     }
 
     sealed interface ComponentEvent : BaseContract.ComponentEvent {
@@ -135,20 +207,25 @@ fun ProfileUi(
             .nestedScroll(rememberHideOnScrollConnection(LocalNavigationVisibility.current))
     ) {
         RetryOnReconnect(
-            isFailed = uiState.hasError && uiState.user == null,
+            isFailed = uiState.error != null && uiState.user == null,
             onRetry = { obtainEvent(ProfileContract.UiEvent.Retry) }
         )
 
         // Photos and collections of a profile are grids of equal cards whatever layout the feed uses.
         CompositionLocalProvider(LocalPhotoGridMode provides PhotoGridMode.Grid) {
-            ProfileGrid(
-                uiState = uiState,
-                photos = component.photos,
-                collections = component.collections,
-                collectionPhotos = component.collectionPhotos,
-                contentPadding = contentPadding,
-                obtainEvent = obtainEvent
-            )
+            ListRefreshErrors(
+                retries = uiState.listRetries,
+                onChange = { list, error -> obtainEvent(ProfileContract.UiEvent.ListRefreshError(list, error)) }
+            ) {
+                ProfileGrid(
+                    uiState = uiState,
+                    photos = component.photos,
+                    collections = component.collections,
+                    collectionPhotos = component.collectionPhotos,
+                    contentPadding = contentPadding,
+                    obtainEvent = obtainEvent
+                )
+            }
         }
 
         if (component.canNavigateBack) {
@@ -170,7 +247,6 @@ fun ProfileUi(
                 isSheet = isSheet,
                 form = form,
                 isSaving = uiState.isSaving,
-                hasSaveError = uiState.hasSaveError,
                 obtainEvent = obtainEvent
             )
         }

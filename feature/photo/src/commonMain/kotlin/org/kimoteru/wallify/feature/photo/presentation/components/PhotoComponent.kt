@@ -6,25 +6,23 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
-import org.kimoteru.wallify.core.common.response.handleResponse
-import org.kimoteru.wallify.core.common.response.onError
+import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
+import org.kimoteru.wallify.core.model.collection.CollectionPhotoChange
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.presentation.base.BaseComponentCore
 import org.kimoteru.wallify.core.presentation.base.BaseLogicCore
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
-import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.domain.NotifierManager
-import org.kimoteru.wallify.core.resources.generated.resources.Res
-import org.kimoteru.wallify.core.resources.generated.resources.error_dialog_description
+import org.kimoteru.wallify.core.presentation.errors.CollectionApiError
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.ComponentEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
@@ -46,8 +44,7 @@ class PhotoLogic(
     private val photoRepository: PhotoRepository,
     private val userRepository: UserRepository,
     private val collectionRepository: CollectionRepository,
-    private val notifierManager: NotifierManager,
-    private val observeUserSettings: ObserveUserSettingsUseCase
+    private val observeUserSettings: ObserveUserSettingsUseCase,
 ) : BaseLogicCore<UiState, UiEvent, PhotoNavigationEvent, ComponentEvent>() {
 
     override val uiState: StateFlow<UiState>
@@ -60,9 +57,7 @@ class PhotoLogic(
             launch {
                 observeUserSettings()
                     .mapDistinctBy { settings -> settings.detailImageQuality to settings.listImageQuality }
-                    .collect { (detailQuality, listQuality) ->
-                        uiState.update { it.copy(detailImageQuality = detailQuality, listImageQuality = listQuality) }
-                    }
+                    .collect { (detailQuality, listQuality) -> updateImageQualities(detailQuality, listQuality) }
             }
         }
 
@@ -92,7 +87,7 @@ class PhotoLogic(
             photoRepository.getPhotoFlow(photoId).collect { resource ->
                 when (resource) {
                     is Resource.Loading -> {
-                        updateHasError(false)
+                        updateError(null)
                         updateIsLoading(true)
                     }
                     is Resource.Success -> {
@@ -100,7 +95,7 @@ class PhotoLogic(
                         updateIsLoading(false)
                     }
                     is Resource.Error -> {
-                        updateHasError(true)
+                        updateError(resource.error)
                         updateIsLoading(false)
                     }
                 }
@@ -134,9 +129,11 @@ class PhotoLogic(
 
             val quality = observeUserSettings().first().downloadImageQuality
 
-            photoRepository.trackDownload(photoId, quality).handleResponse(
+            // The repeat goes through the button again, so it shows the progress too.
+            handleResponseDefault(
+                request = { photoRepository.trackDownload(photoId, quality) },
                 onSuccess = { url -> sendComponentEvent(ComponentEvent.OpenUrl(url)) },
-                onError = { showRequestError() }
+                onRetry = { download() }
             )
 
             updateIsDownloading(false)
@@ -152,29 +149,29 @@ class PhotoLogic(
         coroutineScope.launch {
             addPendingCollection(collectionId)
 
-            val response = if (isMember) {
-                collectionRepository.removePhotoFromCollection(collectionId, photoId)
-            } else {
-                collectionRepository.addPhotoToCollection(collectionId, photoId)
-            }
-
-            // On success the repository writes the change into the database and the photo flow delivers it.
-            response.onError { showRequestError() }
+            // On success the repository writes the change into the database and the photo flow delivers it. The
+            // repeat is a new press on the collection: it reads the membership again and shows the progress.
+            handleResponse<CollectionPhotoChange, CollectionApiError>(
+                request = {
+                    if (isMember) {
+                        collectionRepository.removePhotoFromCollection(collectionId, photoId)
+                    } else {
+                        collectionRepository.addPhotoToCollection(collectionId, photoId)
+                    }
+                },
+                onRetry = { toggleCollection(collectionId) }
+            )
 
             removePendingCollection(collectionId)
         }
-    }
-
-    private suspend fun showRequestError() {
-        notifierManager.showLong(getString(Res.string.error_dialog_description))
     }
 
     private fun updateIsLoading(isLoading: Boolean) {
         uiState.update { it.copy(isLoading = isLoading) }
     }
 
-    private fun updateHasError(hasError: Boolean) {
-        uiState.update { it.copy(hasError = hasError) }
+    private fun updateError(error: ResponseError?) {
+        uiState.update { it.copy(error = error) }
     }
 
     /** The loaded photo also tells which collections of the user already hold it. */
@@ -182,7 +179,7 @@ class PhotoLogic(
         uiState.update {
             it.copy(
                 photo = photo,
-                hasError = false,
+                error = null,
                 memberCollectionIds = photo.currentUserCollectionIds.toSet()
             )
         }
@@ -206,6 +203,11 @@ class PhotoLogic(
 
     private fun removePendingCollection(collectionId: Int) {
         uiState.update { it.copy(pendingCollectionIds = it.pendingCollectionIds - collectionId) }
+    }
+
+    /** Both qualities come from the settings together: the list one stands in while the detail one loads. */
+    private fun updateImageQualities(detailQuality: ImageQuality, listQuality: ImageQuality) {
+        uiState.update { it.copy(detailImageQuality = detailQuality, listImageQuality = listQuality) }
     }
 }
 

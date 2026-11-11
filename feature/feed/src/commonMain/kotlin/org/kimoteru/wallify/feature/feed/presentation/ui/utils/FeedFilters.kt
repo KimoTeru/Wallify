@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.feature.feed.presentation.ui
+package org.kimoteru.wallify.feature.feed.presentation.ui.utils
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,10 +34,11 @@ import org.kimoteru.wallify.core.resources.generated.resources.feed_filter_order
 import org.kimoteru.wallify.core.resources.generated.resources.feed_filter_orientation
 import org.kimoteru.wallify.core.resources.generated.resources.feed_filters_note
 import org.kimoteru.wallify.core.resources.generated.resources.feed_filters_title
+import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract
 
 /** Search filters over the feed: a bottom sheet on phones, a dialog on wider windows. */
 @Composable
-fun FeedFiltersOverlay(
+internal fun FeedFiltersOverlay(
     isSheet: Boolean,
     uiState: FeedContract.UiState,
     obtainEvent: (FeedContract.UiEvent) -> Unit

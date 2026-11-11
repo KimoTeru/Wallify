@@ -11,11 +11,12 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_theme_sy
 
 /** Label of a theme. */
 enum class ThemeModeUi(
-    val label: StringResource
+    internal val domain: ThemeMode,
+    val label: StringResource,
 ) {
-    System(Res.string.settings_theme_system),
-    Night(Res.string.settings_theme_night),
-    Day(Res.string.settings_theme_day)
+    System(ThemeMode.System, Res.string.settings_theme_system),
+    Night(ThemeMode.Night, Res.string.settings_theme_night),
+    Day(ThemeMode.Day, Res.string.settings_theme_day),
 }
 
 /** Whether the night scheme is drawn: the chosen one, or the device's own for [ThemeModeUi.System]. */
@@ -30,14 +31,6 @@ fun ThemeModeUi.isDarkTheme(): Boolean {
     }
 }
 
-fun ThemeModeUi.toDomain(): ThemeMode = when (this) {
-    ThemeModeUi.System -> ThemeMode.System
-    ThemeModeUi.Night -> ThemeMode.Night
-    ThemeModeUi.Day -> ThemeMode.Day
-}
+fun ThemeModeUi.toDomain(): ThemeMode = domain
 
-fun ThemeMode.toPresentation(): ThemeModeUi = when (this) {
-    ThemeMode.System -> ThemeModeUi.System
-    ThemeMode.Night -> ThemeModeUi.Night
-    ThemeMode.Day -> ThemeModeUi.Day
-}
+fun ThemeMode.toPresentation(): ThemeModeUi = ThemeModeUi.entries.first { it.domain == this }

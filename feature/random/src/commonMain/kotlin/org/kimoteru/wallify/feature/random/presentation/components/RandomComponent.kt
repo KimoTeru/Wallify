@@ -6,10 +6,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
+import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.common.response.handleResponse
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
@@ -41,7 +43,7 @@ class RandomLogic(
             launch {
                 observeUserSettings()
                     .mapDistinctBy { settings -> settings.listImageQuality }
-                    .collect { quality -> uiState.update { it.copy(listImageQuality = quality) } }
+                    .collect { quality -> updateListImageQuality(quality) }
             }
         }
 
@@ -63,7 +65,11 @@ class RandomLogic(
 
             photoRepository.getRandomPhotos(count = RANDOM_PHOTOS_COUNT, forceRefresh = forceRefresh).handleResponse(
                 onSuccess = { photos -> updatePhotos(photos) },
-                onError = { updateHasError(true) }
+                onError = { error ->
+                    updateError(error)
+                    // The photos on screen stay: a failed shuffle goes to the snackbar, not in place of them.
+                    if (uiState.value.photos.isNotEmpty()) showErrorWithRetry(error) { load(forceRefresh = true) }
+                }
             )
 
             updateIsLoading(false)
@@ -76,11 +82,15 @@ class RandomLogic(
 
     /** A successful load replaces the photos and clears an earlier error. */
     private fun updatePhotos(photos: List<Photo>) {
-        uiState.update { it.copy(photos = photos, hasError = false) }
+        uiState.update { it.copy(photos = photos, error = null) }
     }
 
-    private fun updateHasError(hasError: Boolean) {
-        uiState.update { it.copy(hasError = hasError) }
+    private fun updateError(error: ResponseError?) {
+        uiState.update { it.copy(error = error) }
+    }
+
+    private fun updateListImageQuality(quality: ImageQuality) {
+        uiState.update { it.copy(listImageQuality = quality) }
     }
 }
 

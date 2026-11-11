@@ -17,45 +17,22 @@ import org.kimoteru.wallify.core.resources.generated.resources.color_yellow
 
 /** Label of a photo color. */
 enum class PhotoColorUi(
-    val label: StringResource
+    internal val domain: PhotoColor,
+    val label: StringResource,
 ) {
-    BlackAndWhite(Res.string.color_black_and_white),
-    Black(Res.string.color_black),
-    White(Res.string.color_white),
-    Yellow(Res.string.color_yellow),
-    Orange(Res.string.color_orange),
-    Red(Res.string.color_red),
-    Purple(Res.string.color_purple),
-    Magenta(Res.string.color_magenta),
-    Green(Res.string.color_green),
-    Teal(Res.string.color_teal),
-    Blue(Res.string.color_blue)
+    BlackAndWhite(PhotoColor.BlackAndWhite, Res.string.color_black_and_white),
+    Black(PhotoColor.Black, Res.string.color_black),
+    White(PhotoColor.White, Res.string.color_white),
+    Yellow(PhotoColor.Yellow, Res.string.color_yellow),
+    Orange(PhotoColor.Orange, Res.string.color_orange),
+    Red(PhotoColor.Red, Res.string.color_red),
+    Purple(PhotoColor.Purple, Res.string.color_purple),
+    Magenta(PhotoColor.Magenta, Res.string.color_magenta),
+    Green(PhotoColor.Green, Res.string.color_green),
+    Teal(PhotoColor.Teal, Res.string.color_teal),
+    Blue(PhotoColor.Blue, Res.string.color_blue),
 }
 
-fun PhotoColorUi.toDomain(): PhotoColor = when (this) {
-    PhotoColorUi.BlackAndWhite -> PhotoColor.BlackAndWhite
-    PhotoColorUi.Black -> PhotoColor.Black
-    PhotoColorUi.White -> PhotoColor.White
-    PhotoColorUi.Yellow -> PhotoColor.Yellow
-    PhotoColorUi.Orange -> PhotoColor.Orange
-    PhotoColorUi.Red -> PhotoColor.Red
-    PhotoColorUi.Purple -> PhotoColor.Purple
-    PhotoColorUi.Magenta -> PhotoColor.Magenta
-    PhotoColorUi.Green -> PhotoColor.Green
-    PhotoColorUi.Teal -> PhotoColor.Teal
-    PhotoColorUi.Blue -> PhotoColor.Blue
-}
+fun PhotoColorUi.toDomain(): PhotoColor = domain
 
-fun PhotoColor.toPresentation(): PhotoColorUi = when (this) {
-    PhotoColor.BlackAndWhite -> PhotoColorUi.BlackAndWhite
-    PhotoColor.Black -> PhotoColorUi.Black
-    PhotoColor.White -> PhotoColorUi.White
-    PhotoColor.Yellow -> PhotoColorUi.Yellow
-    PhotoColor.Orange -> PhotoColorUi.Orange
-    PhotoColor.Red -> PhotoColorUi.Red
-    PhotoColor.Purple -> PhotoColorUi.Purple
-    PhotoColor.Magenta -> PhotoColorUi.Magenta
-    PhotoColor.Green -> PhotoColorUi.Green
-    PhotoColor.Teal -> PhotoColorUi.Teal
-    PhotoColor.Blue -> PhotoColorUi.Blue
-}
+fun PhotoColor.toPresentation(): PhotoColorUi = PhotoColorUi.entries.first { it.domain == this }

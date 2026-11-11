@@ -18,12 +18,17 @@ import org.kimoteru.wallify.core.network.config.NetworkConfig
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
 import org.kimoteru.wallify.core.network.json.networkJson
 import org.kimoteru.wallify.core.network.plugin.AuthHeadersPlugin
+import org.kimoteru.wallify.core.network.plugin.RequestStatsPlugin
+import org.kimoteru.wallify.core.network.session.SessionExpiryCollector
+import org.kimoteru.wallify.core.network.stats.RequestStatsCollector
 import org.koin.core.annotation.Singleton
 
 @Singleton
 class HttpClientFactory(
     private val networkConfig: NetworkConfig,
-    private val headersCollector: HeadersCollectorRepository
+    private val headersCollector: HeadersCollectorRepository,
+    private val requestStatsCollector: RequestStatsCollector,
+    private val sessionExpiryCollector: SessionExpiryCollector,
 ) {
     init {
         require(networkConfig.baseUrl.isNotBlank()) {
@@ -75,6 +80,11 @@ class HttpClientFactory(
 
         install(AuthHeadersPlugin) {
             headersCollector = this@HttpClientFactory.headersCollector
+            sessionExpiryCollector = this@HttpClientFactory.sessionExpiryCollector
+        }
+
+        install(RequestStatsPlugin) {
+            collector = requestStatsCollector
         }
 
         defaultRequest {

@@ -26,11 +26,14 @@ import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.model.user.UpdateUserParams
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepositoryImpl
+import org.kimoteru.wallify.core.network.session.SessionExpiryCollectorImpl
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class UserSessionSynchronizerTest {
 
     private val headers = HeadersCollectorRepositoryImpl()
+
+    private val sessionExpiry = SessionExpiryCollectorImpl()
 
     @Test
     fun tokenThatReachesTheClientLoadsTheUser() = runTest(UnconfinedTestDispatcher()) {
@@ -74,14 +77,49 @@ class UserSessionSynchronizerTest {
     }
 
     @Test
-    fun tokenRejectedByBackendEndsTheSessionWithoutReportingAnError() = runTest(UnconfinedTestDispatcher()) {
-        val session = RecordingSessionRepository(token = "token")
+    fun rejectedUserLoadReportsNoError() = runTest(UnconfinedTestDispatcher()) {
         val users = FakeUserRepository(Response.Error(ResponseError(message = "Unauthorized", code = 401)))
-        val synchronizer = createSynchronizer(users, session = session, scope = backgroundScope)
+        val synchronizer = createSynchronizer(users, scope = backgroundScope)
 
         headers.updateAuthorization("Bearer token")
 
+        assertEquals(1, users.refreshCalls)
+        assertEquals(null, synchronizer.loadError.value)
+    }
+
+    @Test
+    fun tokenRejectedByBackendEndsTheSession() = runTest(UnconfinedTestDispatcher()) {
+        val session = RecordingSessionRepository(token = "token")
+        createSynchronizer(FakeUserRepository(Response.Success(USER)), session = session, scope = backgroundScope)
+        headers.updateAuthorization("Bearer token")
+
+        sessionExpiry.onRejected("Bearer token")
+
         assertEquals(null, session.authToken.first())
+    }
+
+    @Test
+    fun lateRejectionOfAnOldTokenKeepsTheNewSession() = runTest(UnconfinedTestDispatcher()) {
+        val session = RecordingSessionRepository(token = "new")
+        createSynchronizer(FakeUserRepository(Response.Success(USER)), session = session, scope = backgroundScope)
+        headers.updateAuthorization("Bearer new")
+
+        sessionExpiry.onRejected("Bearer old")
+
+        assertEquals("new", session.authToken.first())
+    }
+
+    @Test
+    fun retryOfTheUserLoadsAgainWithoutWaitingForTheConnection() = runTest(UnconfinedTestDispatcher()) {
+        val users = FakeUserRepository(SERVER_ERROR, Response.Success(USER))
+        val synchronizer = createSynchronizer(users, scope = backgroundScope)
+        headers.updateAuthorization("Bearer token")
+        assertEquals(1, users.refreshCalls)
+
+        synchronizer.retryLoad()
+
+        assertEquals(2, users.refreshCalls)
+        assertEquals(USER, users.currentUser.value)
         assertEquals(null, synchronizer.loadError.value)
     }
 
@@ -135,7 +173,7 @@ class UserSessionSynchronizerTest {
         session: RecordingSessionRepository = RecordingSessionRepository(),
         connectivity: FakeConnectivityRepository = FakeConnectivityRepository(initial = true),
         scope: CoroutineScope
-    ) = UserSessionSynchronizer(headers, users, session, connectivity, scope).also { it.start() }
+    ) = UserSessionSynchronizer(headers, sessionExpiry, users, session, connectivity, scope).also { it.start() }
 }
 
 private val USER = User(

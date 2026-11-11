@@ -14,6 +14,7 @@ import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.domain.repository.TopicRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
+import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.topic.Topic
 import org.kimoteru.wallify.core.model.topic.TopicsOrder
@@ -55,7 +56,7 @@ class TopicsLogic(
             launch {
                 observeUserSettings()
                     .mapDistinctBy { settings -> settings.listImageQuality }
-                    .collect { quality -> uiState.update { it.copy(listImageQuality = quality) } }
+                    .collect { quality -> updateListImageQuality(quality) }
             }
         }
     }
@@ -64,11 +65,21 @@ class TopicsLogic(
         when (event) {
             is UiEvent.SelectTopic -> updateSelectedSlug(event.slug)
             is UiEvent.OpenPhoto -> navigate(TopicsNavigationEvent.OpenPhoto(event.photoId))
+            is UiEvent.ListRefreshError -> showListRefreshError(event.list, event.error) { addListRetry() }
         }
     }
 
     private fun updateSelectedSlug(slug: String?) {
         uiState.update { it.copy(selectedSlug = slug) }
+    }
+
+    private fun updateListImageQuality(quality: ImageQuality) {
+        uiState.update { it.copy(listImageQuality = quality) }
+    }
+
+    /** «Повторить» on a failed refresh of a list: the failed list on screen repeats itself when the count grows. */
+    private fun addListRetry() {
+        uiState.update { it.copy(listRetries = it.listRetries + 1) }
     }
 }
 

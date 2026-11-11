@@ -2,13 +2,22 @@ package org.kimoteru.wallify.core.common.response
 
 import kotlinx.coroutines.CancellationException
 
+/**
+ * Failure of a data operation. [code] is the HTTP status or [DEBUG_ERROR_CODE]; [isRateLimited] is set by the network
+ * layer when the backend reports the exhausted request limit with a status that means something else too (403).
+ */
 data class ResponseError(
     val message: String,
-    val code: Int = DEBUG_ERROR_CODE
+    val code: Int = DEBUG_ERROR_CODE,
+    val isRateLimited: Boolean = false,
 ) {
+    /** Kind of the failure, for the screen to pick its text. */
+    val type: ResponseErrorType
+        get() = ResponseErrorType.of(code, isRateLimited)
+
     /** The backend does not accept the session token (or its absence): the user has to sign in again. */
     val isUnauthorized: Boolean
-        get() = code == UNAUTHORIZED_CODE
+        get() = type == ResponseErrorType.Unauthorized
 
     companion object {
         const val DEBUG_ERROR_CODE = -1
