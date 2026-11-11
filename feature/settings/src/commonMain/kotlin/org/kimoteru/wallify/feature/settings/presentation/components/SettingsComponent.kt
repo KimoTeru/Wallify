@@ -18,12 +18,17 @@ import org.kimoteru.wallify.core.domain.usecase.settings.UpdateUserSettingsUseCa
 import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.stats.MonthStats
 import org.kimoteru.wallify.core.model.stats.TotalStats
+import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
+import org.kimoteru.wallify.core.presentation.photo.handle
+import org.kimoteru.wallify.core.presentation.photo.toAvatarUi
+import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.toDomain
 import org.kimoteru.wallify.core.presentation.settings.toPhotoColumns
 import org.kimoteru.wallify.core.presentation.settings.toPresentation
+import org.kimoteru.wallify.feature.settings.presentation.ui.SettingsContract.Account
 import org.kimoteru.wallify.feature.settings.presentation.ui.SettingsContract.UiEvent
 import org.kimoteru.wallify.feature.settings.presentation.ui.SettingsContract.UiState
 import org.koin.core.annotation.Factory
@@ -56,15 +61,17 @@ class SettingsLogic(
         settings,
         serviceStats,
         requestStatsRepository.stats,
-        initialValue = UiState(user = userRepository.currentUser.value)
+        initialValue = UiState(account = userRepository.currentUser.value?.toAccount())
     ) { user, userSettings, stats, requestStats ->
         val requestDays = requestStatsRepository.lastDays(requestStats, REQUEST_DAYS).map { it.count }
+        val photoLayout = userSettings.photoLayout.toPresentation()
 
         UiState(
-            user = user,
+            account = user?.toAccount(),
             themeMode = userSettings.themeMode.toPresentation(),
-            photoLayout = userSettings.photoLayout.toPresentation(),
+            photoLayout = photoLayout,
             photoColumns = userSettings.photoColumns.toPhotoColumns(),
+            isPhotoColumnsAvailable = photoLayout != PhotoLayoutUi.List,
             screenLayout = userSettings.screenLayout.toPresentation(),
             listImageQuality = userSettings.listImageQuality.toPresentation(),
             detailImageQuality = userSettings.detailImageQuality.toPresentation(),
@@ -73,6 +80,7 @@ class SettingsLogic(
             totalStats = stats.total,
             monthStats = stats.month,
             requestTotal = requestStats.total,
+            canResetRequestStats = requestStats.total > 0L,
             topEndpoints = requestStats.endpoints.take(TOP_ENDPOINTS),
             rateLimit = requestStats.rateLimit,
             requestDays = requestDays,
@@ -140,6 +148,13 @@ class SettingsLogic(
     private fun updateMonthStats(month: MonthStats) {
         serviceStats.update { it.copy(month = month) }
     }
+
+    /** The account block: the email under the name, or the handle when the email is not shared. */
+    private fun User.toAccount(): Account = Account(
+        name = name,
+        subtitle = email ?: handle(),
+        avatar = toAvatarUi(imageUrl = profileImage?.medium)
+    )
 
     private data class ServiceStats(
         val total: TotalStats? = null,

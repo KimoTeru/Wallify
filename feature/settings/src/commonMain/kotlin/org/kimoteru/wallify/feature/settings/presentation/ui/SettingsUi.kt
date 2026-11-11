@@ -22,9 +22,6 @@ import org.kimoteru.wallify.core.common.extensions.toCompactString
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberCanUseExpandedLayout
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberIsShortWindow
-import org.kimoteru.wallify.core.designsystem.ui.avatar.UserAvatar
-import org.kimoteru.wallify.core.designsystem.ui.blur.BlurSourceZIndex
-import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassSegmentedControl
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen
@@ -38,8 +35,9 @@ import org.kimoteru.wallify.core.model.stats.EndpointStat
 import org.kimoteru.wallify.core.model.stats.MonthStats
 import org.kimoteru.wallify.core.model.stats.RateLimit
 import org.kimoteru.wallify.core.model.stats.TotalStats
-import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.presentation.photo.AvatarUi
+import org.kimoteru.wallify.core.presentation.photo.UserAvatar
 import org.kimoteru.wallify.core.presentation.settings.ImageQualityUi
 import org.kimoteru.wallify.core.presentation.settings.PhotoColumnsUi
 import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
@@ -89,15 +87,26 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_stat_pho
 import org.kimoteru.wallify.core.resources.generated.resources.settings_stat_views
 
 object SettingsContract {
+    /** The account block: the name, the line under it (the email, or the handle without one) and the avatar. */
+    @Immutable
+    data class Account(
+        val name: String,
+        val subtitle: String,
+        val avatar: AvatarUi,
+    )
+
     @Immutable
     data class UiState(
-        val user: User? = null,
+        /** The signed-in user, ready to draw; `null` while there is none. */
+        val account: Account? = null,
         val themeModes: List<ThemeModeUi> = ThemeModeUi.entries,
         val themeMode: ThemeModeUi = ThemeModeUi.System,
         val photoLayouts: List<PhotoLayoutUi> = PhotoLayoutUi.entries,
         val photoLayout: PhotoLayoutUi = PhotoLayoutUi.Masonry,
         val columnOptions: List<PhotoColumnsUi> = PhotoColumnsUi.entries,
         val photoColumns: PhotoColumnsUi = PhotoColumnsUi.Auto,
+        /** The list always has its own number of columns, so the choice is shown for the other layouts only. */
+        val isPhotoColumnsAvailable: Boolean = true,
         val screenLayouts: List<ScreenLayoutUi> = ScreenLayoutUi.entries,
         val screenLayout: ScreenLayoutUi = ScreenLayoutUi.Auto,
         /** The original is only for downloads: on screen it is a huge file for no visible gain. */
@@ -112,6 +121,8 @@ object SettingsContract {
         val totalStats: TotalStats? = null,
         val monthStats: MonthStats? = null,
         val requestTotal: Long = 0L,
+        /** There is something to reset: at least one request is counted. */
+        val canResetRequestStats: Boolean = false,
         /** The most requested endpoints, the first is requested most. */
         val topEndpoints: List<EndpointStat> = emptyList(),
         val rateLimit: RateLimit? = null,
@@ -177,7 +188,7 @@ fun SettingsUi(
 
     FloatingBarScreen(
         modifier = modifier,
-        scrolledPx = scroll.value,
+        scrolledPx = { scroll.value },
         bar = {
             DefaultTopBar(
                 title = stringResource(Res.string.nav_settings),
@@ -189,7 +200,6 @@ fun SettingsUi(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .blurSource(BlurSourceZIndex.Screen)
                 .verticalScroll(scroll)
                 .padding(
                     start = screenPadding.start,
@@ -203,7 +213,7 @@ fun SettingsUi(
             modifier = Modifier.widthIn(max = appSize.panel.contentMaxWidth),
             verticalArrangement = Arrangement.spacedBy(appPadding.medium)
         ) {
-            uiState.user?.let { user ->
+            uiState.account?.let { account ->
                 SettingsSection(title = stringResource(Res.string.settings_account)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -211,14 +221,13 @@ fun SettingsUi(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         UserAvatar(
-                            imageUrl = user.profileImage?.medium,
-                            name = user.name,
+                            avatar = account.avatar,
                             size = appSize.avatar.large
                         )
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = user.name,
+                                text = account.name,
                                 style = appTypography.h5.semiBold,
                                 color = appColor.text.title,
                                 maxLines = 1,
@@ -226,7 +235,7 @@ fun SettingsUi(
                             )
 
                             Text(
-                                text = user.email ?: "@${user.username}",
+                                text = account.subtitle,
                                 style = appTypography.h7.medium,
                                 color = appColor.text.subtitle,
                                 maxLines = 1,
@@ -310,8 +319,7 @@ fun SettingsUi(
                     }
                 }
 
-                // The list always has its own number of columns, so the choice matters for the other two.
-                if (uiState.photoLayout != PhotoLayoutUi.List) {
+                if (uiState.isPhotoColumnsAvailable) {
                     Text(
                         text = stringResource(Res.string.settings_columns).uppercase(),
                         style = appTypography.caps.semiBold,
@@ -441,7 +449,7 @@ fun SettingsUi(
                     modifier = Modifier.fillMaxWidth(),
                     text = stringResource(Res.string.settings_requests_reset),
                     icon = AppIcons.Refresh,
-                    enabled = uiState.requestTotal > 0L,
+                    enabled = uiState.canResetRequestStats,
                     onClick = { obtainEvent(SettingsContract.UiEvent.ResetRequestStats) }
                 )
 

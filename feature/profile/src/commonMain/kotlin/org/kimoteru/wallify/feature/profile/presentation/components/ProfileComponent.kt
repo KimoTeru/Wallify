@@ -2,6 +2,7 @@ package org.kimoteru.wallify.feature.profile.presentation.components
 
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.map
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
@@ -32,7 +34,12 @@ import org.kimoteru.wallify.core.presentation.base.BaseComponentCore
 import org.kimoteru.wallify.core.presentation.base.BaseLogicCore
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.errors.ProfileApiError
+import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
+import org.kimoteru.wallify.core.presentation.photo.profileSubtitle
+import org.kimoteru.wallify.core.presentation.photo.toAvatarUi
+import org.kimoteru.wallify.core.presentation.photo.toCardUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.CollectionCardUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.ComponentEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditField
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditForm
@@ -51,9 +58,9 @@ interface ProfileComponent : BaseComponentCore<UiState, UiEvent, ComponentEvent>
     /** Whether the screen was opened over another one and so has a back button. */
     val canNavigateBack: Boolean
 
-    val photos: Flow<PagingData<Photo>>
-    val collections: Flow<PagingData<PhotoCollection>>
-    val collectionPhotos: Flow<PagingData<Photo>>
+    val photos: Flow<PagingData<PhotoCardUi>>
+    val collections: Flow<PagingData<CollectionCardUi>>
+    val collectionPhotos: Flow<PagingData<PhotoCardUi>>
 }
 
 /**
@@ -68,7 +75,7 @@ class ProfileLogic(
     @InjectedParam private val target: ProfileTarget,
     private val userRepository: UserRepository,
     private val collectionRepository: CollectionRepository,
-    private val observeUserSettings: ObserveUserSettingsUseCase
+    private val observeUserSettings: ObserveUserSettingsUseCase,
 ) : BaseLogicCore<UiState, UiEvent, ProfileNavigationEvent, ComponentEvent>() {
 
     override val uiState: StateFlow<UiState>
@@ -82,20 +89,32 @@ class ProfileLogic(
     /** Every change builds the photo list again, which loads it from the backend if it was made stale. */
     private val photosReloadKey = MutableStateFlow(0)
 
-    val photos: Flow<PagingData<Photo>> = combine(username, photosReloadKey) { login, _ -> login }
+    private val listImageQuality: Flow<ImageQuality> = uiState.mapDistinctBy { state -> state.listImageQuality }
+
+    // The lists give ready cards to the Ui. The quality is joined after `cachedIn`, which may be collected again.
+    val photos: Flow<PagingData<PhotoCardUi>> = combine(username, photosReloadKey) { login, _ -> login }
         .flatMapLatest { login -> userRepository.getUserPhotosFlow(login) }
         .cachedIn(coroutineScope)
+        .combine(listImageQuality) { photos, quality -> photos.map { photo -> photo.toCard(quality) } }
 
-    val collections: Flow<PagingData<PhotoCollection>> = username
+    val collections: Flow<PagingData<CollectionCardUi>> = username
         .flatMapLatest { login -> userRepository.getUserCollectionsFlow(login) }
         .cachedIn(coroutineScope)
+        .combine(listImageQuality) { collections, quality ->
+            collections.map { collection ->
+                CollectionCardUi(collection = collection, coverUrl = collection.coverPhoto?.urls?.forQuality(quality))
+            }
+        }
 
-    val collectionPhotos: Flow<PagingData<Photo>> = uiState
+    val collectionPhotos: Flow<PagingData<PhotoCardUi>> = uiState
         .mapDistinctBy { state -> state.openedCollection?.id }
         .flatMapLatest { id ->
             if (id == null) flowOf(PagingData.empty()) else collectionRepository.getCollectionPhotosFlow(id)
         }
         .cachedIn(coroutineScope)
+        .combine(listImageQuality) { photos, quality ->
+            photos.map { photo -> photo.toCard(quality) }
+        }
 
     private var loadJob: Job? = null
 
@@ -168,6 +187,7 @@ class ProfileLogic(
                                 showUser(resource.data)
                                 updateIsLoading(false)
                             }
+
                             is Resource.Error -> {
                                 updateError(resource.error)
                                 updateIsLoading(false)
@@ -231,10 +251,21 @@ class ProfileLogic(
         uiState.update { it.copy(error = error) }
     }
 
-    /** A loaded user also clears an earlier failure and tells whether the profile is the signed-in user's own. */
+    /**
+     * A loaded user also clears an earlier failure, tells whether the profile is the signed-in user's own and gives
+     * the header its avatar and subtitle.
+     */
     private fun showUser(user: User) {
         val isOwn = target is ProfileTarget.CurrentUser || user.id == userRepository.currentUser.value?.id
-        uiState.update { it.copy(user = user, isOwn = isOwn, error = null) }
+        uiState.update {
+            it.copy(
+                user = user,
+                avatar = user.toAvatarUi(imageUrl = user.profileImage?.large),
+                userSubtitle = user.profileSubtitle(),
+                isOwn = isOwn,
+                error = null
+            )
+        }
     }
 
     private fun updateStatistics(statistics: Statistics) {
@@ -265,6 +296,13 @@ class ProfileLogic(
     private fun addListRetry() {
         uiState.update { it.copy(listRetries = it.listRetries + 1) }
     }
+
+    /** All photos of a profile are the same author's, so the cards show none. */
+    private fun Photo.toCard(quality: ImageQuality): PhotoCardUi = toCardUi(
+        imageUrl = urls.forQuality(quality),
+        lowImageUrl = urls.forQuality(ImageQuality.Low),
+        withAuthor = false
+    )
 }
 
 sealed interface ProfileNavigationEvent : BaseNavigationEvent {

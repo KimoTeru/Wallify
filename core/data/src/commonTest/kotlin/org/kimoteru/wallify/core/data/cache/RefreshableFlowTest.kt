@@ -17,6 +17,7 @@ class RefreshableFlowTest {
     private val listDao = FakeListDao()
     private val time = FakeTimeProvider(now = 1_000_000L)
     private val loader = CacheLoader(listDao = listDao, time = time)
+    private val dispatchers = FakeAppDispatchers()
     private val database = MutableStateFlow<String?>(null)
     private val databaseList = MutableStateFlow<List<String>>(emptyList())
     private var answer: Response<String> = Response.Success("remote")
@@ -25,6 +26,7 @@ class RefreshableFlowTest {
 
     private fun item() = refreshableFlow(
         loader = loader,
+        dispatchers = dispatchers,
         key = ITEM_KEY,
         ttl = TTL,
         roomFlow = { database },
@@ -38,6 +40,7 @@ class RefreshableFlowTest {
 
     private fun list() = refreshableListFlow(
         loader = loader,
+        dispatchers = dispatchers,
         key = LIST_KEY,
         ttl = TTL,
         roomFlow = { databaseList },

@@ -1,6 +1,7 @@
 package org.kimoteru.wallify.core.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.data.cache.CacheLoader
 import org.kimoteru.wallify.core.data.cache.CacheStore
@@ -20,12 +21,14 @@ class StatsRepositoryImpl(
     private val statsRemoteDataSource: StatsRemoteDataSource,
     private val statsDao: StatsDao,
     private val cacheLoader: CacheLoader,
-    private val cacheStore: CacheStore
+    private val cacheStore: CacheStore,
+    private val dispatchers: AppDispatchers
 ) : StatsRepository {
 
     override fun getTotalStatsFlow(): Flow<Resource<TotalStats>> {
         return refreshableFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = ItemKeys.TOTAL_STATS,
             ttl = CacheTtl.Stats,
             roomFlow = { statsDao.observeTotal() },
@@ -38,6 +41,7 @@ class StatsRepositoryImpl(
     override fun getMonthStatsFlow(): Flow<Resource<MonthStats>> {
         return refreshableFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = ItemKeys.MONTH_STATS,
             ttl = CacheTtl.Stats,
             roomFlow = { statsDao.observeMonth() },

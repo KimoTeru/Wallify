@@ -5,7 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.HazeInputSharing
 import dev.chrisbanes.haze.HazePerformanceMode
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
@@ -20,33 +22,35 @@ enum class BlurLevel {
     Large
 }
 
-/** Marks this content as the source that [blurBackdrop] surfaces blur. Does nothing without a [BlurHost]. */
+/**
+ * Marks the content of a screen that the frosted bars and the overlays blur: the list or the column under the top
+ * bar, never the bars themselves. One per screen, and the bars and overlays are its siblings, not its children:
+ * an effect cannot sample a source it lies in. Does nothing without a [BlurHost].
+ *
+ * The top bar and the dock sample the same scrolling content on every frame; with
+ * [HazeInputSharing.Auto] Android renders it once for both instead of once per bar. Other platforms do not reuse the
+ * render, and there `Auto` stays the default `Never`. A source records nothing while no effect samples it.
+ */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
-fun Modifier.blurSource(zIndex: Float = BlurSourceZIndex.Root): Modifier {
+fun Modifier.blurSource(): Modifier {
     val hazeState = LocalHazeState.current ?: return this
-    return hazeSource(state = hazeState, zIndex = zIndex)
+    return hazeSource(state = hazeState, inputSharing = HazeInputSharing.Auto)
 }
 
 /**
- * Frosted glass for a bar that floats over scrolling content (dock, rail, search): the content under it, blurred.
- * The blur lies on an opaque base color, otherwise the sharp content shows through the blurred copy and the bar
- * only looks translucent instead of matte. The surface puts its own tint over it.
- *
- * It sees the content marked with [blurSource] that is not a parent of the bar: the bar and the list are siblings.
- * Without a [BlurHost] it draws nothing, and the surface stays plain translucent.
+ * Frosted glass of a bar over scrolling content (dock, rail, top bar): the content under it, blurred, on an opaque
+ * base color, otherwise the sharp content shows through the blurred copy and the bar only looks translucent. The
+ * surface puts its own tint over it. Without a [BlurHost] it draws nothing, and the surface stays translucent.
  */
 @Composable
-fun Modifier.frostedBackdrop(level: BlurLevel = BlurLevel.Large): Modifier {
+internal fun Modifier.frostedBackdrop(level: BlurLevel = BlurLevel.Large): Modifier {
     val appBlur = AppTheme.blur
     val appColor = AppTheme.color
 
     val hazeState = LocalHazeState.current ?: return this
 
-    val radius = when (level) {
-        BlurLevel.Small -> appBlur.small
-        BlurLevel.Medium -> appBlur.medium
-        BlurLevel.Large -> appBlur.large
-    }
+    val radius = level.radius(appBlur.small, appBlur.medium, appBlur.large)
     val base = appColor.basic.background
 
     val style = remember(radius, base) {
@@ -57,8 +61,8 @@ fun Modifier.frostedBackdrop(level: BlurLevel = BlurLevel.Large): Modifier {
         }
     }
 
-    // A bar sits over scrolling content and redraws every frame; at this radius the lowest input quality looks the
-    // same and costs much less.
+    // A bar redraws on every frame of the scroll; at its radius the lowest input quality looks the same and costs
+    // much less (Haze performance guide).
     return this.hazeBlur(
         input = HazeInput.Backdrop(hazeState),
         style = style,
@@ -67,8 +71,9 @@ fun Modifier.frostedBackdrop(level: BlurLevel = BlurLevel.Large): Modifier {
 }
 
 /**
- * Draws a blurred copy of the content behind this surface instead of a dim scrim.
- * [alpha] fades the effect in and out (0f is invisible, 1f is fully applied), so dialogs and sheets can animate it.
+ * Draws a blurred copy of the screen behind this surface instead of a dim scrim: the backdrop of a sheet or a
+ * dialog. [alpha] fades the effect in and out (0f is invisible, 1f is fully applied), so dialogs and sheets can
+ * animate it.
  *
  * Without a [BlurHost], or where the platform cannot blur, it falls back to a translucent dark scrim.
  */
@@ -84,11 +89,7 @@ fun Modifier.blurBackdrop(
     val currentAlpha = rememberUpdatedState(alpha)
     val hazeState = LocalHazeState.current
 
-    val radius = when (level) {
-        BlurLevel.Small -> appBlur.small
-        BlurLevel.Medium -> appBlur.medium
-        BlurLevel.Large -> appBlur.large
-    }
+    val radius = level.radius(appBlur.small, appBlur.medium, appBlur.large)
     // The screen background lies under the blur source, so the blurred copy is translucent where the screen
     // draws nothing, and the sharp content shows through it as a ghost. An opaque base color behind the blur
     // closes that, the scrim then dims it evenly (dark on the day scheme too, or a white dialog would not stand out),
@@ -101,6 +102,7 @@ fun Modifier.blurBackdrop(
         return this.background(scrim.copy(alpha = scrim.alpha * alpha))
     }
 
+    // The alpha is read through the state on every frame of the fade, so the style is not built again for it.
     val style = remember(radius, base, tint, scrim) {
         HazeBlurStyle {
             blurRadius(radius)
@@ -116,4 +118,14 @@ fun Modifier.blurBackdrop(
         input = HazeInput.Backdrop(hazeState),
         style = style
     )
+}
+
+private fun <T> BlurLevel.radius(
+    small: T,
+    medium: T,
+    large: T,
+): T = when (this) {
+    BlurLevel.Small -> small
+    BlurLevel.Medium -> medium
+    BlurLevel.Large -> large
 }

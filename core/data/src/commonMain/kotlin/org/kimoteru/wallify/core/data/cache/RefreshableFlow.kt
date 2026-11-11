@@ -5,7 +5,9 @@ import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.ResponseError
@@ -21,9 +23,13 @@ import kotlin.time.Duration
  *
  * A failing backend does not touch what is shown: with a saved row the screen keeps it (offline works), without one
  * it gets [Resource.Error] and retries by collecting the flow again.
+ *
+ * The request, the decoding, the saving and [toDomain] run on `dispatchers.io` of the repository (`flowOn`); the
+ * screen only gets the result.
  */
 internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableFlow(
     loader: CacheLoader,
+    dispatchers: AppDispatchers,
     key: String,
     ttl: Duration,
     roomFlow: () -> Flow<Entity?>,
@@ -52,7 +58,7 @@ internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableFlow(
             send(Resource.Success(toDomain(entity)))
         }
     }
-}
+}.flowOn(dispatchers.io)
 
 /**
  * A short list with the database as the single source of truth, the same way as [refreshableFlow]. An empty saved
@@ -61,6 +67,7 @@ internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableFlow(
  */
 internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableListFlow(
     loader: CacheLoader,
+    dispatchers: AppDispatchers,
     key: String,
     ttl: Duration,
     roomFlow: () -> Flow<List<Entity>>,
@@ -92,7 +99,7 @@ internal fun <Entity : Any, Domain : Any, Remote : Any> refreshableListFlow(
             send(Resource.Success(entities.map(toDomain)))
         }
     }
-}
+}.flowOn(dispatchers.io)
 
 /** Saves the answer of the backend; a failure is sent as [Resource.Error] only if nothing is shown yet. */
 private suspend fun <Remote : Any, Domain : Any> ProducerScope<Resource<Domain>>.refresh(

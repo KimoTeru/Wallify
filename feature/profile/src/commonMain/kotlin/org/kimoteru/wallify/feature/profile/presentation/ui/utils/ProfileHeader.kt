@@ -16,10 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import org.jetbrains.compose.resources.stringResource
-import org.kimoteru.wallify.core.common.extensions.Bullet
 import org.kimoteru.wallify.core.common.extensions.toCompactString
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
-import org.kimoteru.wallify.core.designsystem.ui.avatar.UserAvatar
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButtonStyle
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassSegmentedControl
@@ -27,6 +25,7 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.GlassStat
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
 import org.kimoteru.wallify.core.designsystem.ui.shimmer.ShimmerBox
+import org.kimoteru.wallify.core.presentation.photo.UserAvatar
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.profile_edit
 import org.kimoteru.wallify.core.resources.generated.resources.profile_stat_collections
@@ -76,11 +75,12 @@ internal fun ProfileHeader(
                 )
             }
         } else {
-            UserAvatar(
-                imageUrl = user.profileImage?.large,
-                name = user.name,
-                size = appSize.avatar.profile
-            )
+            uiState.avatar?.let { avatar ->
+                UserAvatar(
+                    avatar = avatar,
+                    size = appSize.avatar.profile
+                )
+            }
 
             Text(
                 text = user.name,
@@ -90,7 +90,7 @@ internal fun ProfileHeader(
             )
 
             Text(
-                text = listOfNotNull("@${user.username}", user.location).joinToString(" ${String.Bullet} "),
+                text = uiState.userSubtitle,
                 style = appTypography.h7.medium,
                 color = appColor.text.subtitle,
                 textAlign = TextAlign.Center

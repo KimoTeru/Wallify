@@ -32,7 +32,7 @@ import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIf
 
 /**
  * Pebble chip: glass when idle, solid inverted when [selected]. [leading] is drawn before the text. Over photos pass
- * [GlassLevel.Floating] as [level], so the chip is frosted and stays readable.
+ * [GlassLevel.Floating] as [level], so the chip is dense enough to stay readable.
  */
 @Composable
 fun GlassChip(

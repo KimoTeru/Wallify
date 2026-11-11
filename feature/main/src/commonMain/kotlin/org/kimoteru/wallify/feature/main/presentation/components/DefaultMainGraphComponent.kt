@@ -57,15 +57,15 @@ class DefaultMainGraphComponent(
 
     init {
         backHandler.register(backToFeedCallback)
-        stack.subscribe { state -> backToFeedCallback.isEnabled = state.active.configuration !is Config.Feed }
+        stack.subscribe { state ->
+            backToFeedCallback.isEnabled = state.active.configuration !is Config.Feed
+            logic.onTabShown(state.active.instance.toTab())
+        }
     }
 
     override fun obtainNavigateEvent(event: MainGraphNavigationEvent) {
         when (event) {
-            is MainGraphNavigationEvent.SelectTab -> {
-                val config = event.tab.toConfig()
-                if (stack.value.active.configuration != config) navigation.bringToFront(config)
-            }
+            is MainGraphNavigationEvent.SelectTab -> navigation.bringToFront(event.tab.toConfig())
         }
     }
 

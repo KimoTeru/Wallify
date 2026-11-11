@@ -5,6 +5,8 @@ import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withContext
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.paging.FIRST_PAGE
 import org.kimoteru.wallify.core.common.paging.PagingLoadException
 import org.kimoteru.wallify.core.common.response.Response
@@ -28,6 +30,7 @@ internal class ListRemoteMediator<E : Any, T : Any>(
     private val listKey: String,
     private val ttl: Duration,
     private val loader: CacheLoader,
+    private val dispatchers: AppDispatchers,
     private val listDao: ListDao,
     private val fetch: suspend (page: Int, size: Int) -> Response<List<T>>,
     private val itemId: (T) -> String,
@@ -39,7 +42,17 @@ internal class ListRemoteMediator<E : Any, T : Any>(
         return if (isFresh) InitializeAction.SKIP_INITIAL_REFRESH else InitializeAction.LAUNCH_INITIAL_REFRESH
     }
 
-    override suspend fun load(loadType: LoadType, state: PagingState<Int, E>): MediatorResult {
+    // Paging runs the mediator in the scope that collects the list (`cachedIn` on the main thread of the screen);
+    // the request, the decoding of the page and its saving go to `io`, or every page loaded during a scroll drops
+    // frames.
+    override suspend fun load(
+        loadType: LoadType,
+        state: PagingState<Int, E>,
+    ): MediatorResult = withContext(dispatchers.io) {
+        loadPage(loadType, state)
+    }
+
+    private suspend fun loadPage(loadType: LoadType, state: PagingState<Int, E>): MediatorResult {
         if (loadType == LoadType.PREPEND) return MediatorResult.Success(endOfPaginationReached = true)
 
         return try {

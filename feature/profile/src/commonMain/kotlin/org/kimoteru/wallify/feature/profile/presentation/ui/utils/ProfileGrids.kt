@@ -36,15 +36,14 @@ import org.kimoteru.wallify.core.designsystem.ui.paging.isAppending
 import org.kimoteru.wallify.core.designsystem.ui.paging.isEmpty
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
 import org.kimoteru.wallify.core.designsystem.ui.paging.keyAt
-import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCard
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCardPlaceholder
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridLayout
+import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
 import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.DefaultPullToRefreshBox
-import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
-import org.kimoteru.wallify.core.model.photo.ImageQuality
-import org.kimoteru.wallify.core.model.photo.Photo
+import org.kimoteru.wallify.core.presentation.photo.PhotoCard
+import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.common_photos_empty
 import org.kimoteru.wallify.core.resources.generated.resources.profile_collection_back
@@ -56,23 +55,23 @@ private const val HEADER_KEY = "profile_header"
 private const val SUB_HEADER_KEY = "profile_sub_header"
 
 /**
- * Photos and collections of one profile in a single grid. The header stays the same item when the tab changes,
- * so the segmented control slides instead of being created again on the selected tab.
+ * Photos and collections of one profile in a single grid of equal cards ([PhotoGridMode.Grid]) whatever layout the
+ * feed uses. The header stays the same item when the tab changes, so the segmented control slides instead of being
+ * created again on the selected tab.
  */
 @Composable
 internal fun ProfileGrid(
+    modifier: Modifier = Modifier,
     uiState: ProfileContract.UiState,
-    photos: Flow<PagingData<Photo>>,
-    collections: Flow<PagingData<PhotoCollection>>,
-    collectionPhotos: Flow<PagingData<Photo>>,
+    photos: Flow<PagingData<PhotoCardUi>>,
+    collections: Flow<PagingData<ProfileContract.CollectionCardUi>>,
+    collectionPhotos: Flow<PagingData<PhotoCardUi>>,
     contentPadding: PaddingValues,
     obtainEvent: (ProfileContract.UiEvent) -> Unit
 ) {
     val appRatio = AppTheme.ratio
 
-    val openedCollection = uiState.openedCollection?.takeIf {
-        uiState.selectedTab != ProfileContract.Tab.Photos
-    }
+    val openedCollection = uiState.shownCollection
     val photoPaging = when {
         uiState.selectedTab == ProfileContract.Tab.Photos -> photos.collectAsLazyPagingItems()
         openedCollection != null -> collectionPhotos.collectAsLazyPagingItems()
@@ -89,16 +88,23 @@ internal fun ProfileGrid(
     // Pull to refresh asks the backend for the list on screen, whatever its age.
     val listPaging = photoPaging ?: collectionPaging
 
-    listPaging?.let { paging -> RefreshErrorEffect(paging = paging) }
+    listPaging?.let { paging ->
+        RefreshErrorEffect(
+            paging = paging,
+            retries = uiState.listRetries,
+            onChange = { list, error -> obtainEvent(ProfileContract.UiEvent.ListRefreshError(list, error)) }
+        )
+    }
 
     DefaultPullToRefreshBox(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
         isRefreshing = listPaging?.let { it.isRefreshing && it.itemCount > 0 } == true,
         onRefresh = { listPaging?.refresh() },
         indicatorPadding = PaddingValues(top = contentPadding.calculateTopPadding())
     ) {
         PhotoGridLayout(
             modifier = Modifier.fillMaxSize(),
+            mode = PhotoGridMode.Grid,
             state = gridState,
             contentPadding = contentPadding
         ) {
@@ -126,23 +132,18 @@ internal fun ProfileGrid(
             photoPaging?.let { paging ->
                 items(
                     count = paging.itemCount,
-                    key = { index -> paging.keyAt(index) { photo -> photo.id } }
+                    key = { index -> paging.keyAt(index) { card -> card.id } }
                 ) { index ->
-                    val photo = paging[index]
+                    val card = paging[index]
 
-                    if (photo != null) {
+                    if (card != null) {
                         PhotoCard(
-                            imageUrl = photo.urls.forQuality(uiState.listImageQuality),
-                            lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
-                            width = photo.width,
-                            height = photo.height,
-                            colorHex = photo.color,
-                            authorName = null,
-                            authorAvatarUrl = null,
-                            onClick = { obtainEvent(ProfileContract.UiEvent.OpenPhoto(photo.id)) }
+                            card = card,
+                            mode = PhotoGridMode.Grid,
+                            onClick = { obtainEvent(ProfileContract.UiEvent.OpenPhoto(card.id)) }
                         )
                     } else {
-                        PhotoCardPlaceholder()
+                        PhotoCardPlaceholder(mode = PhotoGridMode.Grid)
                     }
                 }
 
@@ -152,18 +153,20 @@ internal fun ProfileGrid(
             collectionPaging?.let { paging ->
                 items(
                     count = paging.itemCount,
-                    key = { index -> paging.keyAt(index) { collection -> collection.id } }
+                    key = { index -> paging.keyAt(index) { card -> card.collection.id } }
                 ) { index ->
-                    val collection = paging[index]
+                    val card = paging[index]
 
-                    if (collection != null) {
+                    if (card != null) {
                         CollectionCard(
-                            collection = collection,
-                            imageQuality = uiState.listImageQuality,
-                            onClick = { obtainEvent(ProfileContract.UiEvent.OpenCollection(collection)) }
+                            card = card,
+                            onClick = { obtainEvent(ProfileContract.UiEvent.OpenCollection(card.collection)) }
                         )
                     } else {
-                        PhotoCardPlaceholder(aspectRatio = appRatio.image.landscape)
+                        PhotoCardPlaceholder(
+                            mode = PhotoGridMode.Grid,
+                            aspectRatio = appRatio.image.landscape
+                        )
                     }
                 }
 
@@ -243,10 +246,11 @@ private fun CollectionTitle(
 
 @Composable
 private fun CollectionCard(
-    collection: PhotoCollection,
-    imageQuality: ImageQuality,
+    card: ProfileContract.CollectionCardUi,
     onClick: () -> Unit
 ) {
+    val collection = card.collection
+
     val appColor = AppTheme.color
     val appCorner = AppTheme.corner
     val appGradient = AppTheme.gradient
@@ -264,7 +268,7 @@ private fun CollectionCard(
     ) {
         CachedAsyncImage(
             modifier = Modifier.fillMaxSize(),
-            model = collection.coverPhoto?.urls?.forQuality(imageQuality)
+            model = card.coverUrl
         )
 
         Column(

@@ -8,9 +8,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -30,16 +31,18 @@ import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIfComposable
 import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIfNotNull
 
 /**
- * Opacity step of a glass surface: recessed panes, regular cards and panels, raised controls, bars floating over
- * content ([Floating]: frosted, the content under it blurred, see `frostedBackdrop`) and sheets and dialogs
- * ([Solid], opaque).
+ * Opacity step of a glass surface: recessed panes, regular cards and panels, raised controls, controls floating
+ * over content ([Floating]: a dense translucent tone, no blur of their own), the bars of a screen ([Frosted]: the
+ * same tone over the blurred content under it, only the top bar, the dock and the rail) and sheets and dialogs
+ * ([Solid], opaque). A blur costs a pass on every frame of the scroll, so it stays on these few bars.
  */
 enum class GlassLevel {
     Sub,
     Standard,
     Elevated,
     Floating,
-    Solid
+    Frosted,
+    Solid,
 }
 
 /** Side of the hairline on [glassSurface]. [Start] and [End] follow the layout direction. */
@@ -72,22 +75,30 @@ fun Modifier.glassSurface(
         GlassLevel.Sub -> appGlass.sub
         GlassLevel.Standard -> appGlass.standard
         GlassLevel.Elevated -> appGlass.elevated
-        GlassLevel.Floating -> appGlass.dock
+        GlassLevel.Floating, GlassLevel.Frosted -> appGlass.dock
         GlassLevel.Solid -> appGlass.solid
+    }
+    // Every card and chip has a surface: the brush of its hairline is built once per scheme.
+    val edgeBrush = remember(appGlass.edgeTop, appGlass.edge) {
+        Brush.verticalGradient(listOf(appGlass.edgeTop, appGlass.edge))
     }
 
     return this
         .clip(shape)
-        .applyIfComposable(level == GlassLevel.Floating) { frostedBackdrop() }
+        .applyIfComposable(level == GlassLevel.Frosted) { frostedBackdrop() }
         .background(fill)
         .glassEdges(
             edges = edges,
             shape = shape,
             width = appBorderWidth.small,
-            brush = Brush.verticalGradient(listOf(appGlass.edgeTop, appGlass.edge))
+            brush = edgeBrush
         )
 }
 
+/**
+ * The hairline on the chosen [edges]. The outline and the clip of the sides are built once per size
+ * ([drawWithCache]): a bar over a scrolling list redraws on every frame and would build them again each time.
+ */
 private fun Modifier.glassEdges(
     edges: Set<GlassEdge>,
     shape: Shape,
@@ -96,9 +107,7 @@ private fun Modifier.glassEdges(
 ): Modifier = when {
     edges == GlassEdge.All -> border(width = width, brush = brush, shape = shape)
     edges.isEmpty() -> this
-    else -> drawWithContent {
-        drawContent()
-
+    else -> drawWithCache {
         val stroke = width.toPx()
         val full = shape.createOutline(size, layoutDirection, this)
         val topReach = maxOf(stroke, full.cornerReach(top = true))
@@ -124,10 +133,15 @@ private fun Modifier.glassEdges(
                 if (right in edges) addRect(Rect(size.width - stroke, sideTop, size.width, sideBottom))
             }
         }
+        val strokeStyle = Stroke(width = stroke)
 
-        clipPath(clip) {
-            translate(left = stroke / 2f, top = stroke / 2f) {
-                drawOutline(outline = outline, brush = brush, style = Stroke(width = stroke))
+        onDrawWithContent {
+            drawContent()
+
+            clipPath(clip) {
+                translate(left = stroke / 2f, top = stroke / 2f) {
+                    drawOutline(outline = outline, brush = brush, style = strokeStyle)
+                }
             }
         }
     }

@@ -18,7 +18,6 @@ import org.kimoteru.wallify.core.common.extensions.Bullet
 import org.kimoteru.wallify.core.common.extensions.Space
 import org.kimoteru.wallify.core.common.extensions.toCompactString
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
-import org.kimoteru.wallify.core.designsystem.ui.avatar.UserAvatar
 import org.kimoteru.wallify.core.designsystem.ui.chart.Sparkline
 import org.kimoteru.wallify.core.designsystem.ui.click.debouncedClickable
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
@@ -31,6 +30,7 @@ import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.info.InfoLine
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.PhotoExif
+import org.kimoteru.wallify.core.presentation.photo.UserAvatar
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.photo_attribution
 import org.kimoteru.wallify.core.resources.generated.resources.photo_collections_empty
@@ -78,10 +78,7 @@ internal fun PhotoDetails(
                 horizontalArrangement = Arrangement.spacedBy(appPadding.medium),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                UserAvatar(
-                    imageUrl = user.profileImage?.medium,
-                    name = user.name
-                )
+                uiState.author?.let { author -> UserAvatar(avatar = author) }
 
                 Text(
                     text = stringResource(Res.string.photo_attribution, user.name),

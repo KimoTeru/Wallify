@@ -1,6 +1,8 @@
 package org.kimoteru.wallify.core.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.map
@@ -17,28 +19,29 @@ import org.koin.core.annotation.Singleton
 class AuthRepositoryImpl(
     private val authRemoteDataSource: AuthRemoteDataSource,
     private val authBrowser: AuthBrowser,
-    private val sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository,
+    private val dispatchers: AppDispatchers
 ) : AuthRepository {
 
     override val isSignedIn: Flow<Boolean> = sessionRepository.authToken
         .mapDistinctBy { token -> !token.isNullOrBlank() }
 
-    override suspend fun signIn(): Response<Boolean> {
+    override suspend fun signIn(): Response<Boolean> = withContext(dispatchers.io) {
         val redirectUri = authBrowser.redirectUri
         val authorizationUrl = authRemoteDataSource.getAuthorizationUrl(redirectUri = redirectUri)
 
         val redirectedTo = when (val opened = responseOf { authBrowser.open(authorizationUrl) }) {
-            is Response.Success -> opened.data ?: return Response.Success(false)
-            is Response.Error -> return opened
+            is Response.Success -> opened.data ?: return@withContext Response.Success(false)
+            is Response.Error -> return@withContext opened
         }
 
-        return when (val redirect = authRemoteDataSource.parseRedirect(url = redirectedTo, redirectUri = redirectUri)) {
+        when (val redirect = authRemoteDataSource.parseRedirect(url = redirectedTo, redirectUri = redirectUri)) {
             is AuthorizationRedirect.Granted -> exchangeCode(code = redirect.code, redirectUri = redirectUri)
             is AuthorizationRedirect.Denied, null -> Response.Success(false)
         }
     }
 
-    override suspend fun signOut() {
+    override suspend fun signOut(): Unit = withContext(dispatchers.io) {
         sessionRepository.clear()
     }
 

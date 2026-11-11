@@ -60,6 +60,12 @@ val String.Companion.Nbsp: String
 val String.Companion.Unknown: String
     get() = "unknown"
 
+val String.Companion.Hash: String
+    get() = "#"
+
+val String.Companion.At: String
+    get() = "@"
+
 fun String.titleCaseFirstChar() = replaceFirstChar(Char::titlecase)
 
 fun String.toNullIf(converter: (String) -> Boolean): String? {
@@ -67,3 +73,22 @@ fun String.toNullIf(converter: (String) -> Boolean): String? {
 }
 
 fun String.nullIfBlank(): String? = ifBlank { null }
+
+private const val MAX_INITIALS = 2
+private const val HEX_RADIX = 16
+private const val HEX_RGB_LENGTH = 6
+private const val OPAQUE_ALPHA = 0xFF000000
+
+/** Up to two first letters of the words of a name, upper case: "Jane van Doe" -> "JV". Empty for a blank name. */
+fun String.initials(): String =
+    split(String.Space)
+        .mapNotNull { word -> word.firstOrNull()?.uppercaseChar() }
+        .take(MAX_INITIALS)
+        .joinToString(String.Empty)
+
+/** `#RRGGBB` (the `#` is optional) to an opaque ARGB value (`0xFFRRGGBB`), or `null` for anything else. */
+fun String.toArgbOrNull(): Long? =
+    removePrefix(String.Hash)
+        .takeIf { it.length == HEX_RGB_LENGTH }
+        ?.toLongOrNull(HEX_RADIX)
+        ?.let { rgb -> OPAQUE_ALPHA or rgb }

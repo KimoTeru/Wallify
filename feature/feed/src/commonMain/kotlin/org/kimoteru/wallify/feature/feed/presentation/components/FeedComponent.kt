@@ -2,31 +2,38 @@ package org.kimoteru.wallify.feature.feed.presentation.components
 
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.map
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.extensions.Empty
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
+import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.repository.SearchRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
+import org.kimoteru.wallify.core.model.photo.PhotoColor
+import org.kimoteru.wallify.core.model.photo.PhotoOrientation
 import org.kimoteru.wallify.core.model.photo.SearchPhotosQuery
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
+import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
+import org.kimoteru.wallify.core.presentation.photo.toCardUi
 import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract.SearchFilters
 import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract.UiEvent
 import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract.UiState
 import org.koin.core.annotation.Factory
 interface FeedComponent : BaseComponent<UiState, UiEvent> {
-    val photos: Flow<PagingData<Photo>>
+    val photos: Flow<PagingData<PhotoCardUi>>
 }
 
 /**
@@ -44,8 +51,13 @@ class FeedLogic(
     override val uiState: StateFlow<UiState>
         field = MutableStateFlow(UiState())
 
+    /**
+     * The cards are built here, not in the Ui: the addresses for the quality, the color, the proportions and the
+     * initials of the author. The quality is joined after `cachedIn`: a cached `PagingData` may be collected again,
+     * one straight from the pager may not.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val photos: Flow<PagingData<Photo>> = uiState
+    val photos: Flow<PagingData<PhotoCardUi>> = uiState
         .mapDistinctBy { state -> SearchRequest(state.query, state.filters) }
         .flatMapLatest { request ->
             if (request.query.isBlank()) {
@@ -55,6 +67,9 @@ class FeedLogic(
             }
         }
         .cachedIn(coroutineScope)
+        .combine(uiState.mapDistinctBy { state -> state.listImageQuality }) { photos, quality ->
+            photos.map { photo -> photo.toCard(quality) }
+        }
 
     override fun onCreate() {
         coroutineScope.launch {
@@ -73,10 +88,8 @@ class FeedLogic(
             is UiEvent.ClearQuery -> clearQuery()
             is UiEvent.ShowFilters -> showFilters()
             is UiEvent.HideFilters -> updateIsFiltersVisible(false)
-            is UiEvent.SelectOrientation -> updateDraftFilters(
-                uiState.value.draftFilters.copy(orientation = event.orientation)
-            )
-            is UiEvent.SelectColor -> updateDraftFilters(uiState.value.draftFilters.copy(color = event.color))
+            is UiEvent.ToggleOrientation -> toggleOrientation(event.orientation)
+            is UiEvent.ToggleColor -> toggleColor(event.color)
             is UiEvent.SelectOrder -> updateDraftFilters(uiState.value.draftFilters.copy(order = event.order))
             is UiEvent.SelectContentFilter -> updateDraftFilters(
                 uiState.value.draftFilters.copy(contentFilter = event.contentFilter)
@@ -95,6 +108,20 @@ class FeedLogic(
     /** The draft starts from the applied filters every time the sheet opens. */
     private fun showFilters() {
         uiState.update { it.copy(isFiltersVisible = true, draftFilters = it.filters) }
+    }
+
+    /** The chosen orientation chip, tapped again, leaves the orientation to the backend. */
+    private fun toggleOrientation(orientation: PhotoOrientation) {
+        val draftFilters = uiState.value.draftFilters
+        val chosen = orientation.takeIf { it != draftFilters.orientation }
+        updateDraftFilters(draftFilters.copy(orientation = chosen))
+    }
+
+    /** The chosen color chip, tapped again, leaves the color to the backend. */
+    private fun toggleColor(color: PhotoColor) {
+        val draftFilters = uiState.value.draftFilters
+        val chosen = color.takeIf { it != draftFilters.color }
+        updateDraftFilters(draftFilters.copy(color = chosen))
     }
 
     private fun updateQueryInput(queryInput: String) {
@@ -125,6 +152,11 @@ class FeedLogic(
     private fun addListRetry() {
         uiState.update { it.copy(listRetries = it.listRetries + 1) }
     }
+
+    private fun Photo.toCard(quality: ImageQuality): PhotoCardUi = toCardUi(
+        imageUrl = urls.forQuality(quality),
+        lowImageUrl = urls.forQuality(ImageQuality.Low)
+    )
 
     private data class SearchRequest(
         val query: String,

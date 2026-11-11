@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -30,22 +29,19 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
 import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
-import org.kimoteru.wallify.core.designsystem.ui.paging.ListRefreshErrors
 import org.kimoteru.wallify.core.designsystem.ui.paging.RefreshErrorEffect
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
 import org.kimoteru.wallify.core.designsystem.ui.paging.refreshError
-import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PagingPhotoGrid
-import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCard
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridShimmer
 import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
-import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.model.photo.ImageQuality
-import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.topic.Topic
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.presentation.photo.PhotoCard
+import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.feature.topics.presentation.components.TopicsComponent
 import org.kimoteru.wallify.feature.topics.presentation.ui.utils.TopicChips
 import org.kimoteru.wallify.core.resources.generated.resources.Res
@@ -63,6 +59,10 @@ object TopicsContract {
 
     sealed interface UiEvent : BaseContract.UiEvent {
         data class SelectTopic(val slug: String) : UiEvent
+
+        /** The list of topics shows its first topic; the logic picks it while no topic is chosen. */
+        data class FirstTopicShown(val slug: String) : UiEvent
+
         data class OpenPhoto(val photoId: String) : UiEvent
 
         /** The refresh of a list on screen failed over shown items, or its failure is over (`null`). */
@@ -78,7 +78,7 @@ fun PreviewTopicsUi() {
             modifier = Modifier.background(AppTheme.color.basic.background),
             component = object : TopicsComponent {
                 override val topics = flowOf(PagingData.empty<Topic>())
-                override val photos = flowOf(PagingData.empty<Photo>())
+                override val photos = flowOf(PagingData.empty<PhotoCardUi>())
 
                 @Composable
                 override fun getUiState(): TopicsContract.UiState = TopicsContract.UiState()
@@ -104,19 +104,18 @@ fun TopicsUi(
     val screenPadding = rememberScreenPadding()
 
     // A list already on screen that failed to refresh stays, the failure goes to the snackbar with a repeat.
-    ListRefreshErrors(
+    RefreshErrorEffect(
+        paging = topics,
         retries = uiState.listRetries,
         onChange = { list, error -> obtainEvent(TopicsContract.UiEvent.ListRefreshError(list, error)) }
-    ) {
-        RefreshErrorEffect(paging = topics)
-    }
+    )
 
-    val firstTopic = topics.itemSnapshotList.firstOrNull()
+    // `peek` reads one item without copying the list (`itemSnapshotList` copies all of it on every composition) and
+    // without asking for the next page.
+    val firstSlug = if (topics.itemCount > 0) topics.peek(0)?.slug else null
 
-    LaunchedEffect(firstTopic?.slug) {
-        if (uiState.selectedSlug == null && firstTopic != null) {
-            obtainEvent(TopicsContract.UiEvent.SelectTopic(firstTopic.slug))
-        }
+    LaunchedEffect(firstSlug) {
+        firstSlug?.let { slug -> obtainEvent(TopicsContract.UiEvent.FirstTopicShown(slug)) }
     }
 
     // Another topic is another list: it opens at the top, not at the place where the previous one was left.
@@ -124,7 +123,7 @@ fun TopicsUi(
 
     FloatingBarScreen(
         modifier = modifier,
-        scrolledPx = gridState.scrolledPx(),
+        scrolledPx = { gridState.scrolledPx() },
         bar = {
             if (isShortWindow) {
                 Row(
@@ -181,39 +180,33 @@ fun TopicsUi(
         )
 
         // The photos of a topic are a grid of equal cards whatever layout the feed uses.
-        CompositionLocalProvider(LocalPhotoGridMode provides PhotoGridMode.Grid) {
-            when {
-                topics.itemCount == 0 && topics.refreshError != null -> ErrorContentLayout(
-                    error = topics.refreshError?.responseError,
-                    onRetry = { topics.retry() }
+        when {
+            topics.itemCount == 0 && topics.refreshError != null -> ErrorContentLayout(
+                error = topics.refreshError?.responseError,
+                onRetry = { topics.retry() }
+            )
+
+            topics.itemCount == 0 && topics.isRefreshing -> PhotoGridShimmer(
+                mode = PhotoGridMode.Grid,
+                contentPadding = contentPadding
+            )
+
+            else -> PagingPhotoGrid(
+                modifier = Modifier.fillMaxSize(),
+                paging = photos,
+                itemKey = { photo -> photo.id },
+                emptyText = stringResource(Res.string.common_photos_empty),
+                refreshRetries = uiState.listRetries,
+                onRefreshError = { list, error -> obtainEvent(TopicsContract.UiEvent.ListRefreshError(list, error)) },
+                mode = PhotoGridMode.Grid,
+                state = gridState,
+                contentPadding = contentPadding
+            ) { card ->
+                PhotoCard(
+                    card = card,
+                    mode = PhotoGridMode.Grid,
+                    onClick = { obtainEvent(TopicsContract.UiEvent.OpenPhoto(card.id)) }
                 )
-
-                topics.itemCount == 0 && topics.isRefreshing -> PhotoGridShimmer(contentPadding = contentPadding)
-
-                else -> ListRefreshErrors(
-                    retries = uiState.listRetries,
-                    onChange = { list, error -> obtainEvent(TopicsContract.UiEvent.ListRefreshError(list, error)) }
-                ) {
-                    PagingPhotoGrid(
-                        modifier = Modifier.fillMaxSize(),
-                        paging = photos,
-                        itemKey = { photo -> photo.id },
-                        emptyText = stringResource(Res.string.common_photos_empty),
-                        state = gridState,
-                        contentPadding = contentPadding
-                    ) { photo ->
-                        PhotoCard(
-                            imageUrl = photo.urls.forQuality(uiState.listImageQuality),
-                            lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
-                            width = photo.width,
-                            height = photo.height,
-                            colorHex = photo.color,
-                            authorName = photo.user?.name,
-                            authorAvatarUrl = photo.user?.profileImage?.small,
-                            onClick = { obtainEvent(TopicsContract.UiEvent.OpenPhoto(photo.id)) }
-                        )
-                    }
-                }
             }
         }
     }

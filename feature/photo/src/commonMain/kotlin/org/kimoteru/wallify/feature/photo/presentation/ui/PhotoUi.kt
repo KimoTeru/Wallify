@@ -24,14 +24,32 @@ import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.presentation.photo.AvatarUi
 import org.kimoteru.wallify.feature.photo.presentation.components.PhotoComponent
 import org.kimoteru.wallify.feature.photo.presentation.ui.utils.PhotoCompactContent
 import org.kimoteru.wallify.feature.photo.presentation.ui.utils.PhotoWideContent
 
 object PhotoContract {
+    /**
+     * The image of the screen ready to draw: the small version [lowUrl], the chosen [highUrl], the address of the
+     * same photo in the list ([placeholderKey], already in memory), the color (`0xFFRRGGBB`) and width / height.
+     */
+    @Immutable
+    data class PhotoImageUi(
+        val lowUrl: String,
+        val highUrl: String,
+        val placeholderKey: String,
+        val colorArgb: Long?,
+        val aspectRatio: Float,
+    )
+
     @Immutable
     data class UiState(
         val photo: Photo? = null,
+        /** The image of [photo] for the chosen quality; built with the photo. */
+        val image: PhotoImageUi? = null,
+        /** The avatar of the author of [photo]. */
+        val author: AvatarUi? = null,
         val statistics: Statistics? = null,
         val collections: List<PhotoCollection> = emptyList(),
         val memberCollectionIds: Set<Int> = emptySet(),
@@ -103,8 +121,8 @@ fun PhotoUi(
 
     FloatingBarScreen(
         modifier = modifier.background(appColor.basic.background),
-        // On a wide window the inspector scroll must not frost the bar: that blur spreads over the photo.
-        scrolledPx = if (windowType == WindowType.Compact) scroll.value else 0,
+        // On a wide window the bar lies over the photo, not over the inspector: its scroll does not tint the bar.
+        scrolledPx = { if (windowType == WindowType.Compact) scroll.value else 0 },
         bar = {
             DefaultTopBar(
                 paddingValues = screenPadding.header,
@@ -113,17 +131,20 @@ fun PhotoUi(
         }
     ) { _ ->
         val photo = uiState.photo
+        val image = uiState.image
 
         when {
-            photo != null && windowType == WindowType.Compact -> PhotoCompactContent(
+            photo != null && image != null && windowType == WindowType.Compact -> PhotoCompactContent(
                 photo = photo,
+                image = image,
                 uiState = uiState,
                 scroll = compactScroll,
                 obtainEvent = obtainEvent
             )
 
-            photo != null -> PhotoWideContent(
+            photo != null && image != null -> PhotoWideContent(
                 photo = photo,
+                image = image,
                 uiState = uiState,
                 scroll = wideScroll,
                 obtainEvent = obtainEvent

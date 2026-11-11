@@ -3,11 +3,13 @@ package org.kimoteru.wallify.feature.random.presentation.components
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.common.response.handleResponse
+import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
@@ -16,6 +18,8 @@ import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
+import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
+import org.kimoteru.wallify.core.presentation.photo.toCardUi
 import org.kimoteru.wallify.feature.random.presentation.ui.RandomContract.UiEvent
 import org.kimoteru.wallify.feature.random.presentation.ui.RandomContract.UiState
 import org.koin.core.annotation.Factory
@@ -35,15 +39,26 @@ class RandomLogic(
 
     private var loadJob: Job? = null
 
+    /** The last loaded set; the cards on screen are built from it for the quality of the lists. */
+    private val loadedPhotos = MutableStateFlow<List<Photo>>(emptyList())
+
     override val uiState: StateFlow<UiState>
         field = MutableStateFlow(UiState())
 
     override fun onCreate() {
         coroutineScope.launch {
             launch {
-                observeUserSettings()
-                    .mapDistinctBy { settings -> settings.listImageQuality }
-                    .collect { quality -> updateListImageQuality(quality) }
+                combine(
+                    loadedPhotos,
+                    observeUserSettings().mapDistinctBy { settings -> settings.listImageQuality }
+                ) { photos, quality ->
+                    photos.map { photo ->
+                        photo.toCardUi(
+                            imageUrl = photo.urls.forQuality(quality),
+                            lowImageUrl = photo.urls.forQuality(ImageQuality.Low)
+                        )
+                    }
+                }.collect { cards -> updatePhotos(cards) }
             }
         }
 
@@ -64,7 +79,7 @@ class RandomLogic(
             updateIsLoading(true)
 
             photoRepository.getRandomPhotos(count = RANDOM_PHOTOS_COUNT, forceRefresh = forceRefresh).handleResponse(
-                onSuccess = { photos -> updatePhotos(photos) },
+                onSuccess = { photos -> showLoadedPhotos(photos) },
                 onError = { error ->
                     updateError(error)
                     // The photos on screen stay: a failed shuffle goes to the snackbar, not in place of them.
@@ -80,17 +95,18 @@ class RandomLogic(
         uiState.update { it.copy(isLoading = isLoading) }
     }
 
-    /** A successful load replaces the photos and clears an earlier error. */
-    private fun updatePhotos(photos: List<Photo>) {
-        uiState.update { it.copy(photos = photos, error = null) }
+    /** A successful load replaces the set (its cards follow) and clears an earlier error. */
+    private fun showLoadedPhotos(photos: List<Photo>) {
+        loadedPhotos.value = photos
+        updateError(null)
+    }
+
+    private fun updatePhotos(photos: List<PhotoCardUi>) {
+        uiState.update { it.copy(photos = photos) }
     }
 
     private fun updateError(error: ResponseError?) {
         uiState.update { it.copy(error = error) }
-    }
-
-    private fun updateListImageQuality(quality: ImageQuality) {
-        uiState.update { it.copy(listImageQuality = quality) }
     }
 }
 

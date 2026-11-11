@@ -32,7 +32,7 @@ import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIfComposable
 /**
  * Opaque glass-edged sheet over a blurred screen: a bottom sheet on phones ([isSheet]) and a centered dialog
  * elsewhere. Tapping outside dismisses it. [content] gets `close`, which plays the exit animation and then calls
- * [onDismiss]. Put it into the `overlay` of `BlurLayout`, or into [ScreenOverlay] to draw it above the navigation.
+ * [onDismiss]. Put it into [ScreenOverlay]: the root screen draws it above everything, the navigation included.
  * A sheet's glass runs under the system navigation bar, the content stays above it, and the bottom hairline is off.
  */
 @Composable

@@ -7,37 +7,33 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.flowOf
+import org.kimoteru.wallify.core.common.extensions.Empty
 import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.WindowType
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberWindowType
+import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassIconButton
-import org.kimoteru.wallify.core.designsystem.ui.glass.LocalNavigationVisibility
 import org.kimoteru.wallify.core.designsystem.ui.glass.ScreenOverlay
-import org.kimoteru.wallify.core.designsystem.ui.glass.rememberHideOnScrollConnection
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
-import org.kimoteru.wallify.core.designsystem.ui.paging.ListRefreshErrors
-import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
-import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.ImageQuality
-import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.model.user.UpdateUserParams
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.presentation.photo.AvatarUi
+import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.feature.profile.presentation.components.ProfileComponent
 import org.kimoteru.wallify.feature.profile.presentation.ui.utils.ProfileEditOverlay
 import org.kimoteru.wallify.feature.profile.presentation.ui.utils.ProfileGrid
@@ -107,9 +103,20 @@ object ProfileContract {
         }
     }
 
+    /** A collection card ready to draw: the cover address is picked for the quality of the lists. */
+    @Immutable
+    data class CollectionCardUi(
+        val collection: PhotoCollection,
+        val coverUrl: String?,
+    )
+
     @Immutable
     data class UiState(
         val user: User? = null,
+        /** The avatar of [user] for the header, built with the user. */
+        val avatar: AvatarUi? = null,
+        /** The line under the name of [user]: `@jane • Oslo`. */
+        val userSubtitle: String = String.Empty,
         val statistics: Statistics? = null,
         val selectedTab: Tab = Tab.Photos,
         val openedCollection: PhotoCollection? = null,
@@ -126,7 +133,12 @@ object ProfileContract {
         val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality,
         /** Presses of «Повторить» on a failed refresh of the list of the tab ([UiEvent.ListRefreshError]). */
         val listRetries: Int = 0
-    ) : BaseContract.UiState
+    ) : BaseContract.UiState {
+
+        /** The collection whose photos the grid shows: it stays open behind the photos tab and returns with its tab. */
+        val shownCollection: PhotoCollection?
+            get() = openedCollection?.takeIf { selectedTab == Tab.Collections }
+    }
 
     sealed interface UiEvent : BaseContract.UiEvent {
         data object Retry : UiEvent
@@ -157,9 +169,9 @@ fun PreviewProfileUi() {
             modifier = Modifier.background(AppTheme.color.basic.background),
             component = object : ProfileComponent {
                 override val canNavigateBack = false
-                override val photos = flowOf(PagingData.empty<Photo>())
-                override val collections = flowOf(PagingData.empty<PhotoCollection>())
-                override val collectionPhotos = flowOf(PagingData.empty<Photo>())
+                override val photos = flowOf(PagingData.empty<PhotoCardUi>())
+                override val collections = flowOf(PagingData.empty<ProfileContract.CollectionCardUi>())
+                override val collectionPhotos = flowOf(PagingData.empty<PhotoCardUi>())
 
                 @Composable
                 override fun getUiState(): ProfileContract.UiState = ProfileContract.UiState()
@@ -201,32 +213,24 @@ fun ProfileUi(
         bottom = screenPadding.bottom
     )
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .nestedScroll(rememberHideOnScrollConnection(LocalNavigationVisibility.current))
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         RetryOnReconnect(
             isFailed = uiState.error != null && uiState.user == null,
             onRetry = { obtainEvent(ProfileContract.UiEvent.Retry) }
         )
 
-        // Photos and collections of a profile are grids of equal cards whatever layout the feed uses.
-        CompositionLocalProvider(LocalPhotoGridMode provides PhotoGridMode.Grid) {
-            ListRefreshErrors(
-                retries = uiState.listRetries,
-                onChange = { list, error -> obtainEvent(ProfileContract.UiEvent.ListRefreshError(list, error)) }
-            ) {
-                ProfileGrid(
-                    uiState = uiState,
-                    photos = component.photos,
-                    collections = component.collections,
-                    collectionPhotos = component.collectionPhotos,
-                    contentPadding = contentPadding,
-                    obtainEvent = obtainEvent
-                )
-            }
-        }
+        // The grid is what the dock and the profile form blur; the back button is its sibling.
+        ProfileGrid(
+            modifier = Modifier
+                .fillMaxSize()
+                .blurSource(),
+            uiState = uiState,
+            photos = component.photos,
+            collections = component.collections,
+            collectionPhotos = component.collectionPhotos,
+            contentPadding = contentPadding,
+            obtainEvent = obtainEvent
+        )
 
         if (component.canNavigateBack) {
             GlassIconButton(
@@ -238,7 +242,6 @@ fun ProfileUi(
                 onClick = { component.obtainBaseEvent(BaseContract.UiEvent.NavigateBack) }
             )
         }
-
     }
 
     uiState.editForm?.let { form ->

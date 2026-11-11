@@ -253,6 +253,16 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   `core:database` и `core:data` и выше не поднимаются.
 - В `Logic` поток кэшируется `cachedIn(coroutineScope)`, в Ui — `collectAsLazyPagingItems()` (`design/foundations.md`
   § Списки). `Pager` создаётся один раз на `Logic`: повторная подписка берёт последний `PagingData` из `cachedIn`.
+- Поток. Paging выполняет `RemoteMediator` и `PagingSource` в той корутине, что собирает список, а `cachedIn`
+  логики собирает его на главном потоке. Поэтому запрос, разбор JSON (`body<T>()` идёт в корутине вызова), маппинг и
+  запись страницы `ListRemoteMediator` делает в `withContext(dispatchers.io)`, а `refreshableFlow` /
+  `refreshableListFlow` — `flowOn(dispatchers.io)`. Диспетчеры держит только репозиторий: он берёт `AppDispatchers` в
+  конструктор, каждый его `suspend`-метод — `withContext(dispatchers.io)`, каждый его поток — `flowOn(dispatchers.io)`,
+  а в `pager(…)`, `refreshableFlow(…)`, `refreshableListFlow(…)` он передаёт `dispatchers = dispatchers`.
+  `CacheLoader` диспетчеров не хранит. Отдельный диспетчер параметром (`ioDispatcher` и подобные имена) не передаём:
+  везде `dispatchers: AppDispatchers` и `dispatchers.io` в месте вызова.
+  Иначе страница, подгруженная во время прокрутки, разбирается в UI-потоке и роняет кадры. Свой `PagingSource` с
+  сетью (`createPager`) делает то же в `load`.
 - Списки из Room — `enablePlaceholders = true` (`CachedPager.kt`): Room перезагружает источник со смещения в
   таблице, и без заглушек позиция после сброса источника сбивается, список «прыгает». `null`-элемент Ui рисует
   заглушкой `PhotoCardPlaceholder` (`design/foundations.md` § Списки).

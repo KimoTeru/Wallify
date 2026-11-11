@@ -19,13 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
-import org.kimoteru.wallify.core.designsystem.ui.blur.BlurSourceZIndex
-import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
 import org.kimoteru.wallify.core.designsystem.ui.image.ProgressiveAsyncImage
-import org.kimoteru.wallify.core.domain.photo.forQuality
-import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract
 
@@ -36,14 +33,13 @@ private const val COMPACT_MAX_IMAGE_RATIO = 1.5f
 @Composable
 internal fun PhotoCompactContent(
     photo: Photo,
+    image: PhotoContract.PhotoImageUi,
     uiState: PhotoContract.UiState,
     scroll: ScrollState,
     obtainEvent: (PhotoContract.UiEvent) -> Unit
 ) {
     val appCorner = AppTheme.corner
     val appPadding = AppTheme.padding
-
-    val imageRatio = if (photo.width > 0 && photo.height > 0) photo.width / photo.height.toFloat() else 1f
 
     Column(
         modifier = Modifier
@@ -53,16 +49,14 @@ internal fun PhotoCompactContent(
         PhotoImage(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(imageRatio.coerceIn(COMPACT_MIN_IMAGE_RATIO, COMPACT_MAX_IMAGE_RATIO))
+                .aspectRatio(image.aspectRatio.coerceIn(COMPACT_MIN_IMAGE_RATIO, COMPACT_MAX_IMAGE_RATIO))
                 .clip(
                     RoundedCornerShape(
                         bottomStart = appCorner.large + appCorner.small,
                         bottomEnd = appCorner.large + appCorner.small
                     )
-                )
-                .blurSource(BlurSourceZIndex.Screen),
-            photo = photo,
-            uiState = uiState,
+                ),
+            image = image,
             contentScale = ContentScale.Crop
         )
 
@@ -77,13 +71,11 @@ internal fun PhotoCompactContent(
     }
 }
 
-/**
- * Tablet and desktop: the whole photo on the left, the inspector with its own scroll on the right.
- * The photo is not a blur source: frosting the bar over it spills a blurred copy across the screen.
- */
+/** Tablet and desktop: the whole photo on the left, the inspector with its own scroll on the right. */
 @Composable
 internal fun PhotoWideContent(
     photo: Photo,
+    image: PhotoContract.PhotoImageUi,
     uiState: PhotoContract.UiState,
     scroll: ScrollState,
     obtainEvent: (PhotoContract.UiEvent) -> Unit
@@ -103,15 +95,12 @@ internal fun PhotoWideContent(
                 .clip(RoundedCornerShape(appCorner.large + appCorner.smallSpecial))
                 .background(appColor.basic.background)
         ) {
-            val imageRatio = if (photo.width > 0 && photo.height > 0) photo.width / photo.height.toFloat() else 1f
-
             // The color of the photo fills the shape of the photo, not the whole panel around it.
             PhotoImage(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .aspectRatio(imageRatio),
-                photo = photo,
-                uiState = uiState,
+                    .aspectRatio(image.aspectRatio),
+                image = image,
                 contentScale = ContentScale.Fit
             )
         }
@@ -138,21 +127,21 @@ internal fun PhotoWideContent(
 
 /**
  * The photo in the quality chosen for this screen: its color, then the small version, then the chosen one. While it
- * loads, the image from the list the photo was opened from (already in memory) stands in.
+ * loads, the image from the list the photo was opened from (already in memory) stands in. The addresses come ready
+ * from the logic ([PhotoContract.PhotoImageUi]).
  */
 @Composable
 private fun PhotoImage(
     modifier: Modifier = Modifier,
-    photo: Photo,
-    uiState: PhotoContract.UiState,
+    image: PhotoContract.PhotoImageUi,
     contentScale: ContentScale
 ) {
     ProgressiveAsyncImage(
         modifier = modifier,
-        colorHex = photo.color,
-        lowUrl = photo.urls.forQuality(ImageQuality.Low),
-        highUrl = photo.urls.forQuality(uiState.detailImageQuality),
-        placeholderKey = photo.urls.forQuality(uiState.listImageQuality),
+        color = image.colorArgb?.let(::Color),
+        lowUrl = image.lowUrl,
+        highUrl = image.highUrl,
+        placeholderKey = image.placeholderKey,
         contentScale = contentScale
     )
 }

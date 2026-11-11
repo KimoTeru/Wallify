@@ -3,9 +3,9 @@ package org.kimoteru.wallify.feature.topics.presentation.components
 import androidx.paging.PagingData
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.flow.Flow
-import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.topic.Topic
 import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponent
+import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsContract.UiEvent
 import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsContract.UiState
 import org.koin.core.component.get
@@ -22,7 +22,7 @@ class DefaultTopicsComponent(
 
     override val topics: Flow<PagingData<Topic>> = logic.topics
 
-    override val photos: Flow<PagingData<Photo>> = logic.photos
+    override val photos: Flow<PagingData<PhotoCardUi>> = logic.photos
 
     override fun obtainNavigateEvent(event: TopicsNavigationEvent) {
         when (event) {

@@ -49,7 +49,7 @@ fun GlassDock(
     Row(
         modifier = modifier
             .height(appSize.navigation.dockHeight)
-            .glassSurface(GlassLevel.Floating, CircleShape)
+            .glassSurface(GlassLevel.Frosted, CircleShape)
             .padding(horizontal = appPadding.small),
         horizontalArrangement = Arrangement.spacedBy(appPadding.small),
         verticalAlignment = Alignment.CenterVertically
@@ -80,7 +80,7 @@ fun GlassRail(
     Column(
         modifier = modifier
             .width(appSize.navigation.railWidth)
-            .glassSurface(GlassLevel.Floating, RoundedCornerShape(appCorner.large + appCorner.small))
+            .glassSurface(GlassLevel.Frosted, RoundedCornerShape(appCorner.large + appCorner.small))
             .padding(vertical = appPadding.mediumSpecial),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(appPadding.small)

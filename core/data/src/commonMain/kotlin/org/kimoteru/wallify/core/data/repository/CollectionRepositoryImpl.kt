@@ -2,6 +2,8 @@ package org.kimoteru.wallify.core.data.repository
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.paging.DEFAULT_PAGE_SIZE
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
@@ -32,11 +34,13 @@ class CollectionRepositoryImpl(
     private val collectionDao: CollectionDao,
     private val photoDao: PhotoDao,
     private val cacheLoader: CacheLoader,
-    private val cacheStore: CacheStore
+    private val cacheStore: CacheStore,
+    private val dispatchers: AppDispatchers
 ) : CollectionRepository {
 
     override fun getCollectionsFlow(): Flow<PagingData<PhotoCollection>> {
         return cacheLoader.pager(
+            dispatchers = dispatchers,
             listKey = ListKeys.COLLECTIONS_FEED,
             ttl = CacheTtl.Feed,
             pagingSource = { collectionDao.pagingSource(ListKeys.COLLECTIONS_FEED) },
@@ -50,6 +54,7 @@ class CollectionRepositoryImpl(
     override fun getCollectionFlow(id: Int): Flow<Resource<PhotoCollection>> {
         return refreshableFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = ItemKeys.collection(id),
             ttl = CacheTtl.Item,
             roomFlow = { collectionDao.observe(id) },
@@ -66,6 +71,7 @@ class CollectionRepositoryImpl(
     ): Flow<PagingData<Photo>> {
         val listKey = ListKeys.collectionPhotos(id, orientation, order)
         return cacheLoader.pager(
+            dispatchers = dispatchers,
             listKey = listKey,
             ttl = CacheTtl.Feed,
             pagingSource = { photoDao.pagingSource(listKey) },
@@ -88,6 +94,7 @@ class CollectionRepositoryImpl(
         val listKey = ListKeys.relatedCollections(id)
         return refreshableListFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = listKey,
             ttl = CacheTtl.Feed,
             roomFlow = { collectionDao.observeList(listKey = listKey, limit = DEFAULT_PAGE_SIZE) },
@@ -101,8 +108,8 @@ class CollectionRepositoryImpl(
         title: String,
         description: String?,
         isPrivate: Boolean?
-    ): Response<PhotoCollection> {
-        return collectionRemoteDataSource.createCollection(
+    ): Response<PhotoCollection> = withContext(dispatchers.io) {
+        collectionRemoteDataSource.createCollection(
             title = title,
             description = description,
             isPrivate = isPrivate
@@ -114,8 +121,8 @@ class CollectionRepositoryImpl(
         title: String?,
         description: String?,
         isPrivate: Boolean?
-    ): Response<PhotoCollection> {
-        return collectionRemoteDataSource.updateCollection(
+    ): Response<PhotoCollection> = withContext(dispatchers.io) {
+        collectionRemoteDataSource.updateCollection(
             id = id,
             title = title,
             description = description,
@@ -123,8 +130,8 @@ class CollectionRepositoryImpl(
         ).onSuccess { collection -> saveChanged(collection) }
     }
 
-    override suspend fun deleteCollection(id: Int): Response<Unit> {
-        return collectionRemoteDataSource.deleteCollection(id = id)
+    override suspend fun deleteCollection(id: Int): Response<Unit> = withContext(dispatchers.io) {
+        collectionRemoteDataSource.deleteCollection(id = id)
             .onSuccess {
                 cacheLoader.saveQuietly {
                     collectionDao.delete(id)
@@ -133,16 +140,19 @@ class CollectionRepositoryImpl(
             }
     }
 
-    override suspend fun addPhotoToCollection(collectionId: Int, photoId: String): Response<CollectionPhotoChange> {
-        return collectionRemoteDataSource.addPhotoToCollection(collectionId = collectionId, photoId = photoId)
+    override suspend fun addPhotoToCollection(
+        collectionId: Int,
+        photoId: String
+    ): Response<CollectionPhotoChange> = withContext(dispatchers.io) {
+        collectionRemoteDataSource.addPhotoToCollection(collectionId = collectionId, photoId = photoId)
             .onSuccess { change -> saveChangedMembership(change, photoId, isMember = true) }
     }
 
     override suspend fun removePhotoFromCollection(
         collectionId: Int,
         photoId: String
-    ): Response<CollectionPhotoChange> {
-        return collectionRemoteDataSource.removePhotoFromCollection(collectionId = collectionId, photoId = photoId)
+    ): Response<CollectionPhotoChange> = withContext(dispatchers.io) {
+        collectionRemoteDataSource.removePhotoFromCollection(collectionId = collectionId, photoId = photoId)
             .onSuccess { change -> saveChangedMembership(change, photoId, isMember = false) }
     }
 

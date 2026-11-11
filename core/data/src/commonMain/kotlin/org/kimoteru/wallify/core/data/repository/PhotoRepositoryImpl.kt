@@ -2,6 +2,8 @@ package org.kimoteru.wallify.core.data.repository
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.onSuccess
@@ -32,11 +34,13 @@ class PhotoRepositoryImpl(
     private val photoDao: PhotoDao,
     private val statsDao: StatsDao,
     private val cacheLoader: CacheLoader,
-    private val cacheStore: CacheStore
+    private val cacheStore: CacheStore,
+    private val dispatchers: AppDispatchers
 ) : PhotoRepository {
 
     override fun getPhotosFlow(): Flow<PagingData<Photo>> {
         return cacheLoader.pager(
+            dispatchers = dispatchers,
             listKey = ListKeys.PHOTOS_FEED,
             ttl = CacheTtl.Feed,
             pagingSource = { photoDao.pagingSource(ListKeys.PHOTOS_FEED) },
@@ -50,6 +54,7 @@ class PhotoRepositoryImpl(
     override fun getPhotoFlow(id: String): Flow<Resource<Photo>> {
         return refreshableFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = ItemKeys.photo(id),
             ttl = CacheTtl.Item,
             roomFlow = { photoDao.observe(id) },
@@ -60,10 +65,11 @@ class PhotoRepositoryImpl(
     }
 
     /** Every call asks the backend for a new photo; the answer is saved with the other photos. */
-    override suspend fun getRandomPhoto(query: RandomPhotoQuery): Response<Photo> {
-        return photoRemoteDataSource.getRandomPhoto(query = query)
-            .onSuccess { photo -> cacheLoader.saveQuietly { cacheStore.savePhotoSummaries(listOf(photo)) } }
-    }
+    override suspend fun getRandomPhoto(query: RandomPhotoQuery): Response<Photo> =
+        withContext(dispatchers.io) {
+            photoRemoteDataSource.getRandomPhoto(query = query)
+                .onSuccess { photo -> cacheLoader.saveQuietly { cacheStore.savePhotoSummaries(listOf(photo)) } }
+        }
 
     /**
      * With [forceRefresh] every call asks the backend for a new set and saves it. When the backend cannot answer (no
@@ -74,15 +80,15 @@ class PhotoRepositoryImpl(
         count: Int,
         query: RandomPhotoQuery,
         forceRefresh: Boolean
-    ): Response<List<Photo>> {
+    ): Response<List<Photo>> = withContext(dispatchers.io) {
         val listKey = ListKeys.randomPhotos(count, query)
 
         if (!forceRefresh && cacheLoader.isFresh(listKey, CacheTtl.Feed)) {
             val saved = photoDao.getList(listKey, count)
-            if (saved.isNotEmpty()) return Response.Success(saved.map { entity -> entity.toDomain() })
+            if (saved.isNotEmpty()) return@withContext Response.Success(saved.map { entity -> entity.toDomain() })
         }
 
-        return when (val response = photoRemoteDataSource.getRandomPhotos(count = count, query = query)) {
+        when (val response = photoRemoteDataSource.getRandomPhotos(count = count, query = query)) {
             is Response.Success -> {
                 cacheLoader.saveQuietly { cacheStore.savePhotoList(listKey, response.data) }
                 response
@@ -98,6 +104,7 @@ class PhotoRepositoryImpl(
         val key = StatisticsKeys.photo(id, quantity)
         return refreshableFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = ItemKeys.photoStatistics(id, quantity),
             ttl = CacheTtl.Stats,
             roomFlow = { statsDao.observeStatistics(key) },
@@ -108,12 +115,14 @@ class PhotoRepositoryImpl(
     }
 
     /** A download is an action: it is reported every time and never answered from the database. */
-    override suspend fun trackDownload(photoId: String, quality: ImageQuality): Response<String> {
-        return photoRemoteDataSource.trackDownload(id = photoId, quality = quality)
-    }
+    override suspend fun trackDownload(photoId: String, quality: ImageQuality): Response<String> =
+        withContext(dispatchers.io) {
+            photoRemoteDataSource.trackDownload(id = photoId, quality = quality)
+        }
 
-    override suspend fun updatePhoto(id: String, params: UpdatePhotoParams): Response<Photo> {
-        return photoRemoteDataSource.updatePhoto(id = id, params = params)
-            .onSuccess { photo -> cacheLoader.saveQuietly { cacheStore.savePhoto(photo) } }
-    }
+    override suspend fun updatePhoto(id: String, params: UpdatePhotoParams): Response<Photo> =
+        withContext(dispatchers.io) {
+            photoRemoteDataSource.updatePhoto(id = id, params = params)
+                .onSuccess { photo -> cacheLoader.saveQuietly { cacheStore.savePhoto(photo) } }
+        }
 }

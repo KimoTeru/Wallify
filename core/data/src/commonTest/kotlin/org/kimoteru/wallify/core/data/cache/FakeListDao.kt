@@ -1,5 +1,9 @@
 package org.kimoteru.wallify.core.data.cache
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.database.dao.ListDao
 import org.kimoteru.wallify.core.database.entity.ListEntryEntity
 import org.kimoteru.wallify.core.database.entity.ListStateEntity
@@ -64,4 +68,15 @@ internal class FakeListDao : ListDao {
 
 internal class FakeTimeProvider(var now: Long = 0L) : TimeProvider {
     override fun nowEpochMillis(): Long = now
+}
+
+/** Runs everything at once in the test: the work the data layer moves to `io` stays deterministic. */
+@OptIn(ExperimentalCoroutinesApi::class)
+internal class FakeAppDispatchers : AppDispatchers {
+    private val dispatcher = UnconfinedTestDispatcher()
+
+    override val io: CoroutineDispatcher = dispatcher
+    override val main: CoroutineDispatcher = dispatcher
+    override val default: CoroutineDispatcher = dispatcher
+    override val unconfined: CoroutineDispatcher = dispatcher
 }

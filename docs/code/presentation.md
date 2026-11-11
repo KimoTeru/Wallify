@@ -145,14 +145,15 @@ override val logic: XxxLogic = retainedLogic { get<XxxLogic>() }
    логики: те же правила для лимита и сети.
 6. Обновление постраничного списка, упавшее над показанными элементами: Ui не зовёт `NotifierManager`. Событие и
    счётчик — в контракте фичи, `BaseContract` о списках не знает: `UiEvent.ListRefreshError(list: Long,
-   error: ResponseError?)` и `UiState.listRetries: Int`. Экран оборачивает списки в
-   `ListRefreshErrors(retries = uiState.listRetries, onChange = { list, error -> obtainEvent(…ListRefreshError…) })`
-   (`ui/paging`). В событии только данные, без лямбд: лямбда из Ui в логике переживает поворот экрана и держит
+   error: ResponseError?)` и `UiState.listRetries: Int`. Экран передаёт их списку явно:
+   `PagingPhotoGrid(refreshRetries = uiState.listRetries, onRefreshError = { list, error ->
+   obtainEvent(…ListRefreshError…) })`, свой список — `RefreshErrorEffect(paging, retries, onChange)` (`ui/paging`).
+   В событии только данные, без лямбд: лямбда из Ui в логике переживает поворот экрана и держит
    старые объекты Compose. Логика отвечает
    `showListRefreshError(event.list, event.error) { addListRetry() }` (`addListRetry()` прибавляет `listRetries`):
    сбой списка показывается один раз, пока список не сообщит, что сбой прошёл (после поворота тот же сбой приходит
-   снова), «Повторить» прибавляет счётчик, и упавший список сам вызывает `retry()`. `PagingPhotoGrid` делает это
-   внутри, свой список подключает `RefreshErrorEffect(paging)` (`design/foundations.md` § Списки).
+   снова), «Повторить» прибавляет счётчик, и упавший список сам вызывает `retry()` (`design/foundations.md`
+   § Списки).
 7. Снекбар с повтором не переживает экран: повтор запускается в `coroutineScope` логики, а при `onDestroy` логика
    закрывает свой снекбар (`NotifierManager.dismiss`). Повтор из уже закрытого экрана и не выполнился бы: scope
    отменён.
@@ -200,8 +201,29 @@ fun XxxUi(
   выносим в приватный composable.
 - Диалоги, шторки и оверлеи (`ScreenOverlay`, `GlassOverlay`, `DefaultDescriptionDialog`, `XxxManagerUi`) вызываем на
   верхнем уровне функции `XxxUi`, после основного контейнера экрана, а не внутри него. Так они не получают фон и
-  отступы контейнера и не зависят от его размеров. Исключение — блюр-источник и его оверлей
-  (`design/foundations.md` § Блюр): они соседи внутри одного `Box`.
+  отступы контейнера и не зависят от его размеров. Шторки и диалоги экрана идут через `ScreenOverlay`: их рисует
+  `BlurHost` экрана корня рядом с источником блюра (`design/foundations.md` § Блюр).
+- Решения не принимаем в Ui: что выбрать, что показать, доступно ли действие — поле `UiState` или обработка
+  `UiEvent` в логике. Ui сообщает факт (`FirstTopicShown(slug)`, `ToggleColor(color)`), логика решает, что с ним
+  делать; Ui остаются вёрстка, тексты из ресурсов и сопоставление состояния с параметрами компонентов.
+- `CompositionLocal` — только для того, что нужно любому потомку поддерева и имеет хорошее значение по умолчанию
+  ([CompositionLocal](https://developer.android.com/develop/ui/compose/compositionlocal)): токены темы, выбор
+  пользователя на всё приложение из корня (`LocalPhotoGridMode`, `LocalWindowTypeOverride`), окружение
+  (`LocalIsOnline`, `LocalNavigationPadding`) и инфраструктура дизайн-системы (`LocalOverlayHost`). Что нужно одному
+  или двум компонентам, передаём параметром (`mode`, `onRefreshError`), а связь со скроллом — инверсией управления
+  (`nestedScroll` на контейнере у владельца). Экран local заново не провайдит, чтобы поменять поведение одного
+  компонента: передаёт параметр. Тема (`AppTheme`) — исключение: она, как `MaterialTheme`, явно провайдит все свои
+  токены, чтобы вложенная тема сбрасывала переопределения снаружи и не зависела от значений по умолчанию local'ов.
+- Значения, которые меняются на каждом кадре (прокрутка, анимация), в теле composable не читаем: передаём лямбдой и
+  читаем в `graphicsLayer` / `drawBehind` / `offset { }`, иначе весь экран перекомпоновывается на каждом кадре.
+- Данные для отрисовки готовит логика: адреса картинок по качеству, цвет, пропорции, инициалы, строки из нескольких
+  полей (`@jane • Oslo`) — поля `UiState` или модели элементов списка (`PhotoCardUi`, `AvatarUi`,
+  `design/foundations.md` § Изображения фото). В Ui их не вычисляем и `remember` по данным не заводим: `remember`
+  в Ui — только для состояния самой вёрстки (анимация, измерение, контроллер), а производное от данных —
+  `UiState` из логики. Так элемент списка получает модель и не захватывает `uiState`: с strong skipping лямбда,
+  захватившая `uiState`, создаётся заново при любом его изменении (символ в поиске, в форме), и все видимые
+  карточки перекомпоновываются. По той же причине в композиции не копируем постраничный список
+  (`itemSnapshotList`): один элемент — `paging.peek(index)`.
 
 ## Общие блоки (`core:presentation`)
 

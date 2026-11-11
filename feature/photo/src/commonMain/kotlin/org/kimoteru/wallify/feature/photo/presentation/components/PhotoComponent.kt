@@ -6,9 +6,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.kimoteru.wallify.core.common.extensions.toArgbOrNull
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
@@ -23,13 +25,19 @@ import org.kimoteru.wallify.core.presentation.base.BaseComponentCore
 import org.kimoteru.wallify.core.presentation.base.BaseLogicCore
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.errors.CollectionApiError
+import org.kimoteru.wallify.core.presentation.photo.aspectRatioOrNull
+import org.kimoteru.wallify.core.presentation.photo.toAvatarUi
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.ComponentEvent
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.PhotoImageUi
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
 
 private const val STATISTICS_DAYS = 30
+
+/** Proportions of a photo the backend sent no size for. */
+private const val SQUARE_RATIO = 1f
 
 interface PhotoComponent : BaseComponentCore<UiState, UiEvent, ComponentEvent>
 
@@ -174,11 +182,16 @@ class PhotoLogic(
         uiState.update { it.copy(error = error) }
     }
 
-    /** The loaded photo also tells which collections of the user already hold it. */
+    /**
+     * The loaded photo also tells which collections of the user already hold it, and gives the screen its image and
+     * the avatar of the author ready to draw.
+     */
     private fun showPhoto(photo: Photo) {
         uiState.update {
             it.copy(
                 photo = photo,
+                image = photo.toImageUi(detailQuality = it.detailImageQuality, listQuality = it.listImageQuality),
+                author = photo.user?.let { user -> user.toAvatarUi(imageUrl = user.profileImage?.medium) },
                 error = null,
                 memberCollectionIds = photo.currentUserCollectionIds.toSet()
             )
@@ -205,10 +218,28 @@ class PhotoLogic(
         uiState.update { it.copy(pendingCollectionIds = it.pendingCollectionIds - collectionId) }
     }
 
-    /** Both qualities come from the settings together: the list one stands in while the detail one loads. */
+    /**
+     * Both qualities come from the settings together: the list one stands in while the detail one loads. The image
+     * of a shown photo follows them.
+     */
     private fun updateImageQualities(detailQuality: ImageQuality, listQuality: ImageQuality) {
-        uiState.update { it.copy(detailImageQuality = detailQuality, listImageQuality = listQuality) }
+        uiState.update {
+            it.copy(
+                detailImageQuality = detailQuality,
+                listImageQuality = listQuality,
+                image = it.photo?.toImageUi(detailQuality = detailQuality, listQuality = listQuality)
+            )
+        }
     }
+
+    /** The image of the screen: its color, the small version, the chosen one and the one from the list. */
+    private fun Photo.toImageUi(detailQuality: ImageQuality, listQuality: ImageQuality): PhotoImageUi = PhotoImageUi(
+        lowUrl = urls.forQuality(ImageQuality.Low),
+        highUrl = urls.forQuality(detailQuality),
+        placeholderKey = urls.forQuality(listQuality),
+        colorArgb = color.toArgbOrNull(),
+        aspectRatio = aspectRatioOrNull() ?: SQUARE_RATIO
+    )
 }
 
 sealed interface PhotoNavigationEvent : BaseNavigationEvent {
