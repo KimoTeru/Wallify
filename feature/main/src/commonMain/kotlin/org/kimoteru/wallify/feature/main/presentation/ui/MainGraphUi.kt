@@ -1,10 +1,5 @@
 package org.kimoteru.wallify.feature.main.presentation.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,7 +8,6 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -33,7 +27,6 @@ import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.WindowType
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberWindowType
-import org.kimoteru.wallify.core.designsystem.ui.glass.GlassDock
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassDrawer
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassNavItem
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassRail
@@ -51,6 +44,7 @@ import org.kimoteru.wallify.core.resources.generated.resources.nav_studio
 import org.kimoteru.wallify.core.resources.generated.resources.nav_topics
 import org.kimoteru.wallify.feature.main.presentation.components.MainGraphComponent
 import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract.UiEvent
+import org.kimoteru.wallify.feature.main.presentation.ui.utils.MainDock
 import org.kimoteru.wallify.feature.main.presentation.ui.utils.MainScreens
 
 object MainGraphContract {
@@ -129,27 +123,13 @@ fun MainGraphUi(
                         stack = component.stack
                     )
 
-                    AnimatedVisibility(
+                    MainDock(
                         modifier = Modifier.align(Alignment.BottomCenter),
-                        visible = navigationVisibility.isVisible,
-                        enter = slideInVertically { it } + fadeIn(),
-                        exit = slideOutVertically { it } + fadeOut()
-                    ) {
-                        GlassDock(
-                            modifier = Modifier
-                                .navigationBarsPadding()
-                                .padding(
-                                    start = appPadding.medium,
-                                    end = appPadding.medium,
-                                    bottom = appSize.navigation.dockInset
-                                ),
-                            items = items,
-                            selectedIndex = selectedIndex,
-                            onSelect = { index ->
-                                obtainEvent(UiEvent.SelectTab(uiState.tabs[index]))
-                            }
-                        )
-                    }
+                        visibility = navigationVisibility,
+                        items = items,
+                        selectedIndex = selectedIndex,
+                        onSelect = { index -> obtainEvent(UiEvent.SelectTab(uiState.tabs[index])) }
+                    )
                 }
 
                 WindowType.Medium -> Box(modifier = Modifier.fillMaxSize()) {

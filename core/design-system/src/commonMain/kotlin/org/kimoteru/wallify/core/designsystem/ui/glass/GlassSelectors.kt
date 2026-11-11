@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.animation.compose.animateColor
 import org.kimoteru.wallify.core.designsystem.ui.click.debouncedClickable
@@ -112,9 +113,10 @@ fun GlassSegmentedControl(
             (segmentWidth + gap) * index
         }
 
+        // The offset changes on every frame of the slide: read in the layout phase, it composes nothing again.
         Box(
             modifier = Modifier
-                .offset(x = indicatorOffset)
+                .offset { IntOffset(x = indicatorOffset.roundToPx(), y = 0) }
                 .width(segmentWidth)
                 .height(appSize.control.chipHeight)
                 .clip(CircleShape)

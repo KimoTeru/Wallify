@@ -199,7 +199,12 @@ class PhotoLogic(
     }
 
     private fun updateStatistics(statistics: Statistics) {
-        uiState.update { it.copy(statistics = statistics) }
+        uiState.update {
+            it.copy(
+                statistics = statistics,
+                viewsSeries = statistics.views.values.map { point -> point.value }
+            )
+        }
     }
 
     private fun updateCollections(collections: List<PhotoCollection>) {

@@ -51,6 +51,8 @@ object PhotoContract {
         /** The avatar of the author of [photo]. */
         val author: AvatarUi? = null,
         val statistics: Statistics? = null,
+        /** Views per day of [statistics] for the chart; built with them, so the chart does not map the series. */
+        val viewsSeries: List<Long> = emptyList(),
         val collections: List<PhotoCollection> = emptyList(),
         val memberCollectionIds: Set<Int> = emptySet(),
         val pendingCollectionIds: Set<Int> = emptySet(),

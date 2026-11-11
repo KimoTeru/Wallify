@@ -179,7 +179,7 @@ private fun PhotoStatistics(uiState: PhotoContract.UiState) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(appSize.chart.sparklineHeight),
-            values = statistics.views.values.map { point -> point.value }
+            values = uiState.viewsSeries
         )
     }
 }

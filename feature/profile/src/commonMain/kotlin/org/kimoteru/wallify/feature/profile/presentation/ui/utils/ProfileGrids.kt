@@ -53,6 +53,9 @@ import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract
 
 private const val HEADER_KEY = "profile_header"
 private const val SUB_HEADER_KEY = "profile_sub_header"
+private const val PHOTO_CONTENT_TYPE = "photo"
+private const val COLLECTION_CONTENT_TYPE = "collection"
+private const val PLACEHOLDER_CONTENT_TYPE = "placeholder"
 
 /**
  * Photos and collections of one profile in a single grid of equal cards ([PhotoGridMode.Grid]) whatever layout the
@@ -132,7 +135,11 @@ internal fun ProfileGrid(
             photoPaging?.let { paging ->
                 items(
                     count = paging.itemCount,
-                    key = { index -> paging.keyAt(index) { card -> card.id } }
+                    key = { index -> paging.keyAt(index) { card -> card.id } },
+                    // A type per kind of item lets the grid reuse the nodes of a card for another card.
+                    contentType = { index ->
+                        if (paging.peek(index) != null) PHOTO_CONTENT_TYPE else PLACEHOLDER_CONTENT_TYPE
+                    }
                 ) { index ->
                     val card = paging[index]
 
@@ -153,7 +160,10 @@ internal fun ProfileGrid(
             collectionPaging?.let { paging ->
                 items(
                     count = paging.itemCount,
-                    key = { index -> paging.keyAt(index) { card -> card.collection.id } }
+                    key = { index -> paging.keyAt(index) { card -> card.collection.id } },
+                    contentType = { index ->
+                        if (paging.peek(index) != null) COLLECTION_CONTENT_TYPE else PLACEHOLDER_CONTENT_TYPE
+                    }
                 ) { index ->
                     val card = paging[index]
 
