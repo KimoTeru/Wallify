@@ -2,7 +2,6 @@ package org.kimoteru.wallify.core.designsystem.ui.photo
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,24 +14,22 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.paging.compose.LazyPagingItems
-import org.jetbrains.compose.resources.stringResource
+import org.kimoteru.wallify.core.common.paging.responseError
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.WindowType
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberWindowType
 import org.kimoteru.wallify.core.designsystem.ui.blur.BlurSourceZIndex
 import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
-import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
 import org.kimoteru.wallify.core.designsystem.ui.indicator.DefaultProgressIndicator
+import org.kimoteru.wallify.core.designsystem.ui.layout.ContentMessageLayout
+import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
 import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
-import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorDescription
-import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorTitle
+import org.kimoteru.wallify.core.designsystem.ui.paging.RefreshErrorEffect
 import org.kimoteru.wallify.core.designsystem.ui.paging.isAppending
 import org.kimoteru.wallify.core.designsystem.ui.paging.isEmpty
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
@@ -40,8 +37,6 @@ import org.kimoteru.wallify.core.designsystem.ui.paging.keyAt
 import org.kimoteru.wallify.core.designsystem.ui.paging.refreshError
 import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.DefaultPullToRefreshBox
 import org.kimoteru.wallify.core.designsystem.ui.shimmer.ShimmerBox
-import org.kimoteru.wallify.core.resources.generated.resources.Res
-import org.kimoteru.wallify.core.resources.generated.resources.common_retry
 
 /**
  * Scroll state of a grid that shows one list at a time. It survives a rotation and the screen leaving the stack, and
@@ -128,10 +123,11 @@ fun PhotoGridShimmer(
 }
 
 /**
- * Photo masonry over a paged list with every state: shimmer while loading, an error with retry, an empty message,
- * a loader under the list while the next page loads and pull to refresh, which asks the backend whatever the age of
- * the list. [itemContent] draws one item, usually a [PhotoCard]; an item that is not loaded yet is a
- * [PhotoCardPlaceholder].
+ * Photo masonry over a paged list with every state: shimmer while loading, an error with retry on the whole content
+ * while there are no photos, an empty message, a loader under the list while the next page loads and pull to
+ * refresh, which asks the backend whatever the age of the list. A failed refresh over shown photos goes to the
+ * snackbar of the screen ([RefreshErrorEffect]). [itemContent] draws one item, usually a [PhotoCard]; an item that
+ * is not loaded yet is a [PhotoCardPlaceholder].
  */
 @Composable
 fun <T : Any> PagingPhotoGrid(
@@ -151,21 +147,21 @@ fun <T : Any> PagingPhotoGrid(
         onRetry = { paging.retry() }
     )
 
+    RefreshErrorEffect(paging = paging)
+
     when {
         paging.itemCount == 0 && paging.isRefreshing -> PhotoGridShimmer(
             modifier = modifier,
             contentPadding = contentPadding
         )
 
-        paging.itemCount == 0 && paging.refreshError != null -> PhotoGridMessage(
+        paging.itemCount == 0 && paging.refreshError != null -> ErrorContentLayout(
             modifier = modifier,
-            title = networkErrorTitle(),
-            description = networkErrorDescription(),
-            actionText = stringResource(Res.string.common_retry),
-            onAction = { paging.retry() }
+            error = paging.refreshError?.responseError,
+            onRetry = { paging.retry() }
         )
 
-        paging.isEmpty -> PhotoGridMessage(
+        paging.isEmpty -> ContentMessageLayout(
             modifier = modifier,
             title = emptyText
         )
@@ -203,48 +199,6 @@ fun <T : Any> PagingPhotoGrid(
                     }
                 }
             }
-        }
-    }
-}
-
-/** Centered message with an optional action, for the empty and failed states of a photo list. */
-@Composable
-fun PhotoGridMessage(
-    modifier: Modifier = Modifier,
-    title: String,
-    description: String? = null,
-    actionText: String? = null,
-    onAction: (() -> Unit)? = null
-) {
-    val appColor = AppTheme.color
-    val appPadding = AppTheme.padding
-    val appTypography = AppTheme.typography
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(appPadding.large),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(appPadding.medium, Alignment.CenterVertically)
-    ) {
-        Text(
-            text = title,
-            style = appTypography.h4.semiBold,
-            color = appColor.text.title,
-            textAlign = TextAlign.Center
-        )
-
-        description?.let {
-            Text(
-                text = it,
-                style = appTypography.h6.regular,
-                color = appColor.text.subtitle,
-                textAlign = TextAlign.Center
-            )
-        }
-
-        if (actionText != null && onAction != null) {
-            GlassButton(text = actionText, onClick = onAction)
         }
     }
 }

@@ -28,9 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
-import com.arkivanov.decompose.extensions.compose.stack.Children
-import com.arkivanov.decompose.extensions.compose.stack.animation.fade
-import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -55,14 +52,10 @@ import org.kimoteru.wallify.core.resources.generated.resources.nav_random
 import org.kimoteru.wallify.core.resources.generated.resources.nav_settings
 import org.kimoteru.wallify.core.resources.generated.resources.nav_studio
 import org.kimoteru.wallify.core.resources.generated.resources.nav_topics
-import org.kimoteru.wallify.feature.feed.presentation.ui.FeedUi
 import org.kimoteru.wallify.feature.main.presentation.components.MainGraphComponent
-import org.kimoteru.wallify.feature.main.presentation.components.MainGraphComponent.Child
 import org.kimoteru.wallify.feature.main.presentation.components.toTab
-import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileUi
-import org.kimoteru.wallify.feature.random.presentation.ui.RandomUi
-import org.kimoteru.wallify.feature.settings.presentation.ui.SettingsUi
-import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsUi
+import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract.UiEvent
+import org.kimoteru.wallify.feature.main.presentation.ui.utils.MainScreens
 
 object MainGraphContract {
     enum class Tab(
@@ -112,25 +105,6 @@ fun MainGraphUi(
 
     val items = uiState.tabs.map { tab -> GlassNavItem(tab.icon, stringResource(tab.label)) }
     val selectedIndex = uiState.tabs.indexOf(stack.active.instance.toTab())
-    val onSelect: (Int) -> Unit = { index ->
-        obtainEvent(MainGraphContract.UiEvent.SelectTab(uiState.tabs[index]))
-    }
-
-    val screens: @Composable (Modifier) -> Unit = { screenModifier ->
-        Children(
-            stack = component.stack,
-            modifier = screenModifier,
-            animation = stackAnimation(fade())
-        ) { child ->
-            when (val instance = child.instance) {
-                is Child.Feed -> FeedUi(component = instance.component)
-                is Child.Topics -> TopicsUi(component = instance.component)
-                is Child.Random -> RandomUi(component = instance.component)
-                is Child.Studio -> ProfileUi(component = instance.component)
-                is Child.Settings -> SettingsUi(component = instance.component)
-            }
-        }
-    }
 
     val navigationVisibility = remember { NavigationVisibility() }
     val overlayHost = remember { OverlayHost() }
@@ -152,7 +126,7 @@ fun MainGraphUi(
                             bottom = appSize.navigation.dockHeight + appSize.navigation.dockInset
                         )
                     ) {
-                        screens(Modifier.fillMaxSize())
+                        MainScreens(modifier = Modifier.fillMaxSize(), stack = component.stack)
                     }
 
                     AnimatedVisibility(
@@ -171,7 +145,9 @@ fun MainGraphUi(
                                 ),
                             items = items,
                             selectedIndex = selectedIndex,
-                            onSelect = onSelect
+                            onSelect = { index ->
+                                obtainEvent(UiEvent.SelectTab(uiState.tabs[index]))
+                            }
                         )
                     }
                 }
@@ -182,7 +158,7 @@ fun MainGraphUi(
                             start = safeStart + appSize.navigation.railWidth + appPadding.medium
                         )
                     ) {
-                        screens(Modifier.fillMaxSize())
+                        MainScreens(modifier = Modifier.fillMaxSize(), stack = component.stack)
                     }
 
                     GlassRail(
@@ -192,7 +168,7 @@ fun MainGraphUi(
                             .padding(start = appPadding.medium),
                         items = items,
                         selectedIndex = selectedIndex,
-                        onSelect = onSelect
+                        onSelect = { index -> obtainEvent(UiEvent.SelectTab(uiState.tabs[index])) }
                     )
                 }
 
@@ -208,11 +184,11 @@ fun MainGraphUi(
                         title = stringResource(Res.string.app_name),
                         items = items,
                         selectedIndex = selectedIndex,
-                        onSelect = onSelect
+                        onSelect = { index -> obtainEvent(UiEvent.SelectTab(uiState.tabs[index])) }
                     )
 
                     Box(modifier = Modifier.weight(1f)) {
-                        screens(Modifier.fillMaxSize())
+                        MainScreens(modifier = Modifier.fillMaxSize(), stack = component.stack)
                     }
                 }
             }

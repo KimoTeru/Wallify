@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.feature.root.presentation.ui
+package org.kimoteru.wallify.feature.root.presentation.ui.utils
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -20,6 +20,7 @@ import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
+import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract
 import org.kimoteru.wallify.feature.splash.presentation.ui.SplashUi
 
 /**
@@ -49,19 +50,14 @@ internal fun RootGraphStack(
             animation = stackAnimation { fade() + scale() }
         ) { child ->
             BlurHost(modifier = Modifier.fillMaxSize()) {
-                RootGraphScreen(instance = child.instance)
+                when (val instance = child.instance) {
+                    is Child.Splash -> SplashUi(component = instance.component)
+                    is Child.Main -> MainGraphUi(component = instance.component)
+                    is Child.Photo -> PhotoUi(component = instance.component)
+                    is Child.Profile -> ProfileUi(component = instance.component)
+                    is Child.Auth -> AuthUi(component = instance.component)
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun RootGraphScreen(instance: Child) {
-    when (instance) {
-        is Child.Splash -> SplashUi(component = instance.component)
-        is Child.Main -> MainGraphUi(component = instance.component)
-        is Child.Photo -> PhotoUi(component = instance.component)
-        is Child.Profile -> ProfileUi(component = instance.component)
-        is Child.Auth -> AuthUi(component = instance.component)
     }
 }

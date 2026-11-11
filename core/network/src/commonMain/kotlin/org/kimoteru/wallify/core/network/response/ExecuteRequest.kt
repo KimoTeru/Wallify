@@ -3,6 +3,7 @@ package org.kimoteru.wallify.core.network.response
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
@@ -17,7 +18,8 @@ import org.kimoteru.wallify.core.network.model.ApiErrorBody
 /**
  * Runs [request] and maps the HTTP result to [Response].
  * Non-2xx responses become [Response.Error] with the HTTP status as `code` and the backend message
- * (see [ApiErrorBody] for the supported error shapes). Transport and decoding failures become [Response.Error]
+ * (see [ApiErrorBody] for the supported error shapes); a 403 that means the request limit gets
+ * [ResponseError.isRateLimited]. Transport and decoding failures become [Response.Error]
  * without a code.
  */
 suspend inline fun <reified T> executeRequest(
@@ -61,8 +63,25 @@ suspend inline fun <reified T> HttpResponse.toResponse(): Response<T> {
         ?: parsed?.error?.nullIfBlank()
         ?: raw
         ?: status.description
-    return Response.Error(ResponseError(message = message, code = status.value))
+    return Response.Error(
+        ResponseError(message = message, code = status.value, isRateLimited = isRateLimited(message))
+    )
 }
+
+/**
+ * Whether this failure is the exhausted request limit. The backend reports it as 403, the same status as a missing
+ * permission, and tells them apart by the remaining-requests header and the error text.
+ */
+@PublishedApi
+internal fun HttpResponse.isRateLimited(message: String): Boolean =
+    status == HttpStatusCode.Forbidden && (
+        headers[RATE_LIMIT_REMAINING_HEADER] == RATE_LIMIT_EXHAUSTED ||
+            message.contains(RATE_LIMIT_EXCEEDED_MESSAGE, ignoreCase = true)
+        )
+
+private const val RATE_LIMIT_REMAINING_HEADER = "X-Ratelimit-Remaining"
+private const val RATE_LIMIT_EXHAUSTED = "0"
+private const val RATE_LIMIT_EXCEEDED_MESSAGE = "Rate Limit Exceeded"
 
 @PublishedApi
 internal suspend inline fun <reified T> HttpResponse.bodyOrUnit(): T {

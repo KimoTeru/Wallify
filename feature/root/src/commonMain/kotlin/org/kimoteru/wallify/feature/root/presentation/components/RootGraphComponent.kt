@@ -22,7 +22,6 @@ import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.
 import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.presentation.ui.getNotifierManagerLogic
 import org.kimoteru.wallify.core.presentation.settings.toPresentation
 import org.kimoteru.wallify.core.resources.generated.resources.Res
-import org.kimoteru.wallify.core.resources.generated.resources.error_dialog_description
 import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet
 import org.kimoteru.wallify.feature.auth.presentation.components.AuthComponent
 import org.kimoteru.wallify.feature.main.presentation.components.MainGraphComponent
@@ -52,8 +51,11 @@ interface RootGraphComponent : BaseNavigationComponentCore<UiState, UiEvent, Roo
  *   screens,
  * - guards the app: after the splash the user without a session sees the sign-in screen, the signed-in user sees
  *   the main screens, and the screen follows every later change of the session (sign-in, sign-out, expired token),
- * - tells the user when the signed-in user's data could not be loaded. Offline needs no extra notice: the snackbar
- *   is already up, and the data is loaded again when the connection returns.
+ * - tells the user when the signed-in user's data could not be loaded, with a repeat. Offline needs no extra notice:
+ *   the snackbar is already up, and the data is loaded again when the connection returns.
+ *
+ * An expired session needs nothing here: the data layer ends it on a rejected token, and the screen follows
+ * `isSignedIn`.
  */
 @Factory
 class RootGraphLogic(
@@ -61,7 +63,7 @@ class RootGraphLogic(
     private val authRepository: AuthRepository,
     private val userSessionManager: UserSessionManager,
     private val notifierManager: NotifierManager,
-    observeUserSettings: ObserveUserSettingsUseCase
+    observeUserSettings: ObserveUserSettingsUseCase,
 ) : BaseNavigationLogicCore<UiState, UiEvent, RootGraphNavigationEvent, Nothing>() {
 
     private val isSplashFinished = MutableStateFlow(false)
@@ -125,8 +127,14 @@ class RootGraphLogic(
             }
 
             launch {
+                notifierManager.dismissRequests.collectLatest { model ->
+                    notifierManagerLogic.dismiss(model)
+                }
+            }
+
+            launch {
                 userSessionManager.loadError.collectLatest { error ->
-                    if (error != null) notifierManager.showLong(getString(Res.string.error_dialog_description))
+                    if (error != null) showErrorWithRetry(error) { userSessionManager.retryLoad() }
                 }
             }
 

@@ -114,7 +114,8 @@ Related: `code/presentation.md`, `code/di.md`, `architecture/overview.md` § П�
 - «Сейчас» — `TimeProvider` из `core:platform` или `kotlin.time.Clock`; `System.currentTimeMillis()` в
   `commonMain` нет.
 - Работа с датами и часовыми поясами — отдельная библиотека (сейчас в проекте её нет): подключается по просьбе, через
-  каталог версий.
+  каталог версий. Локальный день без неё — смещение пояса из `TimeZoneProvider` (`core:platform`) к «сейчас» из
+  `TimeProvider`; `java.util.TimeZone` только в его реализациях.
 
 ## expect / actual
 

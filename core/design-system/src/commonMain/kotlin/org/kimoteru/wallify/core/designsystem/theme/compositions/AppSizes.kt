@@ -137,8 +137,17 @@ data class WindowSizes(
     val resizeCorner: Dp = 14.dp
 )
 
+/**
+ * [shareBarHeight] is the thickness of `ShareBar`, e.g. the share of one endpoint among all requests. `BarChart`,
+ * e.g. requests per day for a month, is [barChartHeight] high with [barChartGap] between the bars; a zero value is
+ * a stub of [barChartMinBarHeight], so every day of the row stays visible.
+ */
 data class ChartSize(
-    val sparklineHeight: Dp = 56.dp
+    val sparklineHeight: Dp = 56.dp,
+    val shareBarHeight: Dp = 6.dp,
+    val barChartHeight: Dp = 96.dp,
+    val barChartGap: Dp = 2.dp,
+    val barChartMinBarHeight: Dp = 2.dp
 )
 
 val LocalSizes = staticCompositionLocalOf { AppSizes() }

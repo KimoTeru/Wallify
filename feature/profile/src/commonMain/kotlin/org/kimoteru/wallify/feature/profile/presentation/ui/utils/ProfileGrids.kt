@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.feature.profile.presentation.ui
+package org.kimoteru.wallify.feature.profile.presentation.ui.utils
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +31,7 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.GlassChip
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.image.CachedAsyncImage
 import org.kimoteru.wallify.core.designsystem.ui.indicator.DefaultProgressIndicator
+import org.kimoteru.wallify.core.designsystem.ui.paging.RefreshErrorEffect
 import org.kimoteru.wallify.core.designsystem.ui.paging.isAppending
 import org.kimoteru.wallify.core.designsystem.ui.paging.isEmpty
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
@@ -49,6 +50,7 @@ import org.kimoteru.wallify.core.resources.generated.resources.common_photos_emp
 import org.kimoteru.wallify.core.resources.generated.resources.profile_collection_back
 import org.kimoteru.wallify.core.resources.generated.resources.profile_collection_photos
 import org.kimoteru.wallify.core.resources.generated.resources.profile_collections_empty
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract
 
 private const val HEADER_KEY = "profile_header"
 private const val SUB_HEADER_KEY = "profile_sub_header"
@@ -58,7 +60,7 @@ private const val SUB_HEADER_KEY = "profile_sub_header"
  * so the segmented control slides instead of being created again on the selected tab.
  */
 @Composable
-fun ProfileGrid(
+internal fun ProfileGrid(
     uiState: ProfileContract.UiState,
     photos: Flow<PagingData<Photo>>,
     collections: Flow<PagingData<PhotoCollection>>,
@@ -86,6 +88,8 @@ fun ProfileGrid(
 
     // Pull to refresh asks the backend for the list on screen, whatever its age.
     val listPaging = photoPaging ?: collectionPaging
+
+    listPaging?.let { paging -> RefreshErrorEffect(paging = paging) }
 
     DefaultPullToRefreshBox(
         modifier = Modifier.fillMaxSize(),

@@ -20,21 +20,23 @@ import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.flow.flowOf
 import org.jetbrains.compose.resources.stringResource
+import org.kimoteru.wallify.core.common.paging.responseError
+import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberIsShortWindow
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen
 import org.kimoteru.wallify.core.designsystem.ui.glass.scrolledPx
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
+import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
 import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
-import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorDescription
-import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorTitle
+import org.kimoteru.wallify.core.designsystem.ui.paging.ListRefreshErrors
+import org.kimoteru.wallify.core.designsystem.ui.paging.RefreshErrorEffect
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
 import org.kimoteru.wallify.core.designsystem.ui.paging.refreshError
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PagingPhotoGrid
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCard
-import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMessage
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridShimmer
 import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
@@ -45,21 +47,26 @@ import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.topic.Topic
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.feature.topics.presentation.components.TopicsComponent
+import org.kimoteru.wallify.feature.topics.presentation.ui.utils.TopicChips
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.common_photos_empty
-import org.kimoteru.wallify.core.resources.generated.resources.common_retry
 import org.kimoteru.wallify.core.resources.generated.resources.nav_topics
 
 object TopicsContract {
     @Immutable
     data class UiState(
         val selectedSlug: String? = null,
-        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality
+        val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality,
+        /** Presses of «Повторить» on a failed refresh of the topics or the photos ([UiEvent.ListRefreshError]). */
+        val listRetries: Int = 0
     ) : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent {
         data class SelectTopic(val slug: String) : UiEvent
         data class OpenPhoto(val photoId: String) : UiEvent
+
+        /** The refresh of a list on screen failed over shown items, or its failure is over (`null`). */
+        data class ListRefreshError(val list: Long, val error: ResponseError?) : UiEvent
     }
 }
 
@@ -95,6 +102,14 @@ fun TopicsUi(
     val topics = component.topics.collectAsLazyPagingItems()
     val photos = component.photos.collectAsLazyPagingItems()
     val screenPadding = rememberScreenPadding()
+
+    // A list already on screen that failed to refresh stays, the failure goes to the snackbar with a repeat.
+    ListRefreshErrors(
+        retries = uiState.listRetries,
+        onChange = { list, error -> obtainEvent(TopicsContract.UiEvent.ListRefreshError(list, error)) }
+    ) {
+        RefreshErrorEffect(paging = topics)
+    }
 
     val firstTopic = topics.itemSnapshotList.firstOrNull()
 
@@ -168,33 +183,36 @@ fun TopicsUi(
         // The photos of a topic are a grid of equal cards whatever layout the feed uses.
         CompositionLocalProvider(LocalPhotoGridMode provides PhotoGridMode.Grid) {
             when {
-                topics.itemCount == 0 && topics.refreshError != null -> PhotoGridMessage(
-                    title = networkErrorTitle(),
-                    description = networkErrorDescription(),
-                    actionText = stringResource(Res.string.common_retry),
-                    onAction = { topics.retry() }
+                topics.itemCount == 0 && topics.refreshError != null -> ErrorContentLayout(
+                    error = topics.refreshError?.responseError,
+                    onRetry = { topics.retry() }
                 )
 
                 topics.itemCount == 0 && topics.isRefreshing -> PhotoGridShimmer(contentPadding = contentPadding)
 
-                else -> PagingPhotoGrid(
-                    modifier = Modifier.fillMaxSize(),
-                    paging = photos,
-                    itemKey = { photo -> photo.id },
-                    emptyText = stringResource(Res.string.common_photos_empty),
-                    state = gridState,
-                    contentPadding = contentPadding
-                ) { photo ->
-                    PhotoCard(
-                        imageUrl = photo.urls.forQuality(uiState.listImageQuality),
-                        lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
-                        width = photo.width,
-                        height = photo.height,
-                        colorHex = photo.color,
-                        authorName = photo.user?.name,
-                        authorAvatarUrl = photo.user?.profileImage?.small,
-                        onClick = { obtainEvent(TopicsContract.UiEvent.OpenPhoto(photo.id)) }
-                    )
+                else -> ListRefreshErrors(
+                    retries = uiState.listRetries,
+                    onChange = { list, error -> obtainEvent(TopicsContract.UiEvent.ListRefreshError(list, error)) }
+                ) {
+                    PagingPhotoGrid(
+                        modifier = Modifier.fillMaxSize(),
+                        paging = photos,
+                        itemKey = { photo -> photo.id },
+                        emptyText = stringResource(Res.string.common_photos_empty),
+                        state = gridState,
+                        contentPadding = contentPadding
+                    ) { photo ->
+                        PhotoCard(
+                            imageUrl = photo.urls.forQuality(uiState.listImageQuality),
+                            lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
+                            width = photo.width,
+                            height = photo.height,
+                            colorHex = photo.color,
+                            authorName = photo.user?.name,
+                            authorAvatarUrl = photo.user?.profileImage?.small,
+                            onClick = { obtainEvent(TopicsContract.UiEvent.OpenPhoto(photo.id)) }
+                        )
+                    }
                 }
             }
         }

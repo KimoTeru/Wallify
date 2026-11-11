@@ -10,22 +10,15 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_layout_m
 
 /** Label and grid mode of a photo list layout. */
 enum class PhotoLayoutUi(
+    internal val domain: PhotoLayout,
     val label: StringResource,
-    val gridMode: PhotoGridMode
+    val gridMode: PhotoGridMode,
 ) {
-    Masonry(Res.string.settings_layout_masonry, PhotoGridMode.Masonry),
-    Grid(Res.string.settings_layout_grid, PhotoGridMode.Grid),
-    List(Res.string.settings_layout_list, PhotoGridMode.List)
+    Masonry(PhotoLayout.Masonry, Res.string.settings_layout_masonry, PhotoGridMode.Masonry),
+    Grid(PhotoLayout.Grid, Res.string.settings_layout_grid, PhotoGridMode.Grid),
+    List(PhotoLayout.List, Res.string.settings_layout_list, PhotoGridMode.List),
 }
 
-fun PhotoLayoutUi.toDomain(): PhotoLayout = when (this) {
-    PhotoLayoutUi.Masonry -> PhotoLayout.Masonry
-    PhotoLayoutUi.Grid -> PhotoLayout.Grid
-    PhotoLayoutUi.List -> PhotoLayout.List
-}
+fun PhotoLayoutUi.toDomain(): PhotoLayout = domain
 
-fun PhotoLayout.toPresentation(): PhotoLayoutUi = when (this) {
-    PhotoLayout.Masonry -> PhotoLayoutUi.Masonry
-    PhotoLayout.Grid -> PhotoLayoutUi.Grid
-    PhotoLayout.List -> PhotoLayoutUi.List
-}
+fun PhotoLayout.toPresentation(): PhotoLayoutUi = PhotoLayoutUi.entries.first { it.domain == this }

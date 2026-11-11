@@ -3,12 +3,9 @@ package org.kimoteru.wallify.feature.settings.presentation.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -29,9 +26,7 @@ import org.kimoteru.wallify.core.designsystem.ui.avatar.UserAvatar
 import org.kimoteru.wallify.core.designsystem.ui.blur.BlurSourceZIndex
 import org.kimoteru.wallify.core.designsystem.ui.blur.blurSource
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
-import org.kimoteru.wallify.core.designsystem.ui.glass.GlassCard
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassSegmentedControl
-import org.kimoteru.wallify.core.designsystem.ui.glass.GlassStat
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
@@ -39,7 +34,9 @@ import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoLayoutCard
 import org.kimoteru.wallify.core.model.settings.AppLanguage
 import org.kimoteru.wallify.core.model.settings.SupportedLanguages
+import org.kimoteru.wallify.core.model.stats.EndpointStat
 import org.kimoteru.wallify.core.model.stats.MonthStats
+import org.kimoteru.wallify.core.model.stats.RateLimit
 import org.kimoteru.wallify.core.model.stats.TotalStats
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseContract
@@ -49,6 +46,11 @@ import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ScreenLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ThemeModeUi
 import org.kimoteru.wallify.feature.settings.presentation.components.SettingsComponent
+import org.kimoteru.wallify.feature.settings.presentation.ui.utils.EndpointShare
+import org.kimoteru.wallify.feature.settings.presentation.ui.utils.ImageQualityChoice
+import org.kimoteru.wallify.feature.settings.presentation.ui.utils.RequestDays
+import org.kimoteru.wallify.feature.settings.presentation.ui.utils.SettingsSection
+import org.kimoteru.wallify.feature.settings.presentation.ui.utils.StatsRow
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.auth_sign_out
 import org.kimoteru.wallify.core.resources.generated.resources.nav_settings
@@ -68,6 +70,15 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_language
 import org.kimoteru.wallify.core.resources.generated.resources.settings_layout
 import org.kimoteru.wallify.core.resources.generated.resources.settings_layout_description
 import org.kimoteru.wallify.core.resources.generated.resources.settings_screen_layout
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_description
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_empty
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_remaining
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_remaining_unknown
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_remaining_value
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_reset
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_title
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_top
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_total
 import org.kimoteru.wallify.core.resources.generated.resources.settings_screen_layout_description
 import org.kimoteru.wallify.core.resources.generated.resources.settings_service_title
 import org.kimoteru.wallify.core.resources.generated.resources.settings_stat_downloads
@@ -99,7 +110,15 @@ object SettingsContract {
 
         val languageTag: String = SupportedLanguages.first().tag,
         val totalStats: TotalStats? = null,
-        val monthStats: MonthStats? = null
+        val monthStats: MonthStats? = null,
+        val requestTotal: Long = 0L,
+        /** The most requested endpoints, the first is requested most. */
+        val topEndpoints: List<EndpointStat> = emptyList(),
+        val rateLimit: RateLimit? = null,
+        /** Requests per local day for the last days, the oldest first and today last; days without requests are 0. */
+        val requestDays: List<Long> = emptyList(),
+        val requestDaysTotal: Long = 0L,
+        val requestDaysMax: Long = 0L
     ) : BaseContract.UiState
 
     sealed interface UiEvent : BaseContract.UiEvent {
@@ -120,6 +139,8 @@ object SettingsContract {
         data class SelectLanguage(val languageTag: String) : UiEvent
 
         data object SignOut : UiEvent
+
+        data object ResetRequestStats : UiEvent
     }
 }
 
@@ -374,6 +395,63 @@ fun SettingsUi(
                 }
             }
 
+            SettingsSection(title = stringResource(Res.string.settings_requests_title)) {
+                StatsRow(
+                    firstValue = uiState.requestTotal.toCompactString(),
+                    firstLabel = stringResource(Res.string.settings_requests_total),
+                    secondValue = uiState.rateLimit?.let { rateLimit ->
+                        stringResource(
+                            Res.string.settings_requests_remaining_value,
+                            rateLimit.remaining.toLong().toCompactString(),
+                            rateLimit.limit.toLong().toCompactString()
+                        )
+                    } ?: stringResource(Res.string.settings_requests_remaining_unknown),
+                    secondLabel = stringResource(Res.string.settings_requests_remaining)
+                )
+
+                RequestDays(
+                    days = uiState.requestDays,
+                    total = uiState.requestDaysTotal,
+                    max = uiState.requestDaysMax
+                )
+
+                Text(
+                    text = stringResource(Res.string.settings_requests_top).uppercase(),
+                    style = appTypography.caps.semiBold,
+                    color = appColor.text.subtitle
+                )
+
+                if (uiState.topEndpoints.isEmpty()) {
+                    Text(
+                        text = stringResource(Res.string.settings_requests_empty),
+                        style = appTypography.h6.regular,
+                        color = appColor.text.common
+                    )
+                } else {
+                    uiState.topEndpoints.forEach { endpoint ->
+                        EndpointShare(
+                            endpoint = endpoint.endpoint,
+                            count = endpoint.count,
+                            total = uiState.requestTotal
+                        )
+                    }
+                }
+
+                GlassButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(Res.string.settings_requests_reset),
+                    icon = AppIcons.Refresh,
+                    enabled = uiState.requestTotal > 0L,
+                    onClick = { obtainEvent(SettingsContract.UiEvent.ResetRequestStats) }
+                )
+
+                Text(
+                    text = stringResource(Res.string.settings_requests_description),
+                    style = appTypography.h7.regular,
+                    color = appColor.text.subtitle
+                )
+            }
+
             SettingsSection(title = stringResource(Res.string.settings_about)) {
                 Text(
                     text = stringResource(Res.string.settings_about_description),
@@ -383,91 +461,5 @@ fun SettingsUi(
             }
         }
         }
-    }
-}
-
-@Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable () -> Unit
-) {
-    val appColor = AppTheme.color
-    val appPadding = AppTheme.padding
-    val appTypography = AppTheme.typography
-
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title.uppercase(),
-            style = appTypography.caps.semiBold,
-            color = appColor.text.subtitle
-        )
-
-        Column(
-            modifier = Modifier.padding(top = appPadding.medium),
-            verticalArrangement = Arrangement.spacedBy(appPadding.medium)
-        ) {
-            content()
-        }
-    }
-}
-
-/** A caption over a segmented choice of an image quality. */
-@Composable
-private fun ImageQualityChoice(
-    title: String,
-    qualities: List<ImageQualityUi>,
-    selected: ImageQualityUi,
-    onSelect: (ImageQualityUi) -> Unit
-) {
-    val appColor = AppTheme.color
-    val appPadding = AppTheme.padding
-    val appTypography = AppTheme.typography
-
-    Column(verticalArrangement = Arrangement.spacedBy(appPadding.small)) {
-        Text(
-            text = title.uppercase(),
-            style = appTypography.caps.semiBold,
-            color = appColor.text.subtitle
-        )
-
-        GlassSegmentedControl(
-            modifier = Modifier.fillMaxWidth(),
-            options = qualities.map { quality -> stringResource(quality.label) },
-            selectedIndex = qualities.indexOf(selected),
-            onSelect = { index -> onSelect(qualities[index]) }
-        )
-    }
-}
-
-@Composable
-private fun StatsRow(
-    firstValue: String,
-    firstLabel: String,
-    secondValue: String,
-    secondLabel: String
-) {
-    val appPadding = AppTheme.padding
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Max),
-        horizontalArrangement = Arrangement.spacedBy(appPadding.small)
-    ) {
-        GlassStat(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            value = firstValue,
-            label = firstLabel
-        )
-
-        GlassStat(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            value = secondValue,
-            label = secondLabel
-        )
     }
 }

@@ -19,6 +19,7 @@ import org.kimoteru.wallify.core.presentation.settings.ScreenLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ThemeModeUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
+import org.kimoteru.wallify.feature.root.presentation.ui.utils.RootGraphStack
 
 object RootGraphContract {
     @Immutable

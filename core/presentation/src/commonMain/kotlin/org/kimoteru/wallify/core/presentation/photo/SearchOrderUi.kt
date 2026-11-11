@@ -8,18 +8,13 @@ import org.kimoteru.wallify.core.resources.generated.resources.order_relevant
 
 /** Label of a search order. */
 enum class SearchOrderUi(
-    val label: StringResource
+    internal val domain: SearchOrder,
+    val label: StringResource,
 ) {
-    Relevant(Res.string.order_relevant),
-    Latest(Res.string.order_latest)
+    Relevant(SearchOrder.Relevant, Res.string.order_relevant),
+    Latest(SearchOrder.Latest, Res.string.order_latest),
 }
 
-fun SearchOrderUi.toDomain(): SearchOrder = when (this) {
-    SearchOrderUi.Relevant -> SearchOrder.Relevant
-    SearchOrderUi.Latest -> SearchOrder.Latest
-}
+fun SearchOrderUi.toDomain(): SearchOrder = domain
 
-fun SearchOrder.toPresentation(): SearchOrderUi = when (this) {
-    SearchOrder.Relevant -> SearchOrderUi.Relevant
-    SearchOrder.Latest -> SearchOrderUi.Latest
-}
+fun SearchOrder.toPresentation(): SearchOrderUi = SearchOrderUi.entries.first { it.domain == this }

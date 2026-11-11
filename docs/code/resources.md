@@ -19,7 +19,9 @@ Related: `setup/gradle-conventions.md` § Compose Resources, `design/foundations
    (фичи получают его от `wallify.feature`).
 5. В `Logic`, репозиториях и use case'ах строк нет: туда приходят данные и коды, перевод делает Ui. Исключение —
    общий снекбар: его рисует корень, поэтому логика сама берёт `getString` и передаёт в `NotifierManager`
-   (`error_dialog_description` для сбоя действия, `error_no_internet` пока нет сети).
+   (текст сбоя действия по типу ошибки — `ResponseError.errorMessage()` из `core:presentation`, `error_no_internet`
+   пока нет сети). Текст своего статуса действия — `StringResource` в enum `XxxApiError` (`code/presentation.md`
+   § Ошибка действия), строку из него берёт `handleResponse`.
 6. Строка с подстановкой — `%1$s`, `%2$s` в XML и `stringResource(Res.string.name, arg1, arg2)`; склеивать текст из
    частей в коде нельзя (порядок слов зависит от языка).
 7. Название приложения для Android (манифест, лаунчер) — `androidApp/src/main/res/values/strings.xml` (`app_name`);

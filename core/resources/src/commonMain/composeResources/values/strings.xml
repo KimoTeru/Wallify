@@ -3,7 +3,7 @@
     <string name="app_name">Wallify</string>
     <!-- Confirm button of informational dialogs -->
     <string name="action_ok">OK</string>
-    <!-- Button that repeats a failed request, shown under an error message -->
+    <!-- Button that repeats a failed request, shown under an error message and in the failure snackbar -->
     <string name="common_retry">Try again</string>
     <!-- Button of a filter dialog that applies the chosen values -->
     <string name="common_apply">Apply</string>
@@ -20,6 +20,44 @@
     <string name="error_no_internet">No internet connection</string>
     <!-- Description of an error state shown while the device is offline -->
     <string name="error_no_internet_description">Check your connection. The content loads again as soon as you are back online.</string>
+    <!-- Title of an error state when the backend rejected the request parameters (HTTP 400) -->
+    <string name="error_bad_request_title">Request not accepted</string>
+    <!-- Error state description and failure snackbar for HTTP 400; %1$s is the HTTP status code -->
+    <string name="error_bad_request_description">Error %1$s: the request was not accepted. Please try again.</string>
+    <!-- Title of an error state when the session is not accepted (HTTP 401) -->
+    <string name="error_unauthorized_title">Sign-in required</string>
+    <!-- Error state description and failure snackbar for HTTP 401; %1$s is the HTTP status code -->
+    <string name="error_unauthorized_description">Error %1$s: your session has expired. Please sign in again.</string>
+    <!-- Title of an error state when the user has no rights for the action (HTTP 403) -->
+    <string name="error_forbidden_title">Access denied</string>
+    <!-- Error state description and failure snackbar for HTTP 403; %1$s is the HTTP status code -->
+    <string name="error_forbidden_description">Error %1$s: you don't have permission to do this.</string>
+    <!-- Title of an error state when the request limit of the backend is exhausted -->
+    <string name="error_rate_limited_title">Request limit exceeded</string>
+    <!-- Error state description and failure snackbar when the request limit is exhausted; %1$s is the HTTP status code -->
+    <string name="error_rate_limited_description">Error %1$s: request limit exceeded. Please try again later.</string>
+    <!-- Title of an error state when the requested item does not exist (HTTP 404) -->
+    <string name="error_not_found_title">Not found</string>
+    <!-- Error state description and failure snackbar for HTTP 404; %1$s is the HTTP status code -->
+    <string name="error_not_found_description">Error %1$s: nothing was found. It may have been removed.</string>
+    <!-- Title of an error state when the backend failed (HTTP 5xx) -->
+    <string name="error_server_title">Server error</string>
+    <!-- Error state description and failure snackbar for HTTP 5xx; %1$s is the HTTP status code -->
+    <string name="error_server_description">Error %1$s: the server is not responding. Please try again later.</string>
+    <!-- Error state description and failure snackbar for any other HTTP status; %1$s is the HTTP status code -->
+    <string name="error_unknown_description">Error %1$s: something went wrong. Please try again later.</string>
+    <!-- Failure snackbar of adding or removing a photo: the collection belongs to someone else (HTTP 403) -->
+    <string name="error_collection_forbidden">You can only change your own collections.</string>
+    <!-- Failure snackbar of adding or removing a photo: the collection or the photo no longer exists (HTTP 404) -->
+    <string name="error_collection_not_found">This collection or photo no longer exists.</string>
+    <!-- Failure snackbar of saving the profile: some fields were not accepted (HTTP 400 or 422) -->
+    <string name="error_profile_invalid">Some fields were not accepted. Check them and try again.</string>
+    <!-- Failure snackbar of saving the profile: the session has no right to change the profile (HTTP 403) -->
+    <string name="error_profile_forbidden">The app has no permission to change your profile. Sign in again.</string>
+    <!-- Failure snackbar of the sign-in: the backend did not accept the code from the browser (HTTP 400) -->
+    <string name="error_auth_code_rejected">The sign-in was not completed. Please try again.</string>
+    <!-- Failure snackbar of the sign-in: the backend did not accept the app itself (HTTP 401) -->
+    <string name="error_auth_client_rejected">The photo service did not accept the app. Sign-in is not available.</string>
 
     <!-- Legal consent text; %1$s, %2$s and %3$s are the link names below, in this order -->
     <string name="legal_consent">By continuing, you accept our %1$s, %2$s and %3$s.</string>
@@ -202,8 +240,6 @@
     <string name="profile_edit_instagram">Instagram username</string>
     <!-- Button of the profile form: saves the changes -->
     <string name="profile_edit_save">Save</string>
-    <!-- Message in the profile form when the changes were not saved -->
-    <string name="profile_edit_error">Could not save the profile.\nCheck the fields and try again.</string>
 
     <!-- Section title of the settings: the signed-in account -->
     <string name="settings_account">Account</string>
@@ -277,6 +313,38 @@
     <string name="settings_stat_new_photos">New photos, 30 days</string>
     <!-- Caption of the number of photographers who joined in the last 30 days -->
     <string name="settings_stat_new_photographers">New photographers, 30 days</string>
+    <!-- Section title of the settings: requests the app sent to the photo service -->
+    <string name="settings_requests_title">Requests of the app</string>
+    <!-- Caption of the number of all requests the app sent since the last reset -->
+    <string name="settings_requests_total">Requests</string>
+    <!-- Caption of the number of requests left in the current hour -->
+    <string name="settings_requests_remaining">Left this hour</string>
+    <!-- Value of the requests left: %1$s is how many are left, %2$s is the hourly limit -->
+    <string name="settings_requests_remaining_value">%1$s of %2$s</string>
+    <!-- Value of the requests left before the first answer of the photo service -->
+    <string name="settings_requests_remaining_unknown">—</string>
+    <!-- Label over the chart of requests per day for the last 30 days -->
+    <string name="settings_requests_days_title">Last 30 days</string>
+    <!-- Sum of the requests in the last 30 days next to the chart label: %1$s is the number of requests -->
+    <string name="settings_requests_days_total">%1$s in total</string>
+    <!-- Caption over the chart of requests per day: %1$s is the largest number of requests in one day -->
+    <string name="settings_requests_days_max">Up to %1$s a day</string>
+    <!-- Caption under the first (left) bar of the chart of requests per day -->
+    <string name="settings_requests_days_start">30 days ago</string>
+    <!-- Caption under the last (right, highlighted) bar of the chart of requests per day -->
+    <string name="settings_requests_days_end">Today</string>
+    <!-- Accessibility description of the chart: %1$s is the sum for 30 days, %2$s is the largest number in one day -->
+    <string name="settings_requests_days_description">Requests per day for the last 30 days: %1$s in total, up to %2$s a day</string>
+    <!-- Label over the list of the most requested endpoints -->
+    <string name="settings_requests_top">Most requested</string>
+    <!-- Count of one endpoint: %1$s is the number of requests, %2$s is its share of all requests in percent -->
+    <string name="settings_requests_share">%1$s · %2$s%</string>
+    <!-- Shown instead of the list of endpoints when nothing was requested yet -->
+    <string name="settings_requests_empty">No requests yet</string>
+    <!-- Button that sets the request counters to zero -->
+    <string name="settings_requests_reset">Reset statistics</string>
+    <!-- Note under the request statistics: where they are counted and where the limit comes from -->
+    <string name="settings_requests_description">Counted on this device since the last reset or sign-out. The photo service allows a limited number of requests per hour, how many are left comes with every answer.</string>
     <!-- Section title of the settings: about the photo source -->
     <string name="settings_about">About</string>
     <!-- Text of the about section: all photos come from the photo service -->

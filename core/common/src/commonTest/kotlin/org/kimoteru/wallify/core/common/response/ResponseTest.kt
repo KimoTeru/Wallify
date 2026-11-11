@@ -38,6 +38,31 @@ class ResponseTest {
     }
 
     @Test
+    fun errorTypeFollowsHttpStatus() {
+        val expected = mapOf(
+            ResponseError.DEBUG_ERROR_CODE to ResponseErrorType.Network,
+            400 to ResponseErrorType.BadRequest,
+            401 to ResponseErrorType.Unauthorized,
+            403 to ResponseErrorType.Forbidden,
+            404 to ResponseErrorType.NotFound,
+            429 to ResponseErrorType.RateLimited,
+            500 to ResponseErrorType.Server,
+            503 to ResponseErrorType.Server,
+            409 to ResponseErrorType.Unknown
+        )
+        expected.forEach { (code, type) ->
+            assertEquals(type, ResponseError("failed", code).type, "code $code")
+        }
+    }
+
+    @Test
+    fun rateLimitedForbiddenIsRateLimited() {
+        val error = ResponseError("Rate Limit Exceeded", 403, isRateLimited = true)
+        assertEquals(ResponseErrorType.RateLimited, error.type)
+        assertEquals(false, error.isUnauthorized)
+    }
+
+    @Test
     fun detailedMapKeepsTypedError() = runTest {
         val detailed: DetailedResponse<Int, Int> = DetailedResponse.Error(401)
         val mapped = detailed.map { it.toString() }

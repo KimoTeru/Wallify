@@ -11,22 +11,15 @@ import org.kimoteru.wallify.core.resources.generated.resources.orientation_squar
 
 /** Label and icon of a photo orientation. */
 enum class PhotoOrientationUi(
+    internal val domain: PhotoOrientation,
     val label: StringResource,
-    val icon: ImageVector
+    val icon: ImageVector,
 ) {
-    Landscape(Res.string.orientation_landscape, AppIcons.CropLandscape),
-    Portrait(Res.string.orientation_portrait, AppIcons.CropPortrait),
-    Squarish(Res.string.orientation_squarish, AppIcons.CropSquare)
+    Landscape(PhotoOrientation.Landscape, Res.string.orientation_landscape, AppIcons.CropLandscape),
+    Portrait(PhotoOrientation.Portrait, Res.string.orientation_portrait, AppIcons.CropPortrait),
+    Squarish(PhotoOrientation.Squarish, Res.string.orientation_squarish, AppIcons.CropSquare),
 }
 
-fun PhotoOrientationUi.toDomain(): PhotoOrientation = when (this) {
-    PhotoOrientationUi.Landscape -> PhotoOrientation.Landscape
-    PhotoOrientationUi.Portrait -> PhotoOrientation.Portrait
-    PhotoOrientationUi.Squarish -> PhotoOrientation.Squarish
-}
+fun PhotoOrientationUi.toDomain(): PhotoOrientation = domain
 
-fun PhotoOrientation.toPresentation(): PhotoOrientationUi = when (this) {
-    PhotoOrientation.Landscape -> PhotoOrientationUi.Landscape
-    PhotoOrientation.Portrait -> PhotoOrientationUi.Portrait
-    PhotoOrientation.Squarish -> PhotoOrientationUi.Squarish
-}
+fun PhotoOrientation.toPresentation(): PhotoOrientationUi = PhotoOrientationUi.entries.first { it.domain == this }

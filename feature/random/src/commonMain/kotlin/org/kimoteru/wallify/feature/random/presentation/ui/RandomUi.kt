@@ -10,6 +10,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import org.jetbrains.compose.resources.stringResource
+import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberIsShortWindow
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen
@@ -17,14 +18,12 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
 import org.kimoteru.wallify.core.designsystem.ui.glass.scrolledPx
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
+import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
 import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
-import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorDescription
-import org.kimoteru.wallify.core.designsystem.ui.network.networkErrorTitle
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCard
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridLayout
-import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMessage
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridShimmer
 import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
@@ -36,7 +35,6 @@ import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.feature.random.presentation.components.RandomComponent
 import org.kimoteru.wallify.core.resources.generated.resources.Res
-import org.kimoteru.wallify.core.resources.generated.resources.common_retry
 import org.kimoteru.wallify.core.resources.generated.resources.nav_random
 import org.kimoteru.wallify.core.resources.generated.resources.random_shuffle
 
@@ -45,7 +43,8 @@ object RandomContract {
     data class UiState(
         val photos: List<Photo> = emptyList(),
         val isLoading: Boolean = false,
-        val hasError: Boolean = false,
+        /** Failure of the last load; the screen picks its text by the type and shows the code. */
+        val error: ResponseError? = null,
         val listImageQuality: ImageQuality = UserSettings.Default.listImageQuality
     ) : BaseContract.UiState
 
@@ -104,7 +103,7 @@ fun RandomUi(
     ) { topPadding ->
         // Goes back to the photos when the connection returns after a failed load.
         RetryOnReconnect(
-            isFailed = uiState.hasError && uiState.photos.isEmpty(),
+            isFailed = uiState.error != null && uiState.photos.isEmpty(),
             onRetry = { obtainEvent(RandomContract.UiEvent.Shuffle) }
         )
 
@@ -123,11 +122,9 @@ fun RandomUi(
                     contentPadding = listPadding
                 )
 
-                uiState.hasError && uiState.photos.isEmpty() -> PhotoGridMessage(
-                    title = networkErrorTitle(),
-                    description = networkErrorDescription(),
-                    actionText = stringResource(Res.string.common_retry),
-                    onAction = { obtainEvent(RandomContract.UiEvent.Shuffle) }
+                uiState.error != null && uiState.photos.isEmpty() -> ErrorContentLayout(
+                    error = uiState.error,
+                    onRetry = { obtainEvent(RandomContract.UiEvent.Shuffle) }
                 )
 
                 // Pulling the set down is the same as the shuffle button: a new set.

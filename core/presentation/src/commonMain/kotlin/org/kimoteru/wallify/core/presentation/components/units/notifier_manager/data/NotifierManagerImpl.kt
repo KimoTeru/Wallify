@@ -13,12 +13,33 @@ class NotifierManagerImpl : NotifierManager {
     override val snackbarRequests: StateEventFlowWithContent<NotifierModel>
         field = MutableStateEventFlowWithContent<NotifierModel>()
 
-    override fun showShort(message: String) = emit(message, SnackbarDuration.Short)
+    override val dismissRequests: StateEventFlowWithContent<NotifierModel>
+        field = MutableStateEventFlowWithContent<NotifierModel>()
 
-    override fun showLong(message: String) = emit(message, SnackbarDuration.Long)
+    override fun showShort(message: String) {
+        emit(NotifierModel(message = message, snackbarDuration = SnackbarDuration.Short))
+    }
 
-    private fun emit(message: String, duration: SnackbarDuration) {
-        if (message.isBlank()) return
-        snackbarRequests.trigger(NotifierModel(message = message, snackbarDuration = duration))
+    override fun showLong(message: String) {
+        emit(NotifierModel(message = message, snackbarDuration = SnackbarDuration.Long))
+    }
+
+    override fun showWithAction(message: String, actionLabel: String, onAction: () -> Unit): NotifierModel? {
+        val model = NotifierModel(
+            message = message,
+            snackbarDuration = SnackbarDuration.Long,
+            actionLabel = actionLabel,
+            onAction = onAction
+        )
+
+        return if (emit(model)) model else null
+    }
+
+    override fun dismiss(model: NotifierModel) = dismissRequests.trigger(model)
+
+    private fun emit(model: NotifierModel): Boolean {
+        if (model.message.isBlank()) return false
+        snackbarRequests.trigger(model)
+        return true
     }
 }

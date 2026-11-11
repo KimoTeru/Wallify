@@ -27,6 +27,8 @@ import org.kimoteru.wallify.core.network.config.ApiCredentials
 import org.kimoteru.wallify.core.network.config.StaticNetworkConfig
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepositoryImpl
 import org.kimoteru.wallify.core.network.model.response.auth.TokenResponse
+import org.kimoteru.wallify.core.network.session.SessionExpiryCollectorImpl
+import org.kimoteru.wallify.core.network.stats.RequestStatsCollectorImpl
 
 class AuthApiTest {
 
@@ -147,7 +149,9 @@ private const val REDIRECT_URI = "wallify://oauth/callback"
 private fun client(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): HttpClient =
     HttpClientFactory(
         networkConfig = StaticNetworkConfig(baseUrl = "https://api.example.com/"),
-        headersCollector = HeadersCollectorRepositoryImpl()
+        headersCollector = HeadersCollectorRepositoryImpl(),
+        requestStatsCollector = RequestStatsCollectorImpl(),
+        sessionExpiryCollector = SessionExpiryCollectorImpl()
     ).create(engine = MockEngine(handler))
 
 private fun jsonHeaders() = headersOf(

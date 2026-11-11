@@ -9,26 +9,44 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import org.jetbrains.compose.resources.stringResource
+import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.common.response.ResponseErrorType
 import org.kimoteru.wallify.core.resources.generated.resources.Res
-import org.kimoteru.wallify.core.resources.generated.resources.error_dialog_description
-import org.kimoteru.wallify.core.resources.generated.resources.error_dialog_title
 import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet
 import org.kimoteru.wallify.core.resources.generated.resources.error_no_internet_description
 
 /** Whether the device is online. The root provides it, so a failed list can say "no internet", not "wrong". */
 val LocalIsOnline = staticCompositionLocalOf { true }
 
-/** Title of an error state: the lack of internet when offline, a general failure otherwise. */
+/**
+ * Title of an error state by the type of [error]: a failure without an HTTP status (or no [error]) is the lack of
+ * internet when offline and a general failure otherwise.
+ */
 @Composable
-fun networkErrorTitle(): String =
-    stringResource(if (LocalIsOnline.current) Res.string.error_dialog_title else Res.string.error_no_internet)
+fun networkErrorTitle(error: ResponseError? = null): String {
+    val type = (error?.type ?: ResponseErrorType.Network).toPresentation()
 
-/** Description of an error state; offline it promises that the content comes back by itself. */
+    return when {
+        type == ResponseErrorTypeUi.Network && !LocalIsOnline.current -> stringResource(Res.string.error_no_internet)
+        else -> stringResource(type.title)
+    }
+}
+
+/**
+ * Description of an error state by the type of [error], with its HTTP status code. Offline, a failure without a status
+ * promises that the content comes back by itself.
+ */
 @Composable
-fun networkErrorDescription(): String =
-    stringResource(
-        if (LocalIsOnline.current) Res.string.error_dialog_description else Res.string.error_no_internet_description
-    )
+fun networkErrorDescription(error: ResponseError? = null): String {
+    val type = (error?.type ?: ResponseErrorType.Network).toPresentation()
+
+    return when {
+        type == ResponseErrorTypeUi.Network && !LocalIsOnline.current ->
+            stringResource(Res.string.error_no_internet_description)
+        type.hasCode -> stringResource(type.description, error?.code.toString())
+        else -> stringResource(type.description)
+    }
+}
 
 /**
  * Calls [onRetry] when the connection returns while [isFailed] is true, so a screen that failed to load offline
