@@ -63,6 +63,10 @@ fun ShimmerBox(
 /**
  * Draws a moving highlight band over the content. The band is built once per size and color ([drawWithCache]) and
  * only moved on every frame, so the animation allocates nothing.
+ *
+ * The band is a diagonal gradient that fades out on both sides (the brush clamps to transparent beyond it), so it is
+ * drawn over the whole box, shifted by the progress: a rectangle only as wide as the band cuts the diagonal and shows
+ * a column with hard edges on tall cards.
  */
 private fun Modifier.shimmer(
     highlightColor: Color,
@@ -78,8 +82,10 @@ private fun Modifier.shimmer(
     onDrawWithContent {
         drawContent()
         val startX = -bandWidth + (size.width + bandWidth) * progress.value
+        // The brush moves with the translation, the rectangle stays on the box: the same picture as a gradient
+        // from startX to startX + bandWidth over the whole box.
         translate(left = startX) {
-            drawRect(brush = band, topLeft = Offset.Zero, size = size.copy(width = bandWidth))
+            drawRect(brush = band, topLeft = Offset(-startX, 0f), size = size)
         }
     }
 }
