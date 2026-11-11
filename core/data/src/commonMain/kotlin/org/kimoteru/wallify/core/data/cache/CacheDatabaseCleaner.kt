@@ -54,9 +54,7 @@ class CacheDatabaseCleaner(
             { userDao.deleteAll() },
             { collectionDao.deleteAll() },
             { topicDao.deleteAll() },
-            { statsDao.deleteAllStatistics() },
-            { statsDao.deleteTotal() },
-            { statsDao.deleteMonth() }
+            { statsDao.deleteAllStatistics() }
         )
         var failure: Exception? = null
         steps.forEach { step ->

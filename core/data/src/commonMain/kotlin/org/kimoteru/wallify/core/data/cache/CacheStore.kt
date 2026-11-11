@@ -11,9 +11,7 @@ import org.kimoteru.wallify.core.database.entity.PhotoEntity
 import org.kimoteru.wallify.core.database.entity.toEntity
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
-import org.kimoteru.wallify.core.model.stats.MonthStats
 import org.kimoteru.wallify.core.model.stats.Statistics
-import org.kimoteru.wallify.core.model.stats.TotalStats
 import org.kimoteru.wallify.core.model.topic.Topic
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.platform.time.TimeProvider
@@ -182,14 +180,6 @@ class CacheStore(
 
     suspend fun saveStatistics(key: String, statistics: Statistics) {
         statsDao.upsertStatistics(statistics.toEntity(key))
-    }
-
-    suspend fun saveTotalStats(stats: TotalStats) {
-        statsDao.upsertTotal(stats.toEntity())
-    }
-
-    suspend fun saveMonthStats(stats: MonthStats) {
-        statsDao.upsertMonth(stats.toEntity())
     }
 
     /**

@@ -15,11 +15,9 @@ import org.kimoteru.wallify.core.database.dao.UserDao
 import org.kimoteru.wallify.core.database.entity.CollectionEntity
 import org.kimoteru.wallify.core.database.entity.ListEntryEntity
 import org.kimoteru.wallify.core.database.entity.ListStateEntity
-import org.kimoteru.wallify.core.database.entity.MonthStatsEntity
 import org.kimoteru.wallify.core.database.entity.PhotoEntity
 import org.kimoteru.wallify.core.database.entity.StatisticsEntity
 import org.kimoteru.wallify.core.database.entity.TopicEntity
-import org.kimoteru.wallify.core.database.entity.TotalStatsEntity
 import org.kimoteru.wallify.core.database.entity.UserEntity
 
 @Database(
@@ -29,8 +27,6 @@ import org.kimoteru.wallify.core.database.entity.UserEntity
         CollectionEntity::class,
         TopicEntity::class,
         StatisticsEntity::class,
-        TotalStatsEntity::class,
-        MonthStatsEntity::class,
         ListEntryEntity::class,
         ListStateEntity::class
     ],

@@ -299,20 +299,6 @@
     <string name="settings_image_quality_original">Original</string>
     <!-- Note under the image quality choice: what higher quality costs -->
     <string name="settings_image_quality_description">Higher quality takes more traffic, time and memory. Lists and the photo screen first show a small version of the photo, then the chosen one.</string>
-    <!-- Section title of the settings: numbers of the whole photo service -->
-    <string name="settings_service_title">Unsplash in numbers</string>
-    <!-- Caption of the total number of photos of the service -->
-    <string name="settings_stat_photos">Photos</string>
-    <!-- Caption of the total number of downloads of the service -->
-    <string name="settings_stat_downloads">Downloads</string>
-    <!-- Caption of the total number of views of the service -->
-    <string name="settings_stat_views">Views</string>
-    <!-- Caption of the number of photographers of the service -->
-    <string name="settings_stat_photographers">Photographers</string>
-    <!-- Caption of the number of photos added in the last 30 days -->
-    <string name="settings_stat_new_photos">New photos, 30 days</string>
-    <!-- Caption of the number of photographers who joined in the last 30 days -->
-    <string name="settings_stat_new_photographers">New photographers, 30 days</string>
     <!-- Section title of the settings: requests the app sent to the photo service -->
     <string name="settings_requests_title">Requests of the app</string>
     <!-- Caption of the number of all requests the app sent since the last reset -->

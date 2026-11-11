@@ -22,21 +22,3 @@ data class StatPoint(
     val date: String,
     val value: Long
 )
-
-/** Counters for the whole service. */
-@Serializable
-data class TotalStats(
-    val photos: Long,
-    val downloads: Long,
-    val views: Long,
-    val photographers: Long
-)
-
-/** Counters for the last 30 days. */
-@Serializable
-data class MonthStats(
-    val downloads: Long,
-    val views: Long,
-    val newPhotos: Long,
-    val newPhotographers: Long
-)

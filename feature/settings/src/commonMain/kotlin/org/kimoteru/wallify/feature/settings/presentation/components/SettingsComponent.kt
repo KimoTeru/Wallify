@@ -1,23 +1,17 @@
 package org.kimoteru.wallify.feature.settings.presentation.components
 
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.combineState
-import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.domain.repository.AuthRepository
 import org.kimoteru.wallify.core.domain.repository.RequestStatsRepository
-import org.kimoteru.wallify.core.domain.repository.StatsRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.domain.usecase.settings.UpdateUserSettingsUseCase
 import org.kimoteru.wallify.core.model.settings.UserSettings
-import org.kimoteru.wallify.core.model.stats.MonthStats
-import org.kimoteru.wallify.core.model.stats.TotalStats
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
@@ -36,14 +30,13 @@ import org.koin.core.annotation.Factory
 interface SettingsComponent : BaseComponent<UiState, UiEvent>
 
 /**
- * The account, the color scheme, the numbers of the photo service and of the app's requests to it. The scheme is
- * kept in the user settings and the root graph applies it; signing out needs no navigation here: the root graph sees
- * the missing session.
+ * The account, the color scheme and the numbers of the app's requests to the photo service. The scheme is kept in
+ * the user settings and the root graph applies it; signing out needs no navigation here: the root graph sees the
+ * missing session.
  */
 @Factory
 class SettingsLogic(
     private val authRepository: AuthRepository,
-    private val statsRepository: StatsRepository,
     private val updateUserSettings: UpdateUserSettingsUseCase,
     private val requestStatsRepository: RequestStatsRepository,
     userRepository: UserRepository,
@@ -53,16 +46,13 @@ class SettingsLogic(
     private val settings: StateFlow<UserSettings> = observeUserSettings()
         .stateIn(coroutineScope, SharingStarted.Eagerly, UserSettings.Default)
 
-    private val serviceStats = MutableStateFlow(ServiceStats())
-
     override val uiState: StateFlow<UiState> = combineState(
         coroutineScope,
         userRepository.currentUser,
         settings,
-        serviceStats,
         requestStatsRepository.stats,
         initialValue = UiState(account = userRepository.currentUser.value?.toAccount())
-    ) { user, userSettings, stats, requestStats ->
+    ) { user, userSettings, requestStats ->
         val requestDays = requestStatsRepository.lastDays(requestStats, REQUEST_DAYS).map { it.count }
         val photoLayout = userSettings.photoLayout.toPresentation()
 
@@ -77,8 +67,6 @@ class SettingsLogic(
             detailImageQuality = userSettings.detailImageQuality.toPresentation(),
             downloadImageQuality = userSettings.downloadImageQuality.toPresentation(),
             languageTag = userSettings.languageTag,
-            totalStats = stats.total,
-            monthStats = stats.month,
             requestTotal = requestStats.total,
             canResetRequestStats = requestStats.total > 0L,
             topEndpoints = requestStats.endpoints.take(TOP_ENDPOINTS),
@@ -87,22 +75,6 @@ class SettingsLogic(
             requestDaysTotal = requestDays.sum(),
             requestDaysMax = requestDays.maxOrNull() ?: 0L
         )
-    }
-
-    override fun onCreate() {
-        coroutineScope.launch {
-            launch {
-                statsRepository.getTotalStatsFlow().collect { resource ->
-                    if (resource is Resource.Success) updateTotalStats(resource.data)
-                }
-            }
-
-            launch {
-                statsRepository.getMonthStatsFlow().collect { resource ->
-                    if (resource is Resource.Success) updateMonthStats(resource.data)
-                }
-            }
-        }
     }
 
     override fun obtainUiEvent(event: UiEvent) {
@@ -141,24 +113,11 @@ class SettingsLogic(
         }
     }
 
-    private fun updateTotalStats(total: TotalStats) {
-        serviceStats.update { it.copy(total = total) }
-    }
-
-    private fun updateMonthStats(month: MonthStats) {
-        serviceStats.update { it.copy(month = month) }
-    }
-
     /** The account block: the email under the name, or the handle when the email is not shared. */
     private fun User.toAccount(): Account = Account(
         name = name,
         subtitle = email ?: handle(),
         avatar = toAvatarUi(imageUrl = profileImage?.medium)
-    )
-
-    private data class ServiceStats(
-        val total: TotalStats? = null,
-        val month: MonthStats? = null
     )
 
     private companion object {

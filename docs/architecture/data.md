@@ -171,9 +171,8 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 база — единственный источник правды для экранов, бэкенд её обновляет. Так приложение открывается и листается без сети.
 Других кэшей данных (в памяти, JSON-ответы, ключ-значение) нет: новый кэш — это таблица Room.
 
-- Таблицы и DAO — `core:database`: `photo`, `user`, `collection`, `topic`, `statistics`, `total_stats`, `month_stats`
-  и служебные `list_entry` / `list_state`. Сущность — `XxxEntity`, маппер `Xxx.toEntity(…)` и `XxxEntity.toDomain()` —
-  в том же файле, что сущность (`core:database` зависит от `core:model`). Вложенные модели и списки лежат в колонке
+- Таблицы и DAO — `core:database`: `photo`, `user`, `collection`, `topic`, `statistics` и служебные
+  `list_entry` / `list_state`. Сущность — `XxxEntity`, маппер `Xxx.toEntity(…)` и `XxxEntity.toDomain()` — в том же файле, что сущность (`core:database` зависит от `core:model`). Вложенные модели и списки лежат в колонке
   как JSON (`DatabaseConverters`).
 - Порядок списка хранит `list_entry(listKey, position, itemId)`, а не таблица элементов: одно фото может быть в
   ленте, теме и коллекции одновременно. Возраст списка и одиночного элемента — `list_state(listKey, updatedAt)`,

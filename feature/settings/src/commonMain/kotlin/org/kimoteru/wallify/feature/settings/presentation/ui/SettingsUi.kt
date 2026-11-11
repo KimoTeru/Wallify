@@ -32,9 +32,7 @@ import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoLayoutCard
 import org.kimoteru.wallify.core.model.settings.AppLanguage
 import org.kimoteru.wallify.core.model.settings.SupportedLanguages
 import org.kimoteru.wallify.core.model.stats.EndpointStat
-import org.kimoteru.wallify.core.model.stats.MonthStats
 import org.kimoteru.wallify.core.model.stats.RateLimit
-import org.kimoteru.wallify.core.model.stats.TotalStats
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.photo.AvatarUi
 import org.kimoteru.wallify.core.presentation.photo.UserAvatar
@@ -78,13 +76,6 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_requests
 import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_top
 import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_total
 import org.kimoteru.wallify.core.resources.generated.resources.settings_screen_layout_description
-import org.kimoteru.wallify.core.resources.generated.resources.settings_service_title
-import org.kimoteru.wallify.core.resources.generated.resources.settings_stat_downloads
-import org.kimoteru.wallify.core.resources.generated.resources.settings_stat_new_photographers
-import org.kimoteru.wallify.core.resources.generated.resources.settings_stat_new_photos
-import org.kimoteru.wallify.core.resources.generated.resources.settings_stat_photographers
-import org.kimoteru.wallify.core.resources.generated.resources.settings_stat_photos
-import org.kimoteru.wallify.core.resources.generated.resources.settings_stat_views
 
 object SettingsContract {
     /** The account block: the name, the line under it (the email, or the handle without one) and the avatar. */
@@ -118,8 +109,6 @@ object SettingsContract {
         val languages: List<AppLanguage> = SupportedLanguages,
 
         val languageTag: String = SupportedLanguages.first().tag,
-        val totalStats: TotalStats? = null,
-        val monthStats: MonthStats? = null,
         val requestTotal: Long = 0L,
         /** There is something to reset: at least one request is counted. */
         val canResetRequestStats: Boolean = false,
@@ -372,35 +361,6 @@ fun SettingsUi(
                     style = appTypography.h7.regular,
                     color = appColor.text.subtitle
                 )
-            }
-
-            if (uiState.totalStats != null || uiState.monthStats != null) {
-                SettingsSection(title = stringResource(Res.string.settings_service_title)) {
-                    uiState.totalStats?.let { total ->
-                        StatsRow(
-                            firstValue = total.photos.toCompactString(),
-                            firstLabel = stringResource(Res.string.settings_stat_photos),
-                            secondValue = total.photographers.toCompactString(),
-                            secondLabel = stringResource(Res.string.settings_stat_photographers)
-                        )
-
-                        StatsRow(
-                            firstValue = total.downloads.toCompactString(),
-                            firstLabel = stringResource(Res.string.settings_stat_downloads),
-                            secondValue = total.views.toCompactString(),
-                            secondLabel = stringResource(Res.string.settings_stat_views)
-                        )
-                    }
-
-                    uiState.monthStats?.let { month ->
-                        StatsRow(
-                            firstValue = month.newPhotos.toCompactString(),
-                            firstLabel = stringResource(Res.string.settings_stat_new_photos),
-                            secondValue = month.newPhotographers.toCompactString(),
-                            secondLabel = stringResource(Res.string.settings_stat_new_photographers)
-                        )
-                    }
-                }
             }
 
             SettingsSection(title = stringResource(Res.string.settings_requests_title)) {
