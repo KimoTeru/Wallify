@@ -57,6 +57,7 @@ class DefaultMainGraphComponent(
 
     init {
         backHandler.register(backToFeedCallback)
+
         stack.subscribe { state ->
             backToFeedCallback.isEnabled = state.active.configuration !is Config.Feed
             logic.onTabShown(state.active.instance.toTab())

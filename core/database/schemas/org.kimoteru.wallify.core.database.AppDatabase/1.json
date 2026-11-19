@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "3b293e0b36a7e0432b5038110529a7fc",
+    "identityHash": "f856a5b748c6441a86c7ba280fba8828",
     "entities": [
       {
         "tableName": "photo",
@@ -386,90 +386,6 @@
         }
       },
       {
-        "tableName": "total_stats",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `photos` INTEGER NOT NULL, `downloads` INTEGER NOT NULL, `views` INTEGER NOT NULL, `photographers` INTEGER NOT NULL, PRIMARY KEY(`id`))",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "photos",
-            "columnName": "photos",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "downloads",
-            "columnName": "downloads",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "views",
-            "columnName": "views",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "photographers",
-            "columnName": "photographers",
-            "affinity": "INTEGER",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        }
-      },
-      {
-        "tableName": "month_stats",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `downloads` INTEGER NOT NULL, `views` INTEGER NOT NULL, `newPhotos` INTEGER NOT NULL, `newPhotographers` INTEGER NOT NULL, PRIMARY KEY(`id`))",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "downloads",
-            "columnName": "downloads",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "views",
-            "columnName": "views",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "newPhotos",
-            "columnName": "newPhotos",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "newPhotographers",
-            "columnName": "newPhotographers",
-            "affinity": "INTEGER",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        }
-      },
-      {
         "tableName": "list_entry",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`listKey` TEXT NOT NULL, `position` INTEGER NOT NULL, `itemId` TEXT NOT NULL, PRIMARY KEY(`listKey`, `position`))",
         "fields": [
@@ -538,7 +454,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3b293e0b36a7e0432b5038110529a7fc')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f856a5b748c6441a86c7ba280fba8828')"
     ]
   }
 }

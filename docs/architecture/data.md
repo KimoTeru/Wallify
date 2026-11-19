@@ -154,6 +154,10 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 
 - Размер, положение и «развёрнуто» окна Desktop хранит `WindowStateStore` в `desktopApp` (`java.util.prefs`): это
   состояние платформенного окна, а не пользовательская настройка, поэтому в `UserSettings` и DataStore его нет.
+- Бэкап Android выключен целиком: токен сессии лежит в DataStore рядом с настройками, база — копия бэкенда.
+  `allowBackup="false"` на Android 12+ не отключает перенос на новое устройство, поэтому все каталоги исключены и в
+  `data_extraction_rules.xml` (облако и перенос), и в `backup_rules.xml` (Android 11 и ниже). Если появятся данные,
+  которые стоит переносить (только настройки), — отдельный файл DataStore без токена и `include` только его.
 - Пути к файлам и базе дают платформенные провайдеры (`expect`/`actual`); в `commonMain` путей вида `/data/...`
   нет.
 - Пользовательские настройки — `UserSettings` (`core:model`) через `UserSettingsRepository`; язык и другие поля
