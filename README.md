@@ -106,3 +106,7 @@ download tracking and attribution (`docs/architecture/data.md` § Бэкенд �
   (`docs/setup/config-and-secrets.md` § Вход пользователя). Nothing is downloaded and no server of your own is needed.
 - The secret key is built into the application. For a public release move requests that need it behind your own proxy
   (`docs/setup/config-and-secrets.md`).
+
+## License
+
+[MIT](LICENSE).
