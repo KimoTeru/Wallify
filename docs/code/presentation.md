@@ -1,7 +1,7 @@
 # Экран: Component / Logic / Contract / Ui
 
 Форма экрана и правила состояния. Образцы — `feature/splash` (простой экран), `feature/random` (экран с
-состоянием), `feature/feed` (постраничный список), `feature/photo` (аргумент экрана и `ComponentEvent`),
+состоянием), `feature/feed` (постраничный список), `feature/photo` (аргумент экрана и ссылка в браузере),
 `feature/root` (граф с состоянием).
 
 Related: `code/navigation.md`, `code/di.md`, `design/foundations.md`, `architecture/layers.md`.
@@ -65,11 +65,10 @@ override val logic: XxxLogic = retainedLogic { get<XxxLogic>() }
    префиксом `XxxContract.UiEvent.Xxx`.
 5. Одноразовые эффекты: навигация — `navigate(NavigationEvent)` логики; сообщение пользователю — `NotifierManager`
    (без сети отдельный снекбар уже виден, текст логика берёт `getString`); сбой действия — `handleResponse`
-   (§ Ошибка действия); действие, которое
-   выполняет сам экран (открыть адрес в браузере через
-   `LocalUriHandler`), — `ComponentEvent`: логика шлёт `sendComponentEvent(…)`, Ui ловит
-   `component.collectComponentEvents { … }` (для него нужны `…Core`-типы с явным `ComponentEvent`). Не
-   `StateFlow<Boolean>` с ручным сбросом.
+   (§ Ошибка действия); системное действие (открыть адрес в браузере, настройки приложения) логика выполняет сама
+   через менеджер `core:platform`: ссылка — `intentNavigator.openUrl(url)` (поле базовой логики), а не
+   `LocalUriHandler` в Ui. `ComponentEvent` (`sendComponentEvent` / `component.collectComponentEvents { … }`) — только
+   для того, что без Compose не сделать (фокус, скролл, анимация экрана). Не `StateFlow<Boolean>` с ручным сбросом.
 6. Данные приходят из use case'ов и репозиториев `core:domain` (`architecture/layers.md`). Ошибки — `Response`; логика
    решает, что показать, а не бросает исключения в Ui. Сбой загрузки экран держит в `UiState` как
    `error: ResponseError?` (не `hasError: Boolean`); без контента Ui рисует по нему `ErrorContentLayout(error, onRetry)`
@@ -199,7 +198,8 @@ fun XxxUi(
 - Контракт — `object XxxContract` (или `interface`) в файле Ui; `UiState` помечаем `@Immutable`.
 - `LaunchedEffect(Unit)` — для разовых эффектов экрана (например, задержка сплеша); ключ — то, что реально
   перезапускает эффект.
-- Одноразовые события компонента собираем `collectComponentEvents { … }` / `collectAsEffect`.
+- Одноразовые события компонента, которым нужен Compose, собираем `collectComponentEvents { … }` /
+  `collectAsEffect`; системные действия Ui не выполняет (§ Правила, п. 5).
 - Каждый значимый блок вёрстки — отдельный composable без знания о компоненте: принимает данные и лямбды.
 - Лямбды-обработчики и слоты в `val` внутри composable не складываем (`val onRefreshError: (…) -> Unit = { … }`,
   `val screens: @Composable (Modifier) -> Unit`): лямбду пишем прямо в аргументе вызова, повторяющуюся вёрстку

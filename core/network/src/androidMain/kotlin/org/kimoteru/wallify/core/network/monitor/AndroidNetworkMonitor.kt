@@ -5,99 +5,59 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkRequest
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.koin.core.annotation.Singleton
 
+/**
+ * Follows the default network of the app (`registerDefaultNetworkCallback`): online is a default network that the
+ * system validated, so it really reaches the internet. The capabilities come from [ConnectivityManager.NetworkCallback]
+ * itself: reading them synchronously inside the callback races with the system.
+ */
 @Singleton
 internal class AndroidNetworkMonitor(
-    context: Context,
-    appDispatchers: AppDispatchers
+    context: Context
 ) : NetworkMonitor {
     private val connectivityManager =
         context.applicationContext.getSystemService(ConnectivityManager::class.java)
 
-    private val scope = CoroutineScope(SupervisorJob() + appDispatchers.default)
-    private val lock = Any()
-
-    private val networkRequest = NetworkRequest.Builder()
-        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        .build()
-
-    private val onlineState = MutableStateFlow(readOnline())
-    override val isOnline: StateFlow<Boolean> = onlineState.asStateFlow()
+    override val isOnline: StateFlow<Boolean>
+        field = MutableStateFlow(readOnline())
 
     private var started = false
 
     private val callback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            onlineState.value = readOnline()
+        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+            isOnline.value = capabilities.hasInternet()
         }
 
         override fun onLost(network: Network) {
-            onlineState.value = readOnline()
-        }
-
-        override fun onUnavailable() {
-            onlineState.value = readOnline()
+            // A new default network, if any, follows with its own capabilities.
+            isOnline.value = false
         }
     }
 
-    override suspend fun checkInternet() {
-        var attempts = 0
-        while (!onlineState.value && attempts < MAX_ATTEMPTS) {
-            delay(RETRY_DELAY_MILLIS)
-            attempts += 1
-            onlineState.value = readOnline()
-        }
-    }
-
+    @Synchronized
     override fun start() {
-        val shouldCheck = synchronized(lock) {
-            if (started) return
-            try {
-                connectivityManager.registerNetworkCallback(networkRequest, callback)
-                started = true
-                true
-            } catch (_: RuntimeException) {
-                false
-            }
-        }
-        if (shouldCheck) {
-            scope.launch { checkInternet() }
-        }
+        if (started) return
+        // The state may be stale after a pause; the callback corrects it as soon as it is registered.
+        isOnline.value = readOnline()
+        started = runCatching { connectivityManager.registerDefaultNetworkCallback(callback) }.isSuccess
     }
 
+    @Synchronized
     override fun stop() {
-        synchronized(lock) {
-            if (!started) return
-            try {
-                connectivityManager.unregisterNetworkCallback(callback)
-            } catch (_: IllegalArgumentException) {
-            } finally {
-                started = false
-            }
-        }
+        if (!started) return
+        started = false
+        runCatching { connectivityManager.unregisterNetworkCallback(callback) }
     }
 
     @SuppressLint("MissingPermission")
-    private fun readOnline(): Boolean = try {
-        val network = connectivityManager.activeNetwork
-        val capabilities = connectivityManager.getNetworkCapabilities(network)
-        capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
-    } catch (_: RuntimeException) {
-        false
-    }
+    private fun readOnline(): Boolean = runCatching {
+        connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)?.hasInternet() == true
+    }.getOrDefault(false)
 
-    private companion object {
-        const val RETRY_DELAY_MILLIS = 1_000L
-        const val MAX_ATTEMPTS = 5
-    }
+    private fun NetworkCapabilities.hasInternet(): Boolean =
+        hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 }

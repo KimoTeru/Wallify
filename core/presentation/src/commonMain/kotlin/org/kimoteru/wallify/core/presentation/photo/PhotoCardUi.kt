@@ -36,8 +36,8 @@ data class AvatarUi(
 )
 
 /**
- * The card of this photo. [imageUrl] and [lowImageUrl] are picked by the logic for its quality (`forQuality` of
- * `core:domain`); without [withAuthor] the card shows no author (the photos of a profile are all the same author).
+ * The card of this photo. [imageUrl] and [lowImageUrl] are picked by the logic for its quality ([forQuality]);
+ * without [withAuthor] the card shows no author (the photos of a profile are all the same author).
  */
 fun Photo.toCardUi(
     imageUrl: String,

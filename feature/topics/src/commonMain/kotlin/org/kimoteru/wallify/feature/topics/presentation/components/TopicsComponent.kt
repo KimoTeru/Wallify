@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
-import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.domain.repository.TopicRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
@@ -25,6 +24,7 @@ import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
+import org.kimoteru.wallify.core.presentation.photo.forQuality
 import org.kimoteru.wallify.core.presentation.photo.toCardUi
 import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsContract.UiEvent
 import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsContract.UiState

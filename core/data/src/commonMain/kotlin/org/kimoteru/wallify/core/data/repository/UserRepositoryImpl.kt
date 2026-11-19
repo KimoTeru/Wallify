@@ -14,6 +14,7 @@ import org.kimoteru.wallify.core.common.paging.DEFAULT_PAGE_SIZE
 import org.kimoteru.wallify.core.common.paging.FIRST_PAGE
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
+import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.common.response.onSuccess
 import org.kimoteru.wallify.core.data.cache.CacheLoader
 import org.kimoteru.wallify.core.data.cache.CacheStore
@@ -25,11 +26,14 @@ import org.kimoteru.wallify.core.data.cache.pager
 import org.kimoteru.wallify.core.data.cache.refreshableFlow
 import org.kimoteru.wallify.core.data.cache.refreshableListFlow
 import org.kimoteru.wallify.core.data.remote.UserRemoteDataSource
+import org.kimoteru.wallify.core.data.session.CurrentUserSync
 import org.kimoteru.wallify.core.database.dao.CollectionDao
 import org.kimoteru.wallify.core.database.dao.PhotoDao
 import org.kimoteru.wallify.core.database.dao.StatsDao
 import org.kimoteru.wallify.core.database.dao.UserDao
 import org.kimoteru.wallify.core.database.entity.toDomain
+import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
+import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
@@ -38,9 +42,14 @@ import org.kimoteru.wallify.core.model.photo.UserPhotosOrder
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.model.user.UpdateUserParams
 import org.kimoteru.wallify.core.model.user.User
+import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
 import org.koin.core.annotation.Singleton
 
-@Singleton
+/**
+ * Created with Koin: the repository itself keeps [currentUser] in step with the session ([CurrentUserSync]), so it
+ * runs from the start of the app, before any screen asks.
+ */
+@Singleton(createdAtStart = true)
 class UserRepositoryImpl(
     private val userRemoteDataSource: UserRemoteDataSource,
     private val userDao: UserDao,
@@ -50,7 +59,10 @@ class UserRepositoryImpl(
     private val cacheLoader: CacheLoader,
     private val cacheStore: CacheStore,
     private val dispatchers: AppDispatchers,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    headersCollector: HeadersCollectorRepository,
+    session: SessionRepository,
+    connectivityRepository: ConnectivityRepository
 ) : UserRepository {
 
     /** The signed-in user comes from the database, so the app opens with the user it saw last, even offline. */
@@ -58,8 +70,20 @@ class UserRepositoryImpl(
         .map { entity -> entity?.toDomain() }
         .stateIn(scope = scope, started = SharingStarted.Eagerly, initialValue = null)
 
+    private val currentUserSync = CurrentUserSync(
+        headersCollector = headersCollector,
+        session = session,
+        connectivityRepository = connectivityRepository,
+        refresh = ::refreshCurrentUser,
+        clear = ::clearCurrentUser
+    ).also { it.start(scope) }
+
+    override val currentUserLoadError: StateFlow<ResponseError?> = currentUserSync.loadError
+
+    override fun retryCurrentUserLoad() = currentUserSync.retry()
+
     /** Writes the answer into the database; [currentUser] follows from there. */
-    override suspend fun refreshCurrentUser(): Response<User> = withContext(dispatchers.io) {
+    private suspend fun refreshCurrentUser(): Response<User> = withContext(dispatchers.io) {
         userRemoteDataSource.getCurrentUser()
             .onSuccess { user -> cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) } }
     }

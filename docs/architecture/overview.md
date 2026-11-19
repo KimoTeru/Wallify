@@ -109,7 +109,9 @@ flowchart TB
 2. `core:domain` зависит от `core:model` и `core:common`, не знает про `core:data`, сеть, базу и UI.
    `core:presentation` зависит от `core:model`: `XxxUi` мапится в доменный enum рядом с собой (`toDomain()`,
    обратно `toPresentation()`). `core:model` про UI не знает.
-3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет.
+3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет. `core:presentation` отдаёт
+   `core:platform` фичам через `api`: системное действие (`intentNavigator` базовой логики) логика фичи вызывает
+   сама, без Ui.
    `core:network` зависит от `core:model`: модель ответа API мапится в доменную рядом с собой (`toDomain()`),
    `core:model` про сеть не знает. Так же `core:database` зависит от `core:model`: сущность Room мапится в доменную
    модель и обратно рядом с собой (`toEntity()` / `toDomain()`), `core:model` про базу не знает.

@@ -20,7 +20,6 @@ import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.ResponseError
-import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
@@ -30,17 +29,17 @@ import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.model.user.User
-import org.kimoteru.wallify.core.presentation.base.BaseComponentCore
-import org.kimoteru.wallify.core.presentation.base.BaseLogicCore
+import org.kimoteru.wallify.core.presentation.base.BaseComponent
+import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.errors.ProfileApiError
 import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
+import org.kimoteru.wallify.core.presentation.photo.forQuality
 import org.kimoteru.wallify.core.presentation.photo.profileSubtitle
 import org.kimoteru.wallify.core.presentation.photo.toAvatarUi
 import org.kimoteru.wallify.core.presentation.photo.toCardUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.Tab
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.CollectionCardUi
-import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.ComponentEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditField
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditForm
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiEvent
@@ -54,7 +53,7 @@ sealed interface ProfileTarget {
     data class Username(val username: String) : ProfileTarget
 }
 
-interface ProfileComponent : BaseComponentCore<UiState, UiEvent, ComponentEvent> {
+interface ProfileComponent : BaseComponent<UiState, UiEvent> {
     /** Whether the screen was opened over another one and so has a back button. */
     val canNavigateBack: Boolean
 
@@ -76,7 +75,7 @@ class ProfileLogic(
     private val userRepository: UserRepository,
     private val collectionRepository: CollectionRepository,
     private val observeUserSettings: ObserveUserSettingsUseCase,
-) : BaseLogicCore<UiState, UiEvent, ProfileNavigationEvent, ComponentEvent>() {
+) : BaseLogic<UiState, UiEvent, ProfileNavigationEvent>() {
 
     override val uiState: StateFlow<UiState>
         field = MutableStateFlow(UiState())
@@ -201,7 +200,7 @@ class ProfileLogic(
 
     private fun upload() {
         isUploadPending = true
-        sendComponentEvent(ComponentEvent.OpenUrl(userRepository.uploadPageUrl))
+        intentNavigator.openUrl(userRepository.uploadPageUrl)
     }
 
     private fun reloadAfterUpload() {

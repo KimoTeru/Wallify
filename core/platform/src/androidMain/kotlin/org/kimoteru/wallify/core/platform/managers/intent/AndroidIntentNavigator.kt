@@ -25,4 +25,12 @@ class AndroidIntentNavigator(
         }
         runCatching { context.startActivity(intent) }.onFailure { openAppSettings() }
     }
+
+    override fun openUrl(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        // No app can open the address (no browser): nothing to do, the app keeps running.
+        runCatching { context.startActivity(intent) }
+    }
 }

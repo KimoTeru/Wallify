@@ -54,8 +54,8 @@ Ui (Compose)
 |---|---|
 | Интерфейс репозитория (любой, включая `SessionRepository`, `ConnectivityRepository`) | `core/domain/.../repository/` |
 | Use case | `core/domain/.../usecase/<область>/` |
-| Правило предметной области над моделью без состояния, нужное и экранам, и данным (адрес фото по качеству — `PhotoUrls.forQuality`) | функция-расширение в `core/domain/.../<область>/` (`photo/PhotoUrlsExt.kt`); `core:model` остаётся данными |
-| Интерфейс фонового сервиса данных, наружу которого нужно показать состояние (`UserSessionManager`) | `core/domain/.../manager/`, реализация — `core/data/.../<область>/` |
+| Выбор над моделью, который нужен только экранам (адрес фото по качеству — `PhotoUrls.forQuality`) | функция-расширение в `core/presentation/.../<область>/` (`photo/PhotoUrlsExt.kt`); `core:model` остаётся данными, в `core:domain` — только интерфейсы и use case'ы |
+| Фоновая загрузка данных и её состояние (вошедший пользователь, сбой его загрузки) | сам репозиторий этих данных: реализация загружает их сама (`UserRepositoryImpl` + его часть `CurrentUserSync`) и отдаёт статус в интерфейсе (`currentUserLoadError` / `retryCurrentUserLoad()`); внешнего синхронизатора, который дёргает репозиторий, и интерфейса-«менеджера» в домене нет |
 | Реализация репозитория (`XxxRepositoryImpl`) | `core/data/.../repository/` |
 | Источник данных | `core/data/.../<область>/` (например, `settings/`) |
 | Удалённый источник (`XxxRemoteDataSource` + `Impl`, мапит ответ API в доменные модели) | `core/data/.../remote/` |
@@ -65,8 +65,7 @@ Ui (Compose)
 | Свойства экрана для enum | Доменный enum в `core/model`, экранный `XxxUi` в `core/presentation`, маппер `toDomain()` / `toPresentation()` в файле `XxxUi`. Образец — `ContentFilter` и `ContentFilterUi` |
 | Сущность и DAO Room (мапперы `toEntity()` / `toDomain()` — в файле сущности) | `core/database/.../entity/` и `core/database/.../dao/` (`AppDatabase` и `DatabaseModule` — в корне пакета; конвертеры — `converter/`) |
 | Загрузка с кэшем в Room: `CacheLoader` (постраничные списки), `ListRemoteMediator`, `refreshableFlow`, `CacheStore`, ключи списков, очистка базы | `core/data/.../cache/` |
-| Менеджер платформы (буфер, язык, ссылки) | интерфейс в `core/platform/commonMain`, реализации в `androidMain` / `jvmMain` |
-| Общая логика с состоянием для нескольких экранов (уведомления, сообщение об ошибке запроса) | `core/presentation/.../components/units/<name>/` |
+| Менеджер платформы (буфер, язык, ссылки) | интерфейс в `core/platform/commonMain`, реализации в `androidMain` / `jvmMain` || Общая логика с состоянием для нескольких экранов (уведомления, сообщение об ошибке запроса) | `core/presentation/.../components/units/<name>/` |
 
 ## Пакеты внутри модуля
 

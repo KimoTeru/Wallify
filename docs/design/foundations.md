@@ -178,8 +178,8 @@ Drawer и рейл стоят у начала окна и отступают о�
 
 Качество картинок выбирает пользователь: три выбора в `UserSettings` (`listImageQuality`, `detailImageQuality`,
 `downloadImageQuality`). `ImageQuality.Original` — только для скачивания: на экране это огромный файл без видимой
-разницы. Адрес по качеству — одна функция `PhotoUrls.forQuality(quality)` из `core:domain`; поля `urls.regular` и
-другие в экранах не читаем.
+разницы. Адрес по качеству — одна функция `PhotoUrls.forQuality(quality)` из `core:presentation` (`photo`); поля
+`urls.regular` и другие в экранах не читаем.
 
 1. Качество — данные экрана, а не окружение дерева: `Logic` экрана берёт его из `ObserveUserSettingsUseCase` и сама
    выбирает адреса (`forQuality`). `CompositionLocal` для него не заводим: он для того, что может понадобиться

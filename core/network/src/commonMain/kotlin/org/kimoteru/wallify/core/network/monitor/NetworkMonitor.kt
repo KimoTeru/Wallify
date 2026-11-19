@@ -3,14 +3,11 @@ package org.kimoteru.wallify.core.network.monitor
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Connectivity observer.
- * Android uses ConnectivityManager, desktop checks network interfaces,
- * iOS is a stub until a path monitor is wired in the app target.
+ * Whether the internet is reachable. Android follows the validated default network, desktop checks that the API host
+ * answers. [isOnline] is kept up to date only between [start] and [stop]; [start] reads the state again.
  */
 interface NetworkMonitor {
     val isOnline: StateFlow<Boolean>
-
-    suspend fun checkInternet()
 
     fun start()
 

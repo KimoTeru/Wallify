@@ -25,6 +25,7 @@ import org.kimoteru.wallify.core.common.flow.StateEventFlowWithContent
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.common.response.ResponseErrorType
+import org.kimoteru.wallify.core.platform.managers.intent.IntentNavigator
 import org.kimoteru.wallify.core.presentation.base.BaseContract.BaseUiState
 import org.kimoteru.wallify.core.presentation.base.navigation.ScreenBackResult
 import org.kimoteru.wallify.core.presentation.components.units.notifier_manager.domain.NotifierManager
@@ -161,6 +162,9 @@ abstract class BaseLogicCore<
 
     protected val dispatchers by inject<AppDispatchers>()
     protected val coroutineScope = CoroutineScope(SupervisorJob() + dispatchers.main)
+
+    /** System actions (a link in the browser, the app settings) run straight from the logic, without the screen. */
+    protected val intentNavigator by inject<IntentNavigator>()
 
     private val notifierManager by inject<NotifierManager>()
 

@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.Response
+import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.PhotoOrientation
@@ -16,13 +17,21 @@ import org.kimoteru.wallify.core.model.user.User
 interface UserRepository {
 
     /**
-     * The signed-in user. The session keeps it up to date: it is loaded when the token appears and cleared
-     * on sign-out, so screens only read it and never load it. `null` until the first load and without a session.
+     * The signed-in user. The repository keeps it in step with the session itself: it is loaded when the token appears
+     * and cleared on sign-out, so screens only read it and never load it. `null` until the first load and without a
+     * session.
      */
     val currentUser: StateFlow<User?>
 
-    /** Loads the signed-in user and publishes it to [currentUser]. Needs the user token, otherwise 401. */
-    suspend fun refreshCurrentUser(): Response<User>
+    /**
+     * Why the repository could not load [currentUser]; `null` when the load went well or is not needed. A token the
+     * backend rejects is not here: that ends the session instead. While the failure lasts, the load is repeated each
+     * time the connection returns or [retryCurrentUserLoad] is called, and the value goes back to `null` on success.
+     */
+    val currentUserLoadError: StateFlow<ResponseError?>
+
+    /** Loads the signed-in user again now (the user pressed «Повторить»); does nothing while there is no failure. */
+    fun retryCurrentUserLoad()
 
     fun clearCurrentUser()
 

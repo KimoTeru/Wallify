@@ -6,10 +6,8 @@ import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.data.cache.CacheDatabaseCleaner
 import org.kimoteru.wallify.core.data.download.FileDownloader
 import org.kimoteru.wallify.core.data.session.SessionDataCleaner
+import org.kimoteru.wallify.core.data.session.SessionExpiryHandler
 import org.kimoteru.wallify.core.data.session.SessionHeadersSynchronizer
-import org.kimoteru.wallify.core.data.session.UserSessionSynchronizer
-import org.kimoteru.wallify.core.domain.manager.UserSessionManager
-import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
 import org.kimoteru.wallify.core.domain.repository.RequestStatsRepository
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
@@ -54,19 +52,15 @@ class DataModule {
     ).also { it.start() }
 
     @Singleton(createdAtStart = true)
-    fun userSessionManager(
+    fun sessionExpiryHandler(
         headersCollector: HeadersCollectorRepository,
         sessionExpiry: SessionExpiryCollector,
-        userRepository: UserRepository,
         session: SessionRepository,
-        connectivityRepository: ConnectivityRepository,
         scope: CoroutineScope
-    ): UserSessionManager = UserSessionSynchronizer(
+    ): SessionExpiryHandler = SessionExpiryHandler(
         headersCollector = headersCollector,
         sessionExpiry = sessionExpiry,
-        userRepository = userRepository,
         session = session,
-        connectivityRepository = connectivityRepository,
         scope = scope
     ).also { it.start() }
 

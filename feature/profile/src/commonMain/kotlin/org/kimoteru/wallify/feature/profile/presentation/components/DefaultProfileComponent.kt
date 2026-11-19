@@ -3,10 +3,9 @@ package org.kimoteru.wallify.feature.profile.presentation.components
 import androidx.paging.PagingData
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.flow.Flow
-import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponentCore
+import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponent
 import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.CollectionCardUi
-import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.ComponentEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiState
 import org.koin.core.component.get
@@ -17,7 +16,7 @@ class DefaultProfileComponent(
     target: ProfileTarget,
     navigateBack: (() -> Unit)?,
     private val openPhoto: (photoId: String) -> Unit
-) : BaseDefaultComponentCore<ProfileLogic, UiState, UiEvent, ProfileNavigationEvent, ComponentEvent>(
+) : BaseDefaultComponent<ProfileLogic, UiState, UiEvent, ProfileNavigationEvent>(
     componentContext = componentContext,
     navigateBack = navigateBack
 ),
