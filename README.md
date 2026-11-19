@@ -5,6 +5,10 @@ The project is a photo browser on a modular architecture: networking, session ha
 design system (night and day schemes, adaptive phone / tablet / desktop navigation) and the screens: feed with search,
 curated topics, random photos, photo details, photographer profile and settings.
 
+> Wallify is a portfolio project and is not affiliated with or endorsed by Unsplash. To run it, register your own
+> application at [unsplash.com/developers](https://unsplash.com/developers), use your own keys and follow the
+> [Unsplash API Guidelines](https://help.unsplash.com/en/articles/2511245-unsplash-api-guidelines).
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -46,9 +50,10 @@ Wallify/
 │   ├── design-system/   # Theme, tokens, UI components
 │   └── resources/       # All strings, fonts and images (public Res)
 ├── feature/
-│   ├── root/            # Navigation graph, tab navigation, error dialog, snackbars, offline banner
+│   ├── root/            # Top-level navigation graph, error dialog, snackbars, offline banner
 │   ├── splash/
 │   ├── auth/            # Sign-in screen, shown until the user has a session
+│   ├── main/            # Tabs of the signed-in user: dock, rail or drawer
 │   ├── feed/            # Photo feed with search and filters
 │   ├── topics/          # Curated topics and their photos
 │   ├── random/          # Random photos
@@ -99,9 +104,6 @@ download tracking and attribution (`docs/architecture/data.md` § Бэкенд �
 ## Known Limitations
 
 - iOS targets are not enabled.
-- The API layer covers every documented endpoint: API classes and full response models (with their `toDomain()`
-  mappers) in `core:network`, remote data sources and repositories in `core:data`, trimmed domain models in
-  `core:model`. No screen uses it yet.
 - Signing in opens the system browser and needs two redirect URIs in the application on the backend
   (`docs/setup/config-and-secrets.md` § Вход пользователя). Nothing is downloaded and no server of your own is needed.
 - The secret key is built into the application. For a public release move requests that need it behind your own proxy
