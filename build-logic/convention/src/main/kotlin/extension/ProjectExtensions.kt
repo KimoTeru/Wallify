@@ -25,11 +25,11 @@ internal fun Project.androidNamespace(): String =
         .joinToString(separator = ".", prefix = "${ProjectConfig.APPLICATION_ID}.") { it.replace("-", "") }
 
 /**
- * Reads a local value from `local.properties` (key [propertyName]) or from the environment ([envName]).
- * Returns [default] when neither is set, so builds still work without credentials.
+ * Reads a local value [name] from `local.properties` or, if it is not there, from the environment variable of the same
+ * name. Returns [default] when neither is set, so builds still work without credentials.
  * Both sources are read through Gradle providers, so configuration cache sees them as build inputs.
  */
-internal fun Project.localSecret(propertyName: String, envName: String, default: String = ""): String {
+internal fun Project.localSecret(name: String, default: String = ""): String {
     val localProperties = providers
         .fileContents(rootProject.layout.projectDirectory.file("local.properties"))
         .asText
@@ -37,11 +37,11 @@ internal fun Project.localSecret(propertyName: String, envName: String, default:
 
     val fromFile = localProperties
         ?.let { text -> Properties().apply { load(StringReader(text)) } }
-        ?.getProperty(propertyName)
+        ?.getProperty(name)
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
 
-    val fromEnvironment = providers.environmentVariable(envName).orNull
+    val fromEnvironment = providers.environmentVariable(name).orNull
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
 

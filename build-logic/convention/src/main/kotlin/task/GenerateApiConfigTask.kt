@@ -1,7 +1,6 @@
 package org.kimoteru.wallify.buildlogic.task
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -11,8 +10,8 @@ import org.gradle.api.tasks.TaskAction
 /**
  * Writes `ApiBuildConfig.kt` with both backend keys into the generated sources of `core:network`.
  * The file lives in the build directory, so the keys never reach version control.
- * Both keys are required: the task fails with a pointer to the missing values instead of building an app that
- * cannot authenticate. It is not cacheable on purpose, so the keys never end up in a build cache entry.
+ * The keys are checked earlier, when `wallify.api.config` is applied, so Gradle Sync already fails without them.
+ * It is not cacheable on purpose, so the keys never end up in a build cache entry.
  */
 abstract class GenerateApiConfigTask : DefaultTask() {
     @get:Input
@@ -26,7 +25,6 @@ abstract class GenerateApiConfigTask : DefaultTask() {
 
     @TaskAction
     fun generate() {
-        checkRequiredKeys()
         val directory = outputDir.get().asFile.resolve(PACKAGE_PATH)
         directory.mkdirs()
         directory.resolve(FILE_NAME).writeText(
@@ -42,27 +40,11 @@ abstract class GenerateApiConfigTask : DefaultTask() {
         )
     }
 
-    private fun checkRequiredKeys() {
-        val missing = buildList {
-            if (accessKey.get().isBlank()) add("$ACCESS_KEY_PROPERTY (environment: $ACCESS_KEY_ENV)")
-            if (secretKey.get().isBlank()) add("$SECRET_KEY_PROPERTY (environment: $SECRET_KEY_ENV)")
-        }
-        if (missing.isEmpty()) return
-        throw GradleException(
-            "Missing required backend keys: ${missing.joinToString("; ")}. " +
-                "Set them in local.properties or the environment, see docs/setup/config-and-secrets.md."
-        )
-    }
-
     private fun String.asKotlinString(): String = replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
 
     private companion object {
         const val PACKAGE_NAME = "org.kimoteru.wallify.core.network.config"
         const val PACKAGE_PATH = "org/kimoteru/wallify/core/network/config"
         const val FILE_NAME = "ApiBuildConfig.kt"
-        const val ACCESS_KEY_PROPERTY = "api.accessKey"
-        const val ACCESS_KEY_ENV = "API_ACCESS_KEY"
-        const val SECRET_KEY_PROPERTY = "api.secretKey"
-        const val SECRET_KEY_ENV = "API_SECRET_KEY"
     }
 }

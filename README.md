@@ -63,24 +63,25 @@ The module dependency graph and the rules behind it are in
 
 ## Getting Started
 
-1. Open the project in Android Studio or IntelliJ IDEA and let Gradle sync.
-2. Configure the backend (see below). The access key and the secret key are required: without them the build fails
-   with a message naming the missing values.
+1. Configure the backend (see below). The access key and the secret key are required: without them Gradle Sync
+   fails with a message naming the missing values.
+2. Open the project in Android Studio or IntelliJ IDEA and let Gradle sync.
 3. Run:
    - Android: `./gradlew :androidApp:assembleDebug`
    - Desktop: `./gradlew :desktopApp:run` (hot reload: `./gradlew :desktopApp:hotRun --auto`)
    - Tests: `./gradlew allTests`
+   - Release APK and desktop installer for the current OS: `./gradlew buildRelease` (into `build/release/`)
 
 ### Backend configuration
 
 The backend address is embedded in `core:network`. The keys of your Unsplash application (see
 [Registering your application](https://unsplash.com/documentation#registering-your-application)) never go into
-version control. Put them in `local.properties` or the environment:
+version control. Put them in `local.properties` or the environment, under the same names:
 
-| Value | `local.properties` | Environment variable |
-|---|---|---|
-| Access key (required) | `api.accessKey` | `API_ACCESS_KEY` |
-| Secret key (required) | `api.secretKey` | `API_SECRET_KEY` |
+```
+API_ACCESS_KEY=your-access-key
+API_SECRET_KEY=your-secret-key
+```
 
 The build reads them and generates constants for `core:network` (Android and Desktop alike); rebuild after changing them.
 A new application is in demo mode: 50 requests per hour. Follow the

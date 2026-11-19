@@ -38,7 +38,7 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 | `wallify.kmp.library` | KMP-библиотека: таргеты Android (KMP-library) и JVM, `namespace` из пути модуля без дефисов (`:core:design-system` → `org.kimoteru.wallify.core.designsystem`), `commonTest` с `kotlin-test` |
 | `wallify.compose` | Compose Multiplatform и compiler plugin, базовые Compose-зависимости |
 | `wallify.feature` | `kmp.library` + `compose` + serialization + Decompose, Koin и его компиляторный плагин, `common`, `model`, `domain`, `design-system`, `resources`, `presentation` |
-| `wallify.api.config` | Генерирует `ApiBuildConfig` (два обязательных ключа бэкенда и флаг логирования) из `local.properties` или окружения; без ключей задача падает; подключён в `core:network` |
+| `wallify.api.config` | Генерирует `ApiBuildConfig` (два обязательных ключа бэкенда `API_ACCESS_KEY`, `API_SECRET_KEY`) из `local.properties` или окружения; без ключей падает уже Gradle Sync; подключён в `core:network` |
 | `wallify.android.application` | Android-приложение: SDK, Compose, граф Koin |
 | `wallify.desktop.application` | Desktop-приложение: JVM, окно, пакеты, граф Koin |
 
