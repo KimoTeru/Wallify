@@ -44,6 +44,14 @@ class ComposeConventionPlugin : Plugin<Project> {
             }
         }
 
+        // The Android-KMP library plugin has no debug variant, so the preview renderer goes on the Android runtime
+        // classpath of the module itself: without it Android Studio cannot render any `@Preview` of the module.
+        pluginManager.withPlugin(libsPlugin("androidMultiplatformLibrary")) {
+            configurations.matching { it.name == "androidRuntimeClasspath" }.configureEach {
+                dependencies.add(project.dependencies.create(library("compose-uiTooling")))
+            }
+        }
+
         pluginManager.withPlugin(libsPlugin("kotlinJvm")) {
             dependencies {
                 composeLibraries.forEach { implementation(library(it)) }
