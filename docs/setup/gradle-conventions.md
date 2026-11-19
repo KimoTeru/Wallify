@@ -26,7 +26,11 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 7. Desktop собирается через ProGuard задачами `…Release…` (`packageReleaseDmg`, `runRelease`); правила —
    `desktopApp/proguard-rules.pro` (`wallify.desktop.application`), имена не обфусцируем. Правила библиотек здесь
    применяются не гарантированно, поэтому нужные (ServiceLoader, JNI, сериализация, protobuf DataStore) скопированы
-   в файл из jar текущих версий: обновили библиотеку — сверяем её правила. Пакеты (DMG, MSI, DEB) не
+   в файл из jar текущих версий: обновили библиотеку — сверяем её правила. Имя пакета — `ProjectConfig.APP_NAME`
+   (так приложение называется в системе), идентификатор macOS — `bundleID = APPLICATION_ID`. На Windows пункт в «Пуске» даёт `menu = true`, а
+   обновление поверх старой версии — `upgradeUuid`, выведенный из `APPLICATION_ID` (`UUID.nameUUIDFromBytes`):
+   сменится id — Windows перестанет считать новую версию обновлением. На Linux пункт в
+   меню приложений даёт `shortcut = true`. Пакеты (DMG, MSI, DEB) не
    подписываются: подпись macOS и Windows требует платных сертификатов, а приложение не публикуется. DMG, собранный на
    этом же Mac, открывается без предупреждений; скачанный (из CI) macOS блокирует при первом запуске — «Системные
    настройки → Конфиденциальность и безопасность → Всё равно открыть» или `xattr -dr com.apple.quarantine` на `.app`.

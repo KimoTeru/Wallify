@@ -1,5 +1,6 @@
 package org.kimoteru.wallify.buildlogic.plugin
 
+import java.util.UUID
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.RelativePath
@@ -37,16 +38,25 @@ class DesktopApplicationConventionPlugin : Plugin<Project> {
                         // The sign-in redirect is caught by a local HTTP server (`JvmAuthBrowser`); the trimmed
                         // runtime of a packaged app does not include its module by default.
                         modules("jdk.httpserver")
-                        packageName = ProjectConfig.APPLICATION_ID
+                        // Shown as the app name in Applications / Start menu; the id stays in `bundleID`.
+                        packageName = ProjectConfig.APP_NAME
                         packageVersion = ProjectConfig.VERSION_NAME
                         macOS {
+                            bundleID = ProjectConfig.APPLICATION_ID
                             iconFile.set(layout.projectDirectory.file("src/main/resources/icons/icon.icns"))
                         }
                         windows {
                             iconFile.set(layout.projectDirectory.file("src/main/resources/icons/icon.ico"))
+                            // Without it the installer adds no Start menu entry.
+                            menu = true
+                            // Windows recognizes a newer MSI as an update of the app by it, so it is derived from the
+                            // application id and stays the same across versions.
+                            upgradeUuid = UUID.nameUUIDFromBytes(ProjectConfig.APPLICATION_ID.toByteArray()).toString()
                         }
                         linux {
                             iconFile.set(layout.projectDirectory.file("src/main/resources/icons/icon.png"))
+                            // Adds the app to the applications' menu.
+                            shortcut = true
                         }
                     }
                 }
