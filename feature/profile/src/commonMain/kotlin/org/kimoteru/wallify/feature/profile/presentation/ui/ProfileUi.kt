@@ -24,7 +24,6 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.GlassIconButton
 import org.kimoteru.wallify.core.designsystem.ui.glass.ScreenOverlay
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
-import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.settings.UserSettings
@@ -210,19 +209,8 @@ fun ProfileUi(
     } else {
         screenPadding.top
     }
-    val contentPadding = PaddingValues(
-        start = screenPadding.start,
-        top = topPadding,
-        end = screenPadding.end,
-        bottom = screenPadding.bottom
-    )
 
     Box(modifier = modifier.fillMaxSize()) {
-        RetryOnReconnect(
-            isFailed = uiState.error != null && uiState.user == null,
-            onRetry = { obtainEvent(ProfileContract.UiEvent.Retry) }
-        )
-
         // The grid is what the dock and the profile form blur; the back button is its sibling.
         ProfileGrid(
             modifier = Modifier
@@ -232,7 +220,12 @@ fun ProfileUi(
             photos = component.photos,
             collections = component.collections,
             collectionPhotos = component.collectionPhotos,
-            contentPadding = contentPadding,
+            contentPadding = PaddingValues(
+                start = screenPadding.start,
+                top = topPadding,
+                end = screenPadding.end,
+                bottom = screenPadding.bottom
+            ),
             obtainEvent = obtainEvent
         )
 

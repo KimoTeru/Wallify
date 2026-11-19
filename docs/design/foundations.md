@@ -44,10 +44,14 @@ AsyncImage(
 
 Тема — «Ночь» и «День» палитры Crystalline; пользователь выбирает `ThemeMode` (`System` / `Night` / `Day`) в
 настройках, значение лежит в `UserSettings.themeMode`. `RootGraphLogic` подписан на него и кладёт в состояние корня;
-платформенные приложения читают `rootComponent.getUiState()` и оборачивают `RootGraphUi` в
-`AppTheme(isDarkTheme = uiState.themeMode.isDarkTheme())` (`ThemeModeUi.kt` в `core:presentation`), сами `ThemeMode`
-не знают. Значения состояния корня приложения берут из `UiState` напрямую: расширения-геттеры на компоненте
-(`RootGraphComponent.xxx() = getUiState().xxx`) не заводим, вычисление над экранным enum — функция в файле `XxxUi`.
+платформенные приложения читают `rootComponent.getUiState()` и оборачивают `RootGraphUi` в `AppTheme`,
+сами `ThemeMode` не знают. `AppTheme` — единственный глобальный провайдер: приложения передают в него схему
+(`isDarkTheme()` из `ThemeModeUi.kt`), язык и выбор пользователя на всё приложение (`LocalPhotoGridMode`,
+`LocalPhotoGridColumns`, `LocalWindowTypeOverride`) из `UiState` корня. Новый local на всё
+приложение — параметр `AppTheme` и строка в его `CompositionLocalProvider`, а не ещё один провайдер ниже по дереву;
+вложенные провайдеры — только для части дерева (`LightAppTheme` / `DarkAppTheme`, `BlurHost`,
+`LocalNavigationPadding`). Значения состояния корня приложения берут из `UiState` напрямую: расширения-геттеры на
+компоненте (`RootGraphComponent.xxx() = getUiState().xxx`) не заводим, вычисление над экранным enum — функция в файле `XxxUi`.
 Android-приложение дополнительно переключает цвет значков системных панелей (`enableEdgeToEdge` в `MainActivity`),
 потому что тема приложения может отличаться от системной.
 
@@ -60,19 +64,17 @@ Android-приложение дополнительно переключает �
 
 1. Без контента — `ErrorContentLayout(error, onRetry)` (`ui/layout`): заголовок и описание из
    `networkErrorTitle(error)` / `networkErrorDescription(error)` (`ui/network`) и кнопка «Повторить». Заголовок по
-   `ResponseErrorType`, описание с HTTP-кодом («Ошибка 404: …»); ошибка без кода без сети — «нет интернета» и
-   обещание, что загрузится само, при сети — общий сбой. Строки типов — `title` /
-   `description` экранного `ResponseErrorTypeUi` (`ui/network`, `toPresentation()`), своих строк ошибок экраны не
-   заводят. Ошибка списка — `refreshError?.responseError`. Пустой
-   список — `ContentMessageLayout(title)`, то же оформление без кнопки; третьего варианта не верстаем. Корень кладёт
-   состояние сети в `LocalIsOnline`.
+   `ResponseErrorType`, описание с HTTP-кодом («Ошибка 404: …»), ошибка без кода — сетевой сбой. Строки типов —
+   `title` / `description` экранного `ResponseErrorTypeUi` (`ui/network`, `toPresentation()`), своих строк ошибок
+   экраны не заводят. Ошибка списка — `refreshError?.responseError`. Пустой список — `ContentMessageLayout(title)`, то
+   же оформление без кнопки; третьего варианта не верстаем.
 2. С контентом — `GlassSnackbar` корня с текстом `ResponseErrorTypeUi.description` и «Повторить» (`handleResponse`,
    `showErrorWithRetry`, `RefreshErrorEffect`). Лимит запросов — тот же снекбар без кнопки. Обычные сообщения
    (`showShort` / `showLong`, «нет интернета») рисует тот же `GlassSnackbar` без кнопки: вид снекбара в проекте один.
-3. Экран, который читает данные, подключает `RetryOnReconnect(isFailed) { retry }`: загрузка без контента
-   повторяется сама, когда сеть вернулась, и только тогда (сбой при сети в цикле не повторяем). Запись (скачать,
-   добавить в коллекцию) так не повторяем: неизвестно, дошёл ли первый запрос, повтор остаётся за пользователем.
-4. Без сети снекбары экранов не показываются: снекбар про интернет уже виден, а данные догрузит `RetryOnReconnect`.
+3. Состояние сети знает только корень (как `NiaAppState.isOffline` в Now in Android): `RootGraphLogic` держит снекбар
+   «нет интернета» и, пока сети нет, не показывает снекбары экранов. В экраны сеть не передаём — ни local'ом, ни
+   параметром, фичи на `ConnectivityRepository` не подписываются. Загрузку без контента повторяет пользователь
+   кнопкой «Повторить».
 
 ## Заголовок окна Desktop
 
@@ -207,7 +209,7 @@ Drawer и рейл стоят у начала окна и отступают о�
 
 | Что | Для чего |
 |---|---|
-| `BlurHost` | Состояние блюра и место для оверлеев экрана. По одному на каждый экран корневого стека (`RootGraphStack`): `ScreenOverlay` экрана рисуется здесь, над всем экраном, доком тоже. Сам хост не источник. Хост у каждого экрана свой, иначе при переходе шторка уходящего экрана размывала бы приходящий |
+| `BlurHost` | Состояние блюра и место для оверлеев экрана. По одному на каждый экран корневого стека (`RootGraphUi`): `ScreenOverlay` экрана рисуется здесь, над всем экраном, доком тоже. Сам хост не источник. Хост у каждого экрана свой, иначе при переходе шторка уходящего экрана размывала бы приходящий |
 | `Modifier.blurSource()` | Помечает контент экрана под панелями: список или колонку. `FloatingBarScreen` делает это сам, профиль — у своей сетки |
 | `GlassLevel.Frosted` | Матовое стекло топбара, дока и рейла (`frostedBackdrop` внутри `glassSurface`) |
 | `Modifier.blurBackdrop(level, alpha)` | Рисует размытую копию экрана под оверлеем. `alpha` 0…1 для появления и исчезновения |
@@ -322,7 +324,7 @@ if (uiState.isFiltersVisible) {
   (`modifier`, `animation`, `compose`), раскладки (`layout`: ошибка и пустое состояние на весь контент —
   `ErrorContentLayout`, `ContentMessageLayout`);
 - снекбар (`glass`: `GlassSnackbar`, рисует только корень), текст ошибки по типу (`network`: `networkErrorTitle`,
-  `networkErrorDescription`, `RetryOnReconnect`);
+  `networkErrorDescription`);
 - клики (`click`), тексты с ссылками (`text`), информационные блоки (`info`).
 
 ## Списки

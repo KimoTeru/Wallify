@@ -27,7 +27,6 @@ import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberWindowType
 import org.kimoteru.wallify.core.designsystem.ui.indicator.DefaultProgressIndicator
 import org.kimoteru.wallify.core.designsystem.ui.layout.ContentMessageLayout
 import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
-import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.designsystem.ui.paging.RefreshErrorEffect
 import org.kimoteru.wallify.core.designsystem.ui.paging.isAppending
 import org.kimoteru.wallify.core.designsystem.ui.paging.isEmpty
@@ -149,12 +148,6 @@ fun <T : Any> PagingPhotoGrid(
     itemContent: @Composable (T) -> Unit
 ) {
     val appPadding = AppTheme.padding
-
-    // A list that failed to load offline loads again by itself when the connection returns.
-    RetryOnReconnect(
-        isFailed = paging.itemCount == 0 && paging.refreshError != null,
-        onRetry = { paging.retry() }
-    )
 
     RefreshErrorEffect(
         paging = paging,

@@ -19,7 +19,6 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
-import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridLayout
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridShimmer
@@ -98,12 +97,6 @@ fun RandomUi(
             )
         }
     ) { topPadding ->
-        // Goes back to the photos when the connection returns after a failed load.
-        RetryOnReconnect(
-            isFailed = uiState.error != null && uiState.photos.isEmpty(),
-            onRetry = { obtainEvent(UiEvent.Shuffle) }
-        )
-
         val listPadding = PaddingValues(
             start = screenPadding.start,
             top = topPadding,

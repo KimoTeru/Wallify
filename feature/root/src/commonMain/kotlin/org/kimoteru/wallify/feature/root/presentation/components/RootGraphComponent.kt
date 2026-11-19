@@ -76,13 +76,11 @@ class RootGraphLogic(
     override val uiState: StateFlow<UiState> = combineState(
         coroutineScope,
         notifierManagerLogic.uiState,
-        connectivityRepository.isOnline,
         observeUserSettings(),
         initialValue = UiState()
-    ) { notifierManagerState, isOnline, settings ->
+    ) { notifierManagerState, settings ->
         UiState(
             notifierManagerState = notifierManagerState,
-            isOnline = isOnline,
             themeMode = settings.themeMode.toPresentation(),
             photoLayout = settings.photoLayout.toPresentation(),
             photoColumns = settings.photoColumns,

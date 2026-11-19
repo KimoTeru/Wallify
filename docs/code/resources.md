@@ -58,8 +58,11 @@ Related: `setup/gradle-conventions.md` § Compose Resources, `design/foundations
 
 Языки приложения — `SupportedLanguages` (`core:model`): английский и русский. Пользователь выбирает один из них в
 настройках; выбор лежит в `UserSettings.languageTag` (по умолчанию английский, варианта «язык системы» нет). Корень
-кладёт его в `UiState.languageTag`, приложения оборачивают `RootGraphUi` в `ProvideAppLocale(languageTag)`
-(`core:design-system`, `ui/locale`): строки читаются на выбранном языке и сразу меняются. Выбранный язык уходит и в
+кладёт его в `UiState.languageTag`, приложения передают его в `AppTheme(languageTag)`, которым оборачивают
+`RootGraphUi`: строки читаются на выбранном языке и сразу меняются. Язык меняем рекомпозицией, а не
+пересозданием: `AppTheme` ставит локаль по умолчанию и провайдит статический `LocalAppLocale` (`ui/locale`), и всё
+дерево перечитывает строки с сохранённым состоянием. `key(language)` из доки JetBrains не используем: он строит
+контент заново, и интерфейс прыгает (теряются скролл и состояние экранов). Выбранный язык уходит и в
 заголовок `Accept-Language`, и в параметр `lang` поиска фото (английский не отправляем). Названия языков — данные
 списка (`AppLanguage.name`, на самом языке), в `strings.xml` их нет. Новый язык — запись в `SupportedLanguages` и
 `values-<код>/strings.xml` (правило 9).

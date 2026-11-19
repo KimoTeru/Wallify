@@ -28,7 +28,6 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.scrolledPx
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
-import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.designsystem.ui.paging.RefreshErrorEffect
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
 import org.kimoteru.wallify.core.designsystem.ui.paging.refreshError
@@ -173,12 +172,6 @@ fun TopicsUi(
             top = topPadding,
             end = screenPadding.end,
             bottom = screenPadding.bottom
-        )
-
-        // The topics came back after an offline start: select the first one again without a tap.
-        RetryOnReconnect(
-            isFailed = topics.itemCount == 0 && topics.refreshError != null,
-            onRetry = { topics.retry() }
         )
 
         // The photos of a topic are a grid of equal cards whatever layout the feed uses.

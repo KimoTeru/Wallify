@@ -124,8 +124,8 @@ override val logic: XxxLogic = retainedLogic { get<XxxLogic>() }
   обновление списка), и сбой загрузки вошедшего пользователя в корне;
 - **контента нет** — `ErrorContentLayout(error, onRetry)` на весь контент фичи (`design/foundations.md` § Нет сети).
 
-Сами ничего не повторяем: ни автоповторов на 5xx, ни диалога ожидания. Повтор — только кнопкой пользователя; без
-сети загрузку повторяет `RetryOnReconnect`.
+Сами ничего не повторяем: ни автоповторов на 5xx, ни повтора при возвращении сети, ни диалога ожидания. Повтор —
+только кнопкой пользователя.
 
 1. Разовое действие логика выполняет через `handleResponse<T, XxxApiError>(request = { … }, onSuccess, onTypedError,
    onError, onRetry)` базовой логики, а без своих статусов — `handleResponseDefault(request, onSuccess, onError,
@@ -214,7 +214,7 @@ fun XxxUi(
 - `CompositionLocal` — только для того, что нужно любому потомку поддерева и имеет хорошее значение по умолчанию
   ([CompositionLocal](https://developer.android.com/develop/ui/compose/compositionlocal)): токены темы, выбор
   пользователя на всё приложение из корня (`LocalPhotoGridMode`, `LocalWindowTypeOverride`), окружение
-  (`LocalIsOnline`, `LocalNavigationPadding`) и инфраструктура дизайн-системы (`LocalOverlayHost`). Что нужно одному
+  (`LocalNavigationPadding`) и инфраструктура дизайн-системы (`LocalOverlayHost`). Что нужно одному
   или двум компонентам, передаём параметром (`mode`, `onRefreshError`), а связь со скроллом — инверсией управления
   (`nestedScroll` на контейнере у владельца). Экран local заново не провайдит, чтобы поменять поведение одного
   компонента: передаёт параметр. Тема (`AppTheme`) — исключение: она, как `MaterialTheme`, явно провайдит все свои
@@ -244,5 +244,5 @@ fun XxxUi(
   сканирует `PresentationModule`.
 - Корневой экран (`feature:root`) подписан на `NotifierManager` и `ConnectivityRepository`; фичи подписываться на
   них самостоятельно не должны.
-- В `RootGraphUi` `NotifierManagerUi` вызывается после `Box`, в котором лежит `RootGraphStack`, а не внутри него:
+- В `RootGraphUi` `NotifierManagerUi` вызывается после `Box`, в котором лежит стек экранов (`Children`), а не внутри него:
   снекбар — оверлей над всем корнем, и фон или отступы стека на него не действуют.

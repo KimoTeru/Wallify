@@ -16,7 +16,6 @@ import org.kimoteru.wallify.core.designsystem.ui.full_screen_loader.DefaultFullS
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
-import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.ImageQuality
@@ -117,12 +116,6 @@ fun PhotoUi(
             is ComponentEvent.OpenUrl -> uriHandler.openUri(event.url)
         }
     }
-
-    // A photo that failed to load offline loads again by itself when the connection returns.
-    RetryOnReconnect(
-        isFailed = uiState.photo == null && uiState.error != null,
-        onRetry = { obtainEvent(PhotoContract.UiEvent.Retry) }
-    )
 
     FloatingBarScreen(
         modifier = modifier.background(appColor.basic.background),
