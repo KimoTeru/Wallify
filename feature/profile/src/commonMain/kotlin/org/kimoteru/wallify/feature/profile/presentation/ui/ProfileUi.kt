@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.flowOf
@@ -24,7 +23,6 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.GlassIconButton
 import org.kimoteru.wallify.core.designsystem.ui.glass.ScreenOverlay
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
-import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.settings.UserSettings
@@ -34,7 +32,6 @@ import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.base.BaseContract.UiEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.CollectionCardUi
-import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.ComponentEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiState
 import org.kimoteru.wallify.core.presentation.photo.AvatarUi
 import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
@@ -159,10 +156,6 @@ object ProfileContract {
         /** The refresh of a list on screen failed over shown items, or its failure is over (`null`). */
         data class ListRefreshError(val list: Long, val error: ResponseError?) : UiEvent
     }
-
-    sealed interface ComponentEvent : BaseContract.ComponentEvent {
-        data class OpenUrl(val url: String) : ComponentEvent
-    }
 }
 
 @Preview
@@ -195,14 +188,7 @@ fun ProfileUi(
     val uiState = component.getUiState()
     val obtainEvent = component::obtainUiEvent
     val screenPadding = rememberScreenPadding()
-    val uriHandler = LocalUriHandler.current
     val isSheet = rememberWindowType() == WindowType.Compact
-
-    component.collectComponentEvents { event ->
-        when (event) {
-            is ComponentEvent.OpenUrl -> uriHandler.openUri(event.url)
-        }
-    }
 
     // A back button floats over the top left corner, so the content starts below it.
     val topPadding = if (component.canNavigateBack) {
@@ -210,19 +196,8 @@ fun ProfileUi(
     } else {
         screenPadding.top
     }
-    val contentPadding = PaddingValues(
-        start = screenPadding.start,
-        top = topPadding,
-        end = screenPadding.end,
-        bottom = screenPadding.bottom
-    )
 
     Box(modifier = modifier.fillMaxSize()) {
-        RetryOnReconnect(
-            isFailed = uiState.error != null && uiState.user == null,
-            onRetry = { obtainEvent(ProfileContract.UiEvent.Retry) }
-        )
-
         // The grid is what the dock and the profile form blur; the back button is its sibling.
         ProfileGrid(
             modifier = Modifier
@@ -232,7 +207,12 @@ fun ProfileUi(
             photos = component.photos,
             collections = component.collections,
             collectionPhotos = component.collectionPhotos,
-            contentPadding = contentPadding,
+            contentPadding = PaddingValues(
+                start = screenPadding.start,
+                top = topPadding,
+                end = screenPadding.end,
+                bottom = screenPadding.bottom
+            ),
             obtainEvent = obtainEvent
         )
 

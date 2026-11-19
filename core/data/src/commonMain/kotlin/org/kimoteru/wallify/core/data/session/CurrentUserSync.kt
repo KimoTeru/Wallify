@@ -1,7 +1,6 @@
 package org.kimoteru.wallify.core.data.session
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,83 +15,52 @@ import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.ResponseError
-import org.kimoteru.wallify.core.domain.manager.UserSessionManager
 import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
-import org.kimoteru.wallify.core.domain.repository.UserRepository
+import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
-import org.kimoteru.wallify.core.network.session.SessionExpiryCollector
 
 /**
- * Keeps the signed-in user in `UserRepository.currentUser` in step with the session, so screens never load it, and
- * ends the session the backend no longer accepts.
+ * The loading of the signed-in user that `UserRepositoryImpl` owns: a separate class only so it is tested without the
+ * database. [refresh] loads the user into the repository, [clear] removes it.
  *
  * It follows the `Authorization` of [HeadersCollectorRepository], not the stored token: the user is requested only
  * once the HTTP client really sends the new token, otherwise the request would go out with the old one and fail.
  * A new token loads the user, a missing token clears it once the storage has none either (a sign-out).
  * Any other failure goes to [loadError] and the load is repeated when the connection returns after a drop or the user
- * asks for it ([retryLoad]).
- *
- * The one place that ends a rejected session: the HTTP client reports every 401 to a request sent with the user's
- * token ([SessionExpiryCollector]), whichever screen or background load sent it, and here the session is cleared.
- * `SessionDataCleaner` then wipes the user's data and the root graph shows the sign-in.
+ * asks for it ([retry]). A 401 is not a failure here: `SessionExpiryHandler` ends the session.
  */
-class UserSessionSynchronizer(
+internal class CurrentUserSync(
     private val headersCollector: HeadersCollectorRepository,
-    private val sessionExpiry: SessionExpiryCollector,
-    private val userRepository: UserRepository,
     private val session: SessionRepository,
     private val connectivityRepository: ConnectivityRepository,
-    private val scope: CoroutineScope,
-) : UserSessionManager {
+    private val refresh: suspend () -> Response<User>,
+    private val clear: () -> Unit
+) {
 
-    override val loadError: StateFlow<ResponseError?>
+    val loadError: StateFlow<ResponseError?>
         field = MutableStateFlow<ResponseError?>(null)
 
     /** Repeats the user asked for; conflated: several presses while the load waits are one more load. */
     private val retryRequests = Channel<Unit>(Channel.CONFLATED)
 
-    private var job: Job? = null
-
-    fun start() {
-        if (job?.isActive == true) return
-        job = scope.launch {
-            launch {
-                headersCollector.headersFlow
-                    .mapDistinctBy { headers -> headers.authorization }
-                    .collectLatest { authorization ->
-                        loadError.value = null
-                        if (authorization == null) {
-                            clearUserIfSignedOut()
-                        } else {
-                            loadUser()
-                        }
+    fun start(scope: CoroutineScope) {
+        scope.launch {
+            headersCollector.headersFlow
+                .mapDistinctBy { headers -> headers.authorization }
+                .collectLatest { authorization ->
+                    loadError.value = null
+                    if (authorization == null) {
+                        clearUserIfSignedOut()
+                    } else {
+                        loadUser()
                     }
-            }
-
-            launch {
-                sessionExpiry.rejectedAuthorizations.collect { authorization ->
-                    endSessionIfCurrent(authorization)
                 }
-            }
         }
     }
 
-    fun stop() {
-        job?.cancel()
-        job = null
-    }
-
-    override fun retryLoad() {
+    fun retry() {
         if (loadError.value != null) retryRequests.trySend(Unit)
-    }
-
-    /**
-     * A request sent with [authorization] was answered with 401. The session ends only while that is still its
-     * token: a late answer to a request sent before a new sign-in must not sign the new user out.
-     */
-    private suspend fun endSessionIfCurrent(authorization: String) {
-        if (headersCollector.headersFlow.value.authorization == authorization) session.clear()
     }
 
     /**
@@ -101,16 +69,14 @@ class UserSessionSynchronizer(
      * and the app opens with it even without a connection.
      */
     private suspend fun clearUserIfSignedOut() {
-        if (session.authToken.first().isNullOrBlank()) {
-            userRepository.clearCurrentUser()
-        }
+        if (session.authToken.first().isNullOrBlank()) clear()
     }
 
     private suspend fun loadUser() {
         while (true) {
             loadError.value = null
 
-            when (val response = userRepository.refreshCurrentUser()) {
+            when (val response = refresh()) {
                 is Response.Success -> return
 
                 is Response.Error -> {

@@ -21,13 +21,33 @@ import org.kimoteru.wallify.core.designsystem.theme.compositions.LocalScales
 import org.kimoteru.wallify.core.designsystem.theme.compositions.LocalSizes
 import org.kimoteru.wallify.core.designsystem.theme.compositions.LocalTypography
 import org.kimoteru.wallify.core.designsystem.theme.compositions.LocalZIndex
+import org.kimoteru.wallify.core.designsystem.ui.adaptive.LocalWindowTypeOverride
+import org.kimoteru.wallify.core.designsystem.ui.adaptive.WindowType
+import org.kimoteru.wallify.core.designsystem.ui.locale.ApplyAppLocale
+import org.kimoteru.wallify.core.designsystem.ui.locale.LocalAppLocale
+import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridColumns
+import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
+import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 
+/**
+ * The one global provider of the app: the tokens, the language ([languageTag], `null` keeps the default locale) and
+ * the choices of the user on the whole app that the root passes in. Nested providers are only for a part of the tree
+ * (a forced scheme, the blur of a screen, the padding of the navigation).
+ */
 @Composable
 fun AppTheme(
     animEnabled: Boolean = true,
     isDarkTheme: Boolean = isSystemInDarkTheme(),
+    languageTag: String? = null,
+    photoGridMode: PhotoGridMode = PhotoGridMode.Masonry,
+    photoGridColumns: Int? = null,
+    windowTypeOverride: WindowType? = null,
     content: @Composable () -> Unit
 ) {
+    languageTag?.let {
+        ApplyAppLocale(languageTag = it)
+    }
+
     val colors = if (isDarkTheme) AppColors.DarkColors else AppColors.LightColors
 
     val durationAnim = remember(animEnabled) {
@@ -54,7 +74,11 @@ fun AppTheme(
         LocalElevations provides AppTheme.elevation,
         LocalBlurs provides AppTheme.blur,
         LocalRatios provides AppTheme.ratio,
-        LocalZIndex provides AppTheme.zIndex
+        LocalZIndex provides AppTheme.zIndex,
+        LocalAppLocale provides languageTag,
+        LocalPhotoGridMode provides photoGridMode,
+        LocalPhotoGridColumns provides photoGridColumns,
+        LocalWindowTypeOverride provides windowTypeOverride
     ) {
         content()
     }

@@ -19,7 +19,8 @@ fun apiNetworkConfig(
     )
 )
 
-private const val API_BASE_URL = "https://api.unsplash.com/"
+/** Address of the API; the desktop network monitor checks that its host is reachable. */
+internal const val API_BASE_URL = "https://api.unsplash.com/"
 
 /** Address of the backend's website; the pages the app opens in the browser and the authorization live there. */
 internal const val WEB_BASE_URL = "https://unsplash.com/"

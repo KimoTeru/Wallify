@@ -1,7 +1,7 @@
 # Экран: Component / Logic / Contract / Ui
 
 Форма экрана и правила состояния. Образцы — `feature/splash` (простой экран), `feature/random` (экран с
-состоянием), `feature/feed` (постраничный список), `feature/photo` (аргумент экрана и `ComponentEvent`),
+состоянием), `feature/feed` (постраничный список), `feature/photo` (аргумент экрана и ссылка в браузере),
 `feature/root` (граф с состоянием).
 
 Related: `code/navigation.md`, `code/di.md`, `design/foundations.md`, `architecture/layers.md`.
@@ -65,11 +65,10 @@ override val logic: XxxLogic = retainedLogic { get<XxxLogic>() }
    префиксом `XxxContract.UiEvent.Xxx`.
 5. Одноразовые эффекты: навигация — `navigate(NavigationEvent)` логики; сообщение пользователю — `NotifierManager`
    (без сети отдельный снекбар уже виден, текст логика берёт `getString`); сбой действия — `handleResponse`
-   (§ Ошибка действия); действие, которое
-   выполняет сам экран (открыть адрес в браузере через
-   `LocalUriHandler`), — `ComponentEvent`: логика шлёт `sendComponentEvent(…)`, Ui ловит
-   `component.collectComponentEvents { … }` (для него нужны `…Core`-типы с явным `ComponentEvent`). Не
-   `StateFlow<Boolean>` с ручным сбросом.
+   (§ Ошибка действия); системное действие (открыть адрес в браузере, настройки приложения) логика выполняет сама
+   через менеджер `core:platform`: ссылка — `intentNavigator.openUrl(url)` (поле базовой логики), а не
+   `LocalUriHandler` в Ui. `ComponentEvent` (`sendComponentEvent` / `component.collectComponentEvents { … }`) — только
+   для того, что без Compose не сделать (фокус, скролл, анимация экрана). Не `StateFlow<Boolean>` с ручным сбросом.
 6. Данные приходят из use case'ов и репозиториев `core:domain` (`architecture/layers.md`). Ошибки — `Response`; логика
    решает, что показать, а не бросает исключения в Ui. Сбой загрузки экран держит в `UiState` как
    `error: ResponseError?` (не `hasError: Boolean`); без контента Ui рисует по нему `ErrorContentLayout(error, onRetry)`
@@ -124,8 +123,8 @@ override val logic: XxxLogic = retainedLogic { get<XxxLogic>() }
   обновление списка), и сбой загрузки вошедшего пользователя в корне;
 - **контента нет** — `ErrorContentLayout(error, onRetry)` на весь контент фичи (`design/foundations.md` § Нет сети).
 
-Сами ничего не повторяем: ни автоповторов на 5xx, ни диалога ожидания. Повтор — только кнопкой пользователя; без
-сети загрузку повторяет `RetryOnReconnect`.
+Сами ничего не повторяем: ни автоповторов на 5xx, ни повтора при возвращении сети, ни диалога ожидания. Повтор —
+только кнопкой пользователя.
 
 1. Разовое действие логика выполняет через `handleResponse<T, XxxApiError>(request = { … }, onSuccess, onTypedError,
    onError, onRetry)` базовой логики, а без своих статусов — `handleResponseDefault(request, onSuccess, onError,
@@ -199,7 +198,8 @@ fun XxxUi(
 - Контракт — `object XxxContract` (или `interface`) в файле Ui; `UiState` помечаем `@Immutable`.
 - `LaunchedEffect(Unit)` — для разовых эффектов экрана (например, задержка сплеша); ключ — то, что реально
   перезапускает эффект.
-- Одноразовые события компонента собираем `collectComponentEvents { … }` / `collectAsEffect`.
+- Одноразовые события компонента, которым нужен Compose, собираем `collectComponentEvents { … }` /
+  `collectAsEffect`; системные действия Ui не выполняет (§ Правила, п. 5).
 - Каждый значимый блок вёрстки — отдельный composable без знания о компоненте: принимает данные и лямбды.
 - Лямбды-обработчики и слоты в `val` внутри composable не складываем (`val onRefreshError: (…) -> Unit = { … }`,
   `val screens: @Composable (Modifier) -> Unit`): лямбду пишем прямо в аргументе вызова, повторяющуюся вёрстку
@@ -214,7 +214,7 @@ fun XxxUi(
 - `CompositionLocal` — только для того, что нужно любому потомку поддерева и имеет хорошее значение по умолчанию
   ([CompositionLocal](https://developer.android.com/develop/ui/compose/compositionlocal)): токены темы, выбор
   пользователя на всё приложение из корня (`LocalPhotoGridMode`, `LocalWindowTypeOverride`), окружение
-  (`LocalIsOnline`, `LocalNavigationPadding`) и инфраструктура дизайн-системы (`LocalOverlayHost`). Что нужно одному
+  (`LocalNavigationPadding`) и инфраструктура дизайн-системы (`LocalOverlayHost`). Что нужно одному
   или двум компонентам, передаём параметром (`mode`, `onRefreshError`), а связь со скроллом — инверсией управления
   (`nestedScroll` на контейнере у владельца). Экран local заново не провайдит, чтобы поменять поведение одного
   компонента: передаёт параметр. Тема (`AppTheme`) — исключение: она, как `MaterialTheme`, явно провайдит все свои
@@ -244,5 +244,5 @@ fun XxxUi(
   сканирует `PresentationModule`.
 - Корневой экран (`feature:root`) подписан на `NotifierManager` и `ConnectivityRepository`; фичи подписываться на
   них самостоятельно не должны.
-- В `RootGraphUi` `NotifierManagerUi` вызывается после `Box`, в котором лежит `RootGraphStack`, а не внутри него:
+- В `RootGraphUi` `NotifierManagerUi` вызывается после `Box`, в котором лежит стек экранов (`Children`), а не внутри него:
   снекбар — оверлей над всем корнем, и фон или отступы стека на него не действуют.

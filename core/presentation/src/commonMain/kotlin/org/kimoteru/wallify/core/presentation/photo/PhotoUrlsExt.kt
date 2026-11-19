@@ -1,4 +1,4 @@
-package org.kimoteru.wallify.core.domain.photo
+package org.kimoteru.wallify.core.presentation.photo
 
 import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.PhotoUrls

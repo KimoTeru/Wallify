@@ -1,8 +1,7 @@
 package org.kimoteru.wallify.feature.photo.presentation.components
 
 import com.arkivanov.decompose.ComponentContext
-import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponentCore
-import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.ComponentEvent
+import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
 import org.koin.core.component.get
@@ -13,7 +12,7 @@ class DefaultPhotoComponent(
     photoId: String,
     navigateBack: () -> Unit,
     private val openProfile: (username: String) -> Unit
-) : BaseDefaultComponentCore<PhotoLogic, UiState, UiEvent, PhotoNavigationEvent, ComponentEvent>(
+) : BaseDefaultComponent<PhotoLogic, UiState, UiEvent, PhotoNavigationEvent>(
     componentContext = componentContext,
     navigateBack = navigateBack
 ),

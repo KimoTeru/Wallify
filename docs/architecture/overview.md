@@ -22,7 +22,7 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 | `core:model` | Чистые `@Serializable` модели |
 | `core:network` | Ktor-клиент, `Response`-обёртка запросов, API-классы, модели запросов и ответов с мапперами в доменные модели, мониторинг сети |
 | `core:database`, `core:datastore`, `core:storage` | Room (кэш данных), DataStore, каталог для скачанных файлов |
-| `core:platform` | `expect`/`actual`: диспетчеры, время, язык, буфер обмена, переходы по системным ссылкам |
+| `core:platform` | `expect`/`actual`: диспетчеры, время, язык, буфер обмена, переходы по системным ссылкам, кэш картинок |
 | `core:common` | Без зависимостей на другие `core`: `Response`, `AppDispatchers`, пагинация, расширения, flow-утилиты |
 
 ## Граф зависимостей
@@ -109,7 +109,9 @@ flowchart TB
 2. `core:domain` зависит от `core:model` и `core:common`, не знает про `core:data`, сеть, базу и UI.
    `core:presentation` зависит от `core:model`: `XxxUi` мапится в доменный enum рядом с собой (`toDomain()`,
    обратно `toPresentation()`). `core:model` про UI не знает.
-3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет.
+3. Реализации (`core:data`) знают про `domain` и инфраструктуру; обратной зависимости нет. `core:presentation` отдаёт
+   `core:platform` фичам через `api`: системное действие (`intentNavigator` базовой логики) логика фичи вызывает
+   сама, без Ui.
    `core:network` зависит от `core:model`: модель ответа API мапится в доменную рядом с собой (`toDomain()`),
    `core:model` про сеть не знает. Так же `core:database` зависит от `core:model`: сущность Room мапится в доменную
    модель и обратно рядом с собой (`toEntity()` / `toDomain()`), `core:model` про базу не знает.

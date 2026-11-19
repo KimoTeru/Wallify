@@ -19,7 +19,6 @@
     <!-- Banner at the top of the screen while the device has no internet connection; also the title of an error state -->
     <string name="error_no_internet">Нет подключения к интернету</string>
     <!-- Description of an error state shown while the device is offline -->
-    <string name="error_no_internet_description">Проверьте соединение. Содержимое загрузится снова, как только появится интернет.</string>
     <!-- Title of an error state when the backend rejected the request parameters (HTTP 400) -->
     <string name="error_bad_request_title">Запрос не принят</string>
     <!-- Error state description and failure snackbar for HTTP 400; %1$s is the HTTP status code -->

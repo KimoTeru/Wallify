@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.kimoteru.wallify.core.common.flow.combineState
-import org.kimoteru.wallify.core.domain.manager.UserSessionManager
 import org.kimoteru.wallify.core.domain.repository.AuthRepository
 import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
+import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
 import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseCase
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationComponentCore
@@ -61,7 +61,7 @@ interface RootGraphComponent : BaseNavigationComponentCore<UiState, UiEvent, Roo
 class RootGraphLogic(
     private val connectivityRepository: ConnectivityRepository,
     private val authRepository: AuthRepository,
-    private val userSessionManager: UserSessionManager,
+    private val userRepository: UserRepository,
     private val notifierManager: NotifierManager,
     observeUserSettings: ObserveUserSettingsUseCase,
 ) : BaseNavigationLogicCore<UiState, UiEvent, RootGraphNavigationEvent, Nothing>() {
@@ -76,13 +76,11 @@ class RootGraphLogic(
     override val uiState: StateFlow<UiState> = combineState(
         coroutineScope,
         notifierManagerLogic.uiState,
-        connectivityRepository.isOnline,
         observeUserSettings(),
         initialValue = UiState()
-    ) { notifierManagerState, isOnline, settings ->
+    ) { notifierManagerState, settings ->
         UiState(
             notifierManagerState = notifierManagerState,
-            isOnline = isOnline,
             themeMode = settings.themeMode.toPresentation(),
             photoLayout = settings.photoLayout.toPresentation(),
             photoColumns = settings.photoColumns,
@@ -133,8 +131,8 @@ class RootGraphLogic(
             }
 
             launch {
-                userSessionManager.loadError.collectLatest { error ->
-                    if (error != null) showErrorWithRetry(error) { userSessionManager.retryLoad() }
+                userRepository.currentUserLoadError.collectLatest { error ->
+                    if (error != null) showErrorWithRetry(error) { userRepository.retryCurrentUserLoad() }
                 }
             }
 

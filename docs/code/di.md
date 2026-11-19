@@ -36,7 +36,12 @@ Related: `code/presentation.md`, `architecture/layers.md`, `setup/gradle-convent
    (так сделан `DownloadHttpClient`).
 8. Платформенные привязки — аннотация на `actual`-классе или на классе в `androidMain` / `jvmMain`; его подхватывает
    `@ComponentScan` корневого класса модуля. `expect fun platformXxxModule()` не нужны. `Context` приходит из
-   `androidContext()` и в проверке графа не требует `@Provided`.
+   `androidContext()` и в проверке графа не требует `@Provided`. Системный объект одной платформы без аннотации
+   (`java.awt.Desktop`) статикой в менеджерах не берём: его отдаёт функция `actual`-модуля `PlatformSystemModule`
+   (`@Module expect class` в `commonMain`, его подключает `PlatformModule` через `includes`; так советует руководство
+   Koin Compiler Plugin для KMP), а менеджер получает его в конструкторе. Если объект может бросить при создании
+   (`Desktop` без поддержки рабочего стола), параметр — `Lazy<T>`: объект берётся только в момент действия, внутри
+   обработки ошибки, и граф на старте не падает.
 9. Бизнес-код не зависит от Koin: классы получают зависимости через конструктор. Аннотации допустимы в `core:data`,
    `core:network`, `core:storage`, `core:database`, `core:datastore`, `core:platform`, `core:presentation` и
    `feature:*`; в `core:common`, `core:model`, `core:domain` их нет. `KoinComponent` допустим в `Component` и `Logic`

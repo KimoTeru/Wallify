@@ -10,7 +10,6 @@ import org.kimoteru.wallify.core.common.extensions.toArgbOrNull
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.ResponseError
-import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
@@ -21,13 +20,13 @@ import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.stats.Statistics
-import org.kimoteru.wallify.core.presentation.base.BaseComponentCore
-import org.kimoteru.wallify.core.presentation.base.BaseLogicCore
+import org.kimoteru.wallify.core.presentation.base.BaseComponent
+import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.errors.CollectionApiError
 import org.kimoteru.wallify.core.presentation.photo.aspectRatioOrNull
+import org.kimoteru.wallify.core.presentation.photo.forQuality
 import org.kimoteru.wallify.core.presentation.photo.toAvatarUi
-import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.ComponentEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.PhotoImageUi
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
@@ -39,12 +38,12 @@ private const val STATISTICS_DAYS = 30
 /** Proportions of a photo the backend sent no size for. */
 private const val SQUARE_RATIO = 1f
 
-interface PhotoComponent : BaseComponentCore<UiState, UiEvent, ComponentEvent>
+interface PhotoComponent : BaseComponent<UiState, UiEvent>
 
 /**
  * Loads the whole photo, its 30-day statistics and the signed-in user's collections independently, so a failing
- * extra never hides the photo. The download goes through the browser: the logic only reports the download to the
- * backend and hands the address of the file to the screen.
+ * extra never hides the photo. The download goes through the browser: the logic reports the download to the backend
+ * and opens the address of the file.
  */
 @Factory
 class PhotoLogic(
@@ -53,7 +52,7 @@ class PhotoLogic(
     private val userRepository: UserRepository,
     private val collectionRepository: CollectionRepository,
     private val observeUserSettings: ObserveUserSettingsUseCase,
-) : BaseLogicCore<UiState, UiEvent, PhotoNavigationEvent, ComponentEvent>() {
+) : BaseLogic<UiState, UiEvent, PhotoNavigationEvent>() {
 
     override val uiState: StateFlow<UiState>
         field = MutableStateFlow(UiState())
@@ -78,9 +77,7 @@ class PhotoLogic(
         when (event) {
             is UiEvent.Retry -> loadPhoto()
             is UiEvent.Download -> download()
-            is UiEvent.OpenSource -> uiState.value.photo?.htmlUrl?.let { url ->
-                sendComponentEvent(ComponentEvent.OpenUrl(url))
-            }
+            is UiEvent.OpenSource -> uiState.value.photo?.htmlUrl?.let(intentNavigator::openUrl)
             is UiEvent.OpenAuthor -> uiState.value.photo?.user?.username?.let { username ->
                 navigate(PhotoNavigationEvent.OpenProfile(username))
             }
@@ -140,7 +137,7 @@ class PhotoLogic(
             // The repeat goes through the button again, so it shows the progress too.
             handleResponseDefault(
                 request = { photoRepository.trackDownload(photoId, quality) },
-                onSuccess = { url -> sendComponentEvent(ComponentEvent.OpenUrl(url)) },
+                onSuccess = { url -> intentNavigator.openUrl(url) },
                 onRetry = { download() }
             )
 

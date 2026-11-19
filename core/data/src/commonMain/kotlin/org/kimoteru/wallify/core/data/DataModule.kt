@@ -6,10 +6,8 @@ import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.data.cache.CacheDatabaseCleaner
 import org.kimoteru.wallify.core.data.download.FileDownloader
 import org.kimoteru.wallify.core.data.session.SessionDataCleaner
+import org.kimoteru.wallify.core.data.session.SessionExpiryHandler
 import org.kimoteru.wallify.core.data.session.SessionHeadersSynchronizer
-import org.kimoteru.wallify.core.data.session.UserSessionSynchronizer
-import org.kimoteru.wallify.core.domain.manager.UserSessionManager
-import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
 import org.kimoteru.wallify.core.domain.repository.RequestStatsRepository
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
@@ -18,6 +16,7 @@ import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseC
 import org.kimoteru.wallify.core.domain.usecase.settings.UpdateUserSettingsUseCase
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
 import org.kimoteru.wallify.core.network.session.SessionExpiryCollector
+import org.kimoteru.wallify.core.platform.managers.image.ImageCacheManager
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Factory
@@ -53,19 +52,15 @@ class DataModule {
     ).also { it.start() }
 
     @Singleton(createdAtStart = true)
-    fun userSessionManager(
+    fun sessionExpiryHandler(
         headersCollector: HeadersCollectorRepository,
         sessionExpiry: SessionExpiryCollector,
-        userRepository: UserRepository,
         session: SessionRepository,
-        connectivityRepository: ConnectivityRepository,
         scope: CoroutineScope
-    ): UserSessionManager = UserSessionSynchronizer(
+    ): SessionExpiryHandler = SessionExpiryHandler(
         headersCollector = headersCollector,
         sessionExpiry = sessionExpiry,
-        userRepository = userRepository,
         session = session,
-        connectivityRepository = connectivityRepository,
         scope = scope
     ).also { it.start() }
 
@@ -76,6 +71,7 @@ class DataModule {
         fileDownloader: FileDownloader,
         userRepository: UserRepository,
         requestStatsRepository: RequestStatsRepository,
+        imageCacheManager: ImageCacheManager,
         scope: CoroutineScope
     ): SessionDataCleaner = SessionDataCleaner(
         session = session,
@@ -83,6 +79,7 @@ class DataModule {
         fileDownloader = fileDownloader,
         userRepository = userRepository,
         requestStatsRepository = requestStatsRepository,
+        imageCacheManager = imageCacheManager,
         scope = scope
     ).also { it.start() }
 

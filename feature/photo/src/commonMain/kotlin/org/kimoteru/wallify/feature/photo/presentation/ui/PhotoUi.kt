@@ -6,7 +6,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
@@ -16,7 +15,6 @@ import org.kimoteru.wallify.core.designsystem.ui.full_screen_loader.DefaultFullS
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
-import org.kimoteru.wallify.core.designsystem.ui.network.RetryOnReconnect
 import org.kimoteru.wallify.core.designsystem.ui.top_bar.DefaultTopBar
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.ImageQuality
@@ -25,7 +23,6 @@ import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.base.BaseContract.UiEvent
-import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.ComponentEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
 import org.kimoteru.wallify.core.presentation.photo.AvatarUi
 import org.kimoteru.wallify.feature.photo.presentation.components.PhotoComponent
@@ -76,10 +73,6 @@ object PhotoContract {
         data object OpenAuthor : UiEvent
         data class ToggleCollection(val collectionId: Int) : UiEvent
     }
-
-    sealed interface ComponentEvent : BaseContract.ComponentEvent {
-        data class OpenUrl(val url: String) : ComponentEvent
-    }
 }
 
 @Preview
@@ -106,23 +99,10 @@ fun PhotoUi(
 
     val uiState = component.getUiState()
     val obtainEvent = component::obtainUiEvent
-    val uriHandler = LocalUriHandler.current
     val windowType = rememberWindowType()
     val compactScroll = rememberScrollState()
     val wideScroll = rememberScrollState()
     val scroll = if (windowType == WindowType.Compact) compactScroll else wideScroll
-
-    component.collectComponentEvents { event ->
-        when (event) {
-            is ComponentEvent.OpenUrl -> uriHandler.openUri(event.url)
-        }
-    }
-
-    // A photo that failed to load offline loads again by itself when the connection returns.
-    RetryOnReconnect(
-        isFailed = uiState.photo == null && uiState.error != null,
-        onRetry = { obtainEvent(PhotoContract.UiEvent.Retry) }
-    )
 
     FloatingBarScreen(
         modifier = modifier.background(appColor.basic.background),

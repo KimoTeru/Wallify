@@ -15,18 +15,19 @@ import org.koin.core.annotation.Singleton
 /**
  * Opens the default browser and catches the redirect with a short-lived HTTP server that listens only on the
  * loopback interface. The server lives exactly as long as the sign-in waits, and no outside machine can reach it.
+ * [desktop] is reached only here: without desktop support it throws, and the sign-in fails with that error.
  */
 @Singleton
 class JvmAuthBrowser(
-    private val dispatchers: AppDispatchers
+    private val dispatchers: AppDispatchers,
+    private val desktop: Lazy<Desktop>
 ) : AuthBrowser {
 
     override val redirectUri: String = "http://$LOOPBACK_HOST:$PORT$CALLBACK_PATH"
 
     override suspend fun open(authorizationUrl: String): String? = withContext(dispatchers.io) {
-        check(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            "The system cannot open a browser"
-        }
+        val browser = desktop.value
+        check(browser.isSupported(Desktop.Action.BROWSE)) { "The system cannot open a browser" }
 
         val redirect = CompletableDeferred<String>()
         val server = HttpServer.create(InetSocketAddress(InetAddress.getByName(LOOPBACK_HOST), PORT), 0)
@@ -41,7 +42,7 @@ class JvmAuthBrowser(
         server.start()
 
         try {
-            Desktop.getDesktop().browse(URI(authorizationUrl))
+            browser.browse(URI(authorizationUrl))
             withTimeoutOrNull(WAIT_TIMEOUT) { redirect.await() }
         } finally {
             server.stop(0)
