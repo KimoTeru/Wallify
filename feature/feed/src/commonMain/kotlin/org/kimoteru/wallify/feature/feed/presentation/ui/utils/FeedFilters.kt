@@ -35,17 +35,18 @@ import org.kimoteru.wallify.core.resources.generated.resources.feed_filter_orien
 import org.kimoteru.wallify.core.resources.generated.resources.feed_filters_note
 import org.kimoteru.wallify.core.resources.generated.resources.feed_filters_title
 import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract
+import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract.UiEvent
 
 /** Search filters over the feed: a bottom sheet on phones, a dialog on wider windows. */
 @Composable
 internal fun FeedFiltersOverlay(
     isSheet: Boolean,
     uiState: FeedContract.UiState,
-    obtainEvent: (FeedContract.UiEvent) -> Unit
+    obtainEvent: (UiEvent) -> Unit
 ) {
     GlassOverlay(
         isSheet = isSheet,
-        onDismiss = { obtainEvent(FeedContract.UiEvent.HideFilters) }
+        onDismiss = { obtainEvent(UiEvent.HideFilters) }
     ) { close ->
         FeedFiltersContent(
             uiState = uiState,
@@ -58,7 +59,7 @@ internal fun FeedFiltersOverlay(
 @Composable
 private fun ColumnScope.FeedFiltersContent(
     uiState: FeedContract.UiState,
-    obtainEvent: (FeedContract.UiEvent) -> Unit,
+    obtainEvent: (UiEvent) -> Unit,
     close: () -> Unit
 ) {
     val appColor = AppTheme.color
@@ -101,17 +102,11 @@ private fun ColumnScope.FeedFiltersContent(
                 verticalArrangement = Arrangement.spacedBy(appPadding.mediumSpecial)
             ) {
                 uiState.orientations.forEach { orientation ->
-                    val isSelected = filters.orientation == orientation.toDomain()
-
                     GlassChip(
                         text = stringResource(orientation.label),
-                        selected = isSelected,
+                        selected = filters.orientation == orientation.toDomain(),
                         icon = orientation.icon,
-                        onClick = {
-                            obtainEvent(
-                                FeedContract.UiEvent.SelectOrientation(if (isSelected) null else orientation.toDomain())
-                            )
-                        }
+                        onClick = { obtainEvent(UiEvent.ToggleOrientation(orientation.toDomain())) }
                     )
                 }
             }
@@ -123,14 +118,10 @@ private fun ColumnScope.FeedFiltersContent(
                 verticalArrangement = Arrangement.spacedBy(appPadding.mediumSpecial)
             ) {
                 uiState.colors.forEach { color ->
-                    val isSelected = filters.color == color.toDomain()
-
                     GlassChip(
                         text = stringResource(color.label),
-                        selected = isSelected,
-                        onClick = {
-                            obtainEvent(FeedContract.UiEvent.SelectColor(if (isSelected) null else color.toDomain()))
-                        }
+                        selected = filters.color == color.toDomain(),
+                        onClick = { obtainEvent(UiEvent.ToggleColor(color.toDomain())) }
                     )
                 }
             }
@@ -144,7 +135,7 @@ private fun ColumnScope.FeedFiltersContent(
                     order.toDomain() == (filters.order ?: SearchOrderUi.Relevant.toDomain())
                 },
                 onSelect = { index ->
-                    obtainEvent(FeedContract.UiEvent.SelectOrder(uiState.orders[index].toDomain()))
+                    obtainEvent(UiEvent.SelectOrder(uiState.orders[index].toDomain()))
                 }
             )
         }
@@ -157,7 +148,7 @@ private fun ColumnScope.FeedFiltersContent(
                     filter.toDomain() == (filters.contentFilter ?: ContentFilterUi.Low.toDomain())
                 },
                 onSelect = { index ->
-                    obtainEvent(FeedContract.UiEvent.SelectContentFilter(uiState.contentFilters[index].toDomain()))
+                    obtainEvent(UiEvent.SelectContentFilter(uiState.contentFilters[index].toDomain()))
                 }
             )
         }
@@ -173,7 +164,7 @@ private fun ColumnScope.FeedFiltersContent(
             modifier = Modifier.weight(1f),
             text = stringResource(Res.string.common_reset),
             style = GlassButtonStyle.Ghost,
-            onClick = { obtainEvent(FeedContract.UiEvent.ResetFilters) }
+            onClick = { obtainEvent(UiEvent.ResetFilters) }
         )
 
         GlassButton(
@@ -181,7 +172,7 @@ private fun ColumnScope.FeedFiltersContent(
             text = stringResource(Res.string.common_apply),
             style = GlassButtonStyle.Solid,
             onClick = {
-                obtainEvent(FeedContract.UiEvent.ApplyFilters)
+                obtainEvent(UiEvent.ApplyFilters)
                 close()
             }
         )

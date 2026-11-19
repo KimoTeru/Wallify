@@ -29,6 +29,7 @@ class ListRemoteMediatorTest {
         listKey = LIST_KEY,
         ttl = 5.minutes,
         loader = loader,
+        dispatchers = FakeAppDispatchers(),
         listDao = listDao,
         fetch = { page, size ->
             requestedPages.add(page)

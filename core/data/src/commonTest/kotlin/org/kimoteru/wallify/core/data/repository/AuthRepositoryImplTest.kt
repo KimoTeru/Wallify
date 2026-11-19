@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.data.cache.FakeAppDispatchers
 import org.kimoteru.wallify.core.data.remote.AuthRemoteDataSource
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.model.auth.AuthorizationRedirect
@@ -97,7 +98,12 @@ class AuthRepositoryImplTest {
         browser: FakeAuthBrowser = FakeAuthBrowser(redirectedTo = null),
         session: FakeSessionRepository = FakeSessionRepository(),
         tokenResponse: Response<String>? = null
-    ) = AuthRepositoryImpl(FakeAuthRemoteDataSource(tokenResponse), browser, session)
+    ) = AuthRepositoryImpl(
+        FakeAuthRemoteDataSource(tokenResponse),
+        browser,
+        session,
+        FakeAppDispatchers()
+    )
 }
 
 private const val REDIRECT = "wallify://oauth/callback"

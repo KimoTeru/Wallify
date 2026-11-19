@@ -31,20 +31,18 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.ScreenOverlay
 import org.kimoteru.wallify.core.designsystem.ui.glass.rememberScreenPadding
 import org.kimoteru.wallify.core.designsystem.ui.glass.scrolledPx
 import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
-import org.kimoteru.wallify.core.designsystem.ui.paging.ListRefreshErrors
 import org.kimoteru.wallify.core.designsystem.ui.photo.PagingPhotoGrid
-import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCard
 import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
-import org.kimoteru.wallify.core.domain.photo.forQuality
 import org.kimoteru.wallify.core.model.photo.ContentFilter
 import org.kimoteru.wallify.core.model.photo.ImageQuality
-import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.PhotoColor
 import org.kimoteru.wallify.core.model.photo.PhotoOrientation
 import org.kimoteru.wallify.core.model.photo.SearchOrder
 import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.photo.ContentFilterUi
+import org.kimoteru.wallify.core.presentation.photo.PhotoCard
+import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.core.presentation.photo.PhotoColorUi
 import org.kimoteru.wallify.core.presentation.photo.PhotoOrientationUi
 import org.kimoteru.wallify.core.presentation.photo.SearchOrderUi
@@ -89,8 +87,12 @@ object FeedContract {
         data object ClearQuery : UiEvent
         data object ShowFilters : UiEvent
         data object HideFilters : UiEvent
-        data class SelectOrientation(val orientation: PhotoOrientation?) : UiEvent
-        data class SelectColor(val color: PhotoColor?) : UiEvent
+        /** A tap on an orientation chip: chooses it, or clears the choice when it is the chosen one. */
+        data class ToggleOrientation(val orientation: PhotoOrientation) : UiEvent
+
+        /** A tap on a color chip: chooses it, or clears the choice when it is the chosen one. */
+        data class ToggleColor(val color: PhotoColor) : UiEvent
+
         data class SelectOrder(val order: SearchOrder?) : UiEvent
         data class SelectContentFilter(val contentFilter: ContentFilter?) : UiEvent
         data object ResetFilters : UiEvent
@@ -109,7 +111,7 @@ fun PreviewFeedUi() {
         FeedUi(
             modifier = Modifier.background(AppTheme.color.basic.background),
             component = object : FeedComponent {
-                override val photos = flowOf(PagingData.empty<Photo>())
+                override val photos = flowOf(PagingData.empty<PhotoCardUi>())
 
                 @Composable
                 override fun getUiState(): FeedContract.UiState = FeedContract.UiState()
@@ -136,7 +138,7 @@ fun FeedUi(
 
     FloatingBarScreen(
         modifier = modifier,
-        scrolledPx = gridState.scrolledPx(),
+        scrolledPx = { gridState.scrolledPx() },
         bar = {
             Row(
                 modifier = Modifier.padding(screenPadding.header),
@@ -172,34 +174,27 @@ fun FeedUi(
             }
         }
     ) { topPadding ->
-        ListRefreshErrors(
-            retries = uiState.listRetries,
-            onChange = { list, error -> obtainEvent(FeedContract.UiEvent.ListRefreshError(list, error)) }
-        ) {
-            PagingPhotoGrid(
-                modifier = Modifier.fillMaxSize(),
-                paging = photos,
-                itemKey = { photo -> photo.id },
-                emptyText = stringResource(Res.string.common_photos_empty),
-                state = gridState,
-                contentPadding = PaddingValues(
-                    start = screenPadding.start,
-                    top = topPadding,
-                    end = screenPadding.end,
-                    bottom = screenPadding.bottom
-                )
-            ) { photo ->
-                PhotoCard(
-                    imageUrl = photo.urls.forQuality(uiState.listImageQuality),
-                    lowImageUrl = photo.urls.forQuality(ImageQuality.Low),
-                    width = photo.width,
-                    height = photo.height,
-                    colorHex = photo.color,
-                    authorName = photo.user?.name,
-                    authorAvatarUrl = photo.user?.profileImage?.small,
-                    onClick = { obtainEvent(FeedContract.UiEvent.OpenPhoto(photo.id)) }
-                )
-            }
+        PagingPhotoGrid(
+            modifier = Modifier.fillMaxSize(),
+            paging = photos,
+            itemKey = { photo -> photo.id },
+            emptyText = stringResource(Res.string.common_photos_empty),
+            refreshRetries = uiState.listRetries,
+            onRefreshError = { list, error -> obtainEvent(FeedContract.UiEvent.ListRefreshError(list, error)) },
+            state = gridState,
+            contentPadding = PaddingValues(
+                start = screenPadding.start,
+                top = topPadding,
+                end = screenPadding.end,
+                bottom = screenPadding.bottom
+            )
+        ) { card ->
+            // The card is built by the logic and captures nothing from the state: typing in the search does not
+            // compose the cards again.
+            PhotoCard(
+                card = card,
+                onClick = { obtainEvent(FeedContract.UiEvent.OpenPhoto(card.id)) }
+            )
         }
     }
 

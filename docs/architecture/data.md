@@ -154,6 +154,10 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 
 - Размер, положение и «развёрнуто» окна Desktop хранит `WindowStateStore` в `desktopApp` (`java.util.prefs`): это
   состояние платформенного окна, а не пользовательская настройка, поэтому в `UserSettings` и DataStore его нет.
+- Бэкап Android выключен целиком: токен сессии лежит в DataStore рядом с настройками, база — копия бэкенда.
+  `allowBackup="false"` на Android 12+ не отключает перенос на новое устройство, поэтому все каталоги исключены и в
+  `data_extraction_rules.xml` (облако и перенос), и в `backup_rules.xml` (Android 11 и ниже). Если появятся данные,
+  которые стоит переносить (только настройки), — отдельный файл DataStore без токена и `include` только его.
 - Пути к файлам и базе дают платформенные провайдеры (`expect`/`actual`); в `commonMain` путей вида `/data/...`
   нет.
 - Пользовательские настройки — `UserSettings` (`core:model`) через `UserSettingsRepository`; язык и другие поля
@@ -171,9 +175,8 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
 база — единственный источник правды для экранов, бэкенд её обновляет. Так приложение открывается и листается без сети.
 Других кэшей данных (в памяти, JSON-ответы, ключ-значение) нет: новый кэш — это таблица Room.
 
-- Таблицы и DAO — `core:database`: `photo`, `user`, `collection`, `topic`, `statistics`, `total_stats`, `month_stats`
-  и служебные `list_entry` / `list_state`. Сущность — `XxxEntity`, маппер `Xxx.toEntity(…)` и `XxxEntity.toDomain()` —
-  в том же файле, что сущность (`core:database` зависит от `core:model`). Вложенные модели и списки лежат в колонке
+- Таблицы и DAO — `core:database`: `photo`, `user`, `collection`, `topic`, `statistics` и служебные
+  `list_entry` / `list_state`. Сущность — `XxxEntity`, маппер `Xxx.toEntity(…)` и `XxxEntity.toDomain()` — в том же файле, что сущность (`core:database` зависит от `core:model`). Вложенные модели и списки лежат в колонке
   как JSON (`DatabaseConverters`).
 - Порядок списка хранит `list_entry(listKey, position, itemId)`, а не таблица элементов: одно фото может быть в
   ленте, теме и коллекции одновременно. Возраст списка и одиночного элемента — `list_state(listKey, updatedAt)`,
@@ -253,6 +256,16 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   `core:database` и `core:data` и выше не поднимаются.
 - В `Logic` поток кэшируется `cachedIn(coroutineScope)`, в Ui — `collectAsLazyPagingItems()` (`design/foundations.md`
   § Списки). `Pager` создаётся один раз на `Logic`: повторная подписка берёт последний `PagingData` из `cachedIn`.
+- Поток. Paging выполняет `RemoteMediator` и `PagingSource` в той корутине, что собирает список, а `cachedIn`
+  логики собирает его на главном потоке. Поэтому запрос, разбор JSON (`body<T>()` идёт в корутине вызова), маппинг и
+  запись страницы `ListRemoteMediator` делает в `withContext(dispatchers.io)`, а `refreshableFlow` /
+  `refreshableListFlow` — `flowOn(dispatchers.io)`. Диспетчеры держит только репозиторий: он берёт `AppDispatchers` в
+  конструктор, каждый его `suspend`-метод — `withContext(dispatchers.io)`, каждый его поток — `flowOn(dispatchers.io)`,
+  а в `pager(…)`, `refreshableFlow(…)`, `refreshableListFlow(…)` он передаёт `dispatchers = dispatchers`.
+  `CacheLoader` диспетчеров не хранит. Отдельный диспетчер параметром (`ioDispatcher` и подобные имена) не передаём:
+  везде `dispatchers: AppDispatchers` и `dispatchers.io` в месте вызова.
+  Иначе страница, подгруженная во время прокрутки, разбирается в UI-потоке и роняет кадры. Свой `PagingSource` с
+  сетью (`createPager`) делает то же в `load`.
 - Списки из Room — `enablePlaceholders = true` (`CachedPager.kt`): Room перезагружает источник со смещения в
   таблице, и без заглушек позиция после сброса источника сбивается, список «прыгает». `null`-элемент Ui рисует
   заглушкой `PhotoCardPlaceholder` (`design/foundations.md` § Списки).

@@ -22,12 +22,9 @@ import kotlinx.coroutines.delay
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import kotlin.time.Duration.Companion.milliseconds
 
-private const val HEX_RADIX = 16
-private const val HEX_COLOR_LENGTH = 6
-
 /**
- * Image that appears in steps: the dominant color of the photo ([colorHex], `#RRGGBB`), then the small version
- * [lowUrl], then [highUrl] fades in over it.
+ * Image that appears in steps: the dominant [color] of the photo (parsed by the logic of the screen), then the small
+ * version [lowUrl], then [highUrl] fades in over it.
  *
  * - The small layer is not requested when it is the same address as [highUrl] (the chosen quality is the lowest) or
  *   when [highUrl] is already in the memory cache of the image loader: the image then shows at once.
@@ -42,7 +39,7 @@ private const val HEX_COLOR_LENGTH = 6
 @Composable
 fun ProgressiveAsyncImage(
     modifier: Modifier = Modifier,
-    colorHex: String?,
+    color: Color?,
     lowUrl: String?,
     highUrl: String?,
     placeholderKey: String? = null,
@@ -54,7 +51,7 @@ fun ProgressiveAsyncImage(
     val platformContext = LocalPlatformContext.current
     val imageLoader = SingletonImageLoader.get(platformContext)
 
-    val backgroundColor = remember(colorHex) { colorHex?.toColorOrNull() } ?: appColor.glass.standard
+    val backgroundColor = color ?: appColor.glass.standard
     var isLowShown by remember(lowUrl, highUrl) {
         val isHighInMemory = highUrl != null && imageLoader.memoryCache?.get(MemoryCache.Key(highUrl)) != null
         mutableStateOf(lowUrl != null && lowUrl != highUrl && !isHighInMemory)
@@ -96,10 +93,3 @@ fun ProgressiveAsyncImage(
         }
     }
 }
-
-/** `#RRGGBB` to an opaque color, or `null` for anything else. */
-internal fun String.toColorOrNull(): Color? =
-    removePrefix("#")
-        .takeIf { it.length == HEX_COLOR_LENGTH }
-        ?.toLongOrNull(HEX_RADIX)
-        ?.let { rgb -> Color(0xFF000000 or rgb) }

@@ -311,7 +311,7 @@ abstract class BaseLogicCore<
     }
 
     /**
-     * Shows a failed refresh of the list [list] over shown items (`ListRefreshErrors`) with «Повторить», which runs
+     * Shows a failed refresh of the list [list] over shown items (`RefreshErrorEffect`) with «Повторить», which runs
      * [onRetry]; `null` [error] means the failure of the list is over. A failure is shown once per list until the list
      * reports it over: the screen recreated after a rotation reports the same failure again. [onRetry] does not hold
      * the list: the screen counts the press in its state, and the failed list on screen repeats itself.

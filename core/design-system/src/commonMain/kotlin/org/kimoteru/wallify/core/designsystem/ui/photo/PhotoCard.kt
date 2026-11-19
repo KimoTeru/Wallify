@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.theme.withAlpha
@@ -28,22 +29,25 @@ private const val MIN_ASPECT_RATIO = 0.6f
 private const val MAX_ASPECT_RATIO = 1.6f
 
 /**
- * Pebble card of the photo masonry: the photo with the author in a pill on the bottom edge.
- * [colorHex] is the dominant color of the photo (`#RRGGBB`), shown first; then [lowImageUrl] (the smallest version),
- * then [imageUrl] (see [ProgressiveAsyncImage]).
- * The card takes the proportions of the photo ([width] and [height] in pixels); extreme ones are limited,
- * so one very tall or wide photo does not break the grid.
+ * Pebble card of the photo masonry: the photo with the author in a pill on the bottom edge. Every value comes ready
+ * from the logic of the screen (`PhotoCardUi` of `core:presentation`): the card computes nothing while a list scrolls.
+ * [colorArgb] is the dominant color of the photo (`0xFFRRGGBB`), shown first; then [lowImageUrl] (the smallest
+ * version), then [imageUrl] (see [ProgressiveAsyncImage]).
+ * The card takes the proportions of the photo ([aspectRatio], width / height; `null` is a square) in the masonry and
+ * the list; extreme ones are limited, so one very tall or wide photo does not break the grid. The author pill shows
+ * while there is an [authorName].
  */
 @Composable
 fun PhotoCard(
     modifier: Modifier = Modifier,
     imageUrl: String,
     lowImageUrl: String?,
-    width: Int,
-    height: Int,
-    colorHex: String?,
+    aspectRatio: Float?,
+    colorArgb: Long?,
     authorName: String?,
+    authorInitials: String?,
     authorAvatarUrl: String?,
+    mode: PhotoGridMode = LocalPhotoGridMode.current,
     onClick: () -> Unit
 ) {
     val appAlpha = AppTheme.alpha
@@ -55,21 +59,20 @@ fun PhotoCard(
     val appSize = AppTheme.size
     val appTypography = AppTheme.typography
 
-    val naturalRatio = if (width > 0 && height > 0) width / height.toFloat() else appRatio.image.square
-    val aspectRatio = when (LocalPhotoGridMode.current) {
+    val cardRatio = when (mode) {
         PhotoGridMode.Grid -> appRatio.image.portrait
-        PhotoGridMode.Masonry, PhotoGridMode.List -> naturalRatio
+        PhotoGridMode.Masonry, PhotoGridMode.List -> aspectRatio ?: appRatio.image.square
     }
 
     Box(
         modifier = modifier
-            .aspectRatio(aspectRatio.coerceIn(MIN_ASPECT_RATIO, MAX_ASPECT_RATIO))
+            .aspectRatio(cardRatio.coerceIn(MIN_ASPECT_RATIO, MAX_ASPECT_RATIO))
             .clip(RoundedCornerShape(appCorner.large + appCorner.smallSpecial))
             .debouncedClickable(onClick = onClick)
     ) {
         ProgressiveAsyncImage(
             modifier = Modifier.fillMaxSize(),
-            colorHex = colorHex,
+            color = colorArgb?.let(::Color),
             lowUrl = lowImageUrl,
             highUrl = imageUrl
         )
@@ -93,7 +96,7 @@ fun PhotoCard(
             ) {
                 UserAvatar(
                     imageUrl = authorAvatarUrl,
-                    name = authorName,
+                    initials = authorInitials.orEmpty(),
                     size = appSize.avatar.small
                 )
 
@@ -119,12 +122,13 @@ fun PhotoCard(
 @Composable
 fun PhotoCardPlaceholder(
     modifier: Modifier = Modifier,
+    mode: PhotoGridMode = LocalPhotoGridMode.current,
     aspectRatio: Float? = null
 ) {
     val appCorner = AppTheme.corner
     val appRatio = AppTheme.ratio
 
-    val defaultRatio = when (LocalPhotoGridMode.current) {
+    val defaultRatio = when (mode) {
         PhotoGridMode.Grid -> appRatio.image.portrait
         PhotoGridMode.Masonry, PhotoGridMode.List -> appRatio.image.square
     }

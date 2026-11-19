@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.paging.DEFAULT_PAGE_SIZE
 import org.kimoteru.wallify.core.common.paging.FIRST_PAGE
 import org.kimoteru.wallify.core.common.response.Resource
@@ -47,6 +49,7 @@ class UserRepositoryImpl(
     private val statsDao: StatsDao,
     private val cacheLoader: CacheLoader,
     private val cacheStore: CacheStore,
+    private val dispatchers: AppDispatchers,
     private val scope: CoroutineScope
 ) : UserRepository {
 
@@ -56,8 +59,8 @@ class UserRepositoryImpl(
         .stateIn(scope = scope, started = SharingStarted.Eagerly, initialValue = null)
 
     /** Writes the answer into the database; [currentUser] follows from there. */
-    override suspend fun refreshCurrentUser(): Response<User> {
-        return userRemoteDataSource.getCurrentUser()
+    override suspend fun refreshCurrentUser(): Response<User> = withContext(dispatchers.io) {
+        userRemoteDataSource.getCurrentUser()
             .onSuccess { user -> cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) } }
     }
 
@@ -65,16 +68,18 @@ class UserRepositoryImpl(
         scope.launch { userDao.deleteCurrent() }
     }
 
-    override suspend fun updateCurrentUser(params: UpdateUserParams): Response<User> {
-        return userRemoteDataSource.updateCurrentUser(params = params)
-            .onSuccess { user -> cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) } }
-    }
+    override suspend fun updateCurrentUser(params: UpdateUserParams): Response<User> =
+        withContext(dispatchers.io) {
+            userRemoteDataSource.updateCurrentUser(params = params)
+                .onSuccess { user -> cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) } }
+        }
 
     override val uploadPageUrl: String = userRemoteDataSource.uploadPageUrl
 
     override fun getUserFlow(username: String): Flow<Resource<User>> {
         return refreshableFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = ItemKeys.user(username),
             ttl = CacheTtl.Item,
             roomFlow = { userDao.observeByUsername(username) },
@@ -92,6 +97,7 @@ class UserRepositoryImpl(
         val listKey = ListKeys.userPhotos(username, order, orientation)
 
         return cacheLoader.pager(
+            dispatchers = dispatchers,
             listKey = listKey,
             ttl = CacheTtl.Feed,
             pagingSource = { photoDao.pagingSource(listKey) },
@@ -110,7 +116,7 @@ class UserRepositoryImpl(
         )
     }
 
-    override suspend fun invalidateUserPhotos(username: String) {
+    override suspend fun invalidateUserPhotos(username: String): Unit = withContext(dispatchers.io) {
         cacheStore.invalidateLists(ListKeys.userPhotosPrefix(username))
         cacheStore.invalidateLists(ItemKeys.userPrefix(username))
     }
@@ -119,6 +125,7 @@ class UserRepositoryImpl(
         val listKey = ListKeys.userCollections(username)
 
         return cacheLoader.pager(
+            dispatchers = dispatchers,
             listKey = listKey,
             ttl = CacheTtl.Feed,
             pagingSource = { collectionDao.pagingSource(listKey) },
@@ -136,6 +143,7 @@ class UserRepositoryImpl(
 
         return refreshableListFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = listKey,
             ttl = CacheTtl.Feed,
             roomFlow = { collectionDao.observeList(listKey = listKey, limit = DEFAULT_PAGE_SIZE) },
@@ -156,6 +164,7 @@ class UserRepositoryImpl(
 
         return refreshableFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = ItemKeys.userStatistics(username, quantity),
             ttl = CacheTtl.Stats,
             roomFlow = { statsDao.observeStatistics(key) },

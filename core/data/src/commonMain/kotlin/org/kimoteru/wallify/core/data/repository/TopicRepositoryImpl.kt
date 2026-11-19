@@ -2,6 +2,7 @@ package org.kimoteru.wallify.core.data.repository
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.data.cache.CacheLoader
 import org.kimoteru.wallify.core.data.cache.CacheStore
@@ -28,12 +29,14 @@ class TopicRepositoryImpl(
     private val topicDao: TopicDao,
     private val photoDao: PhotoDao,
     private val cacheLoader: CacheLoader,
-    private val cacheStore: CacheStore
+    private val cacheStore: CacheStore,
+    private val dispatchers: AppDispatchers
 ) : TopicRepository {
 
     override fun getTopicsFlow(ids: List<String>, order: TopicsOrder?): Flow<PagingData<Topic>> {
         val listKey = ListKeys.topics(ids, order)
         return cacheLoader.pager(
+            dispatchers = dispatchers,
             listKey = listKey,
             ttl = CacheTtl.Slow,
             pagingSource = { topicDao.pagingSource(listKey) },
@@ -49,6 +52,7 @@ class TopicRepositoryImpl(
     override fun getTopicFlow(idOrSlug: String): Flow<Resource<Topic>> {
         return refreshableFlow(
             loader = cacheLoader,
+            dispatchers = dispatchers,
             key = ItemKeys.topic(idOrSlug),
             ttl = CacheTtl.Item,
             roomFlow = { topicDao.observeByIdOrSlug(idOrSlug) },
@@ -65,6 +69,7 @@ class TopicRepositoryImpl(
     ): Flow<PagingData<Photo>> {
         val listKey = ListKeys.topicPhotos(idOrSlug, orientation, order)
         return cacheLoader.pager(
+            dispatchers = dispatchers,
             listKey = listKey,
             ttl = CacheTtl.Feed,
             pagingSource = { photoDao.pagingSource(listKey) },

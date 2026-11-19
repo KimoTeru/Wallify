@@ -25,6 +25,11 @@ class DesktopApplicationConventionPlugin : Plugin<Project> {
             (this as ExtensionAware).extensions.configure<DesktopExtension>("desktop") {
                 application {
                     mainClass = ProjectConfig.DESKTOP_MAIN_CLASS
+                    // The `…Release…` tasks (`packageReleaseDmg`, `runRelease`) shrink and optimize with ProGuard.
+                    // Names stay unobfuscated (the default): Ktor and Koin look types up by them.
+                    buildTypes.release.proguard {
+                        configurationFiles.from(layout.projectDirectory.file("proguard-rules.pro"))
+                    }
                     nativeDistributions {
                         targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
                         // The sign-in redirect is caught by a local HTTP server (`JvmAuthBrowser`); the trimmed

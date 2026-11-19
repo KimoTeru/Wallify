@@ -2,6 +2,7 @@ package org.kimoteru.wallify.feature.main.presentation.components
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationComponentCore
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationLogicCore
@@ -41,8 +42,20 @@ class MainGraphLogic : BaseNavigationLogicCore<UiState, UiEvent, MainGraphNaviga
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {
-            is UiEvent.SelectTab -> navigate(MainGraphNavigationEvent.SelectTab(event.tab))
+            is UiEvent.SelectTab -> selectTab(event.tab)
         }
+    }
+
+    /** The stack of the tabs shows [tab]: the back press or a switch from elsewhere changes it too. */
+    fun onTabShown(tab: MainGraphContract.Tab) = updateSelectedTab(tab)
+
+    /** A tap on the tab already on screen changes nothing. */
+    private fun selectTab(tab: MainGraphContract.Tab) {
+        if (tab != uiState.value.selectedTab) navigate(MainGraphNavigationEvent.SelectTab(tab))
+    }
+
+    private fun updateSelectedTab(tab: MainGraphContract.Tab) {
+        uiState.update { it.copy(selectedTab = tab) }
     }
 }
 

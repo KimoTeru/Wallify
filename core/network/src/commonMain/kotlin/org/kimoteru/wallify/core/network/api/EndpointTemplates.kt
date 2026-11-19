@@ -25,8 +25,6 @@ internal object EndpointTemplates {
         "search/photos",
         "search/collections",
         "search/users",
-        "stats/total",
-        "stats/month",
         "topics",
         "topics/{id_or_slug}",
         "topics/{id_or_slug}/photos",

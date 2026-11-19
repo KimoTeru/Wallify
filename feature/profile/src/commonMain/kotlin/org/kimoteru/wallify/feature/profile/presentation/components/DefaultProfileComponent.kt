@@ -3,9 +3,9 @@ package org.kimoteru.wallify.feature.profile.presentation.components
 import androidx.paging.PagingData
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.flow.Flow
-import org.kimoteru.wallify.core.model.collection.PhotoCollection
-import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.presentation.base.BaseDefaultComponentCore
+import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.CollectionCardUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.ComponentEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiState
@@ -27,11 +27,11 @@ class DefaultProfileComponent(
 
     override val canNavigateBack: Boolean = navigateBack != null
 
-    override val photos: Flow<PagingData<Photo>> = logic.photos
+    override val photos: Flow<PagingData<PhotoCardUi>> = logic.photos
 
-    override val collections: Flow<PagingData<PhotoCollection>> = logic.collections
+    override val collections: Flow<PagingData<CollectionCardUi>> = logic.collections
 
-    override val collectionPhotos: Flow<PagingData<Photo>> = logic.collectionPhotos
+    override val collectionPhotos: Flow<PagingData<PhotoCardUi>> = logic.collectionPhotos
 
     override fun obtainNavigateEvent(event: ProfileNavigationEvent) {
         when (event) {

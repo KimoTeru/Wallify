@@ -8,6 +8,7 @@ import androidx.paging.PagingSource
 import androidx.paging.map
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.paging.DEFAULT_PAGE_SIZE
 import org.kimoteru.wallify.core.common.response.Response
 import kotlin.time.Duration
@@ -15,7 +16,8 @@ import kotlin.time.Duration
 /**
  * Paged list that the screen reads from Room: [pagingSource] reads the saved rows ([E]) in the order of the list
  * [listKey], [ListRemoteMediator] fills them from [fetch], and [toDomain] gives the rows to the layers above.
- * Collect it in the presentation layer with `cachedIn(scope)`.
+ * Collect it in the presentation layer with `cachedIn(scope)`. The mediator loads, decodes and saves the pages on
+ * `dispatchers.io` of the repository, not on the main thread that collects the list.
  *
  * `initialLoadSize` equals the page size, so every request has the same size and the page arithmetic of the mediator
  * stays correct.
@@ -29,6 +31,7 @@ import kotlin.time.Duration
 internal fun <E : Any, T : Any> CacheLoader.pager(
     listKey: String,
     ttl: Duration,
+    dispatchers: AppDispatchers,
     pagingSource: () -> PagingSource<Int, E>,
     toDomain: (E) -> T,
     itemId: (T) -> String,
@@ -45,6 +48,7 @@ internal fun <E : Any, T : Any> CacheLoader.pager(
         listKey = listKey,
         ttl = ttl,
         loader = this,
+        dispatchers = dispatchers,
         listDao = listDao,
         fetch = fetch,
         itemId = itemId,

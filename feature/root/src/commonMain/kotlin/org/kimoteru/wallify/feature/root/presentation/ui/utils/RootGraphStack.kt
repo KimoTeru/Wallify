@@ -27,10 +27,10 @@ import org.kimoteru.wallify.feature.splash.presentation.ui.SplashUi
  * The root screens with the transition between them. The user's choices that every screen reads (photo layout,
  * columns, screen layout, connection) are provided once for the whole stack.
  *
- * Every screen is its own [BlurHost] (the Haze way: the state lives where the source and its bars are). During a
- * transition the leaving and the arriving screens are both on the stage, and with one blur state for the whole stack
- * the bars of the leaving screen would blur the arriving one. Nothing above the stack blurs it, so the stack is no
- * blur source itself.
+ * Every screen is its own [BlurHost]: the screen is the blur source and its sheets and dialogs are drawn next to it
+ * (the Haze way: the state lives where the source and its effects are). During a transition the leaving and the
+ * arriving screens are both on the stage, and with one blur state for the whole stack the sheet of the leaving screen
+ * would blur the arriving one. Nothing above the stack blurs it, so the stack is no blur source itself.
  */
 @Composable
 internal fun RootGraphStack(

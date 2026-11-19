@@ -14,6 +14,16 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 4. Зависимости между модулями — type-safe accessors: `projects.core.common`, `projects.core.designSystem`
    (дефис в имени модуля → camelCase).
 5. Версию Kotlin, Compose Multiplatform и AGP меняют только вместе и только по просьбе пользователя.
+6. Release-сборка Android идёт через R8 (`isMinifyEnabled`, `isShrinkResources` в `wallify.android.application`):
+   без него Compose заметно медленнее. Плавность и рывки меряем только на release. Свои правила R8 — в
+   `androidApp/proguard-rules.pro` и только под то, о чём сообщил R8 (`missing_rules.txt`) или что упало на release:
+   библиотеки приносят свои. Правило узкое (класс и член, а не `-keep class lib.** { *; }`): широкий `-keep`
+   выключает оптимизацию библиотеки. Перед новым правилом смотрим, нет ли его уже в jar библиотеки
+   (`META-INF/proguard`, `META-INF/com.android.tools`).
+7. Desktop собирается через ProGuard задачами `…Release…` (`packageReleaseDmg`, `runRelease`); правила —
+   `desktopApp/proguard-rules.pro` (`wallify.desktop.application`), имена не обфусцируем. Правила библиотек здесь
+   применяются не гарантированно, поэтому нужные (ServiceLoader, JNI, сериализация, protobuf DataStore) скопированы
+   в файл из jar текущих версий: обновили библиотеку — сверяем её правила.
 
 ## Convention-плагины
 

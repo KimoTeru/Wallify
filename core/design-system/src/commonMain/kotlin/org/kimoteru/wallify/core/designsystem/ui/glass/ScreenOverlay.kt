@@ -13,7 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 
-/** Place for the content of [ScreenOverlay]; the navigation host draws it above everything it owns. */
+/** Place for the content of [ScreenOverlay]; the root screen (`BlurHost`) draws it above everything it owns. */
 @Stable
 class OverlayHost {
     var content by mutableStateOf<(@Composable BoxScope.() -> Unit)?>(null)
@@ -22,8 +22,9 @@ class OverlayHost {
 val LocalOverlayHost = staticCompositionLocalOf<OverlayHost?> { null }
 
 /**
- * Draws [content] (a sheet or a dialog, see [GlassOverlay]) above the navigation dock and rail instead of inside
- * the screen, where they would cover it. The overlay lives while this call stays in the composition.
+ * Draws [content] (a sheet or a dialog, see [GlassOverlay]) above the whole root screen, the navigation dock and
+ * rail included, instead of inside the screen, where they would cover it. There it is next to the blur source, so
+ * its backdrop blurs the screen. The overlay lives while this call stays in the composition.
  * Without a host (previews) the content is drawn in place.
  */
 @Composable

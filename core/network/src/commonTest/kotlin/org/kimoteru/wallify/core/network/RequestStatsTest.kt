@@ -12,7 +12,7 @@ import kotlin.test.assertNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.kimoteru.wallify.core.network.api.EndpointTemplates
-import org.kimoteru.wallify.core.network.api.StatsApi
+import org.kimoteru.wallify.core.network.api.TopicsApi
 import org.kimoteru.wallify.core.network.client.HttpClientFactory
 import org.kimoteru.wallify.core.network.config.StaticNetworkConfig
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepositoryImpl
@@ -56,10 +56,10 @@ class RequestStatsTest {
             )
         )
 
-        StatsApi(client).getTotalStats()
+        TopicsApi(client).getTopic("nature")
 
         val record = collector.records.first()
-        assertEquals("GET /stats/total", record.endpoint)
+        assertEquals("GET /topics/{id_or_slug}", record.endpoint)
         assertEquals(50, record.rateLimit)
         assertEquals(0, record.rateLimitRemaining)
         client.close()
@@ -70,10 +70,10 @@ class RequestStatsTest {
         val collector = RequestStatsCollectorImpl()
         val client = client(collector = collector, status = HttpStatusCode.NotFound, headers = Headers.Empty)
 
-        StatsApi(client).getMonthStats()
+        TopicsApi(client).getTopic("nature")
 
         val record = collector.records.first()
-        assertEquals("GET /stats/month", record.endpoint)
+        assertEquals("GET /topics/{id_or_slug}", record.endpoint)
         assertNull(record.rateLimit)
         client.close()
     }

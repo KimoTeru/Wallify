@@ -11,7 +11,9 @@ import kotlin.time.Duration
 /**
  * What the loading of saved data shares: the clock, the age check against a [CacheTtl] and the [ListDao] that keeps
  * the age of every list and item. The lists themselves are loaded by [ListRemoteMediator] (see [pager]); single
- * items and short lists by [refreshableFlow] and [refreshableListFlow].
+ * items and short lists by [refreshableFlow] and [refreshableListFlow]. They do the request, the decoding of the
+ * answer and the mapping on `dispatchers.io` of the repository that calls them: the screens collect them on the main
+ * thread, where a page decoded during a scroll drops frames.
  */
 @Singleton
 class CacheLoader(

@@ -26,7 +26,6 @@ import org.kimoteru.wallify.core.model.topic.TopicsOrder
 import org.kimoteru.wallify.core.network.api.CollectionsApi
 import org.kimoteru.wallify.core.network.api.PhotosApi
 import org.kimoteru.wallify.core.network.api.SearchApi
-import org.kimoteru.wallify.core.network.api.StatsApi
 import org.kimoteru.wallify.core.network.api.TopicsApi
 import org.kimoteru.wallify.core.network.api.UsersApi
 import org.kimoteru.wallify.core.network.client.HttpClientFactory
@@ -38,7 +37,6 @@ import org.kimoteru.wallify.core.network.model.response.collection.CollectionPho
 import org.kimoteru.wallify.core.network.model.response.photo.PhotoDownloadResponse
 import org.kimoteru.wallify.core.network.model.response.photo.PhotoResponse
 import org.kimoteru.wallify.core.network.model.response.search.SearchPhotosResponse
-import org.kimoteru.wallify.core.network.model.response.stats.TotalStatsResponse
 import org.kimoteru.wallify.core.network.model.response.topic.TopicResponse
 import org.kimoteru.wallify.core.network.session.SessionExpiryCollectorImpl
 import org.kimoteru.wallify.core.network.stats.RequestStatsCollectorImpl
@@ -267,20 +265,6 @@ class ApiEndpointsTest {
         val topic = assertIs<Response.Success<TopicResponse>>(TopicsApi(client).getTopic("t1")).data
 
         assertEquals(1, topic.totalCurrentUserSubmissions?.size)
-        client.close()
-    }
-
-    @Test
-    fun statsTotalDecodesCounters() = runBlocking {
-        val client = client { request ->
-            assertEquals("/stats/total", request.url.encodedPath)
-            json("""{"photos":10000,"downloads":2000,"views":5000,"downloads_per_second":10,"requests":8000}""")
-        }
-
-        val stats = assertIs<Response.Success<TotalStatsResponse>>(StatsApi(client).getTotalStats()).data
-
-        assertEquals(10000L, stats.photos)
-        assertEquals(10.0, stats.downloadsPerSecond)
         client.close()
     }
 }

@@ -83,9 +83,6 @@ internal object StatisticsKeys {
  */
 internal object ItemKeys {
 
-    const val TOTAL_STATS = "item:stats:total"
-    const val MONTH_STATS = "item:stats:month"
-
     /** Every item key of one user: the profile and the statistics. */
     fun userPrefix(username: String): String = "item:user:${username.lowercase()}:"
 

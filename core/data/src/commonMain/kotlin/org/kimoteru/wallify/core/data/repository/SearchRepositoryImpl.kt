@@ -4,6 +4,7 @@ import androidx.paging.PagingData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
+import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.data.cache.CacheLoader
 import org.kimoteru.wallify.core.data.cache.CacheStore
@@ -31,7 +32,8 @@ class SearchRepositoryImpl(
     private val userDao: UserDao,
     private val userSettingsRepository: UserSettingsRepository,
     private val cacheLoader: CacheLoader,
-    private val cacheStore: CacheStore
+    private val cacheStore: CacheStore,
+    private val dispatchers: AppDispatchers
 ) : SearchRepository {
 
     /** Searches in the language chosen in the settings and starts over when the choice changes. */
@@ -42,6 +44,7 @@ class SearchRepositoryImpl(
             .flatMapLatest { languageTag ->
                 val listKey = ListKeys.searchPhotos(query, languageTag)
                 cacheLoader.pager(
+                    dispatchers = dispatchers,
                     listKey = listKey,
                     ttl = CacheTtl.Feed,
                     pagingSource = { photoDao.pagingSource(listKey) },
@@ -63,6 +66,7 @@ class SearchRepositoryImpl(
     override fun searchCollectionsFlow(query: String): Flow<PagingData<PhotoCollection>> {
         val listKey = ListKeys.searchCollections(query)
         return cacheLoader.pager(
+            dispatchers = dispatchers,
             listKey = listKey,
             ttl = CacheTtl.Feed,
             pagingSource = { collectionDao.pagingSource(listKey) },
@@ -78,6 +82,7 @@ class SearchRepositoryImpl(
     override fun searchUsersFlow(query: String): Flow<PagingData<User>> {
         val listKey = ListKeys.searchUsers(query)
         return cacheLoader.pager(
+            dispatchers = dispatchers,
             listKey = listKey,
             ttl = CacheTtl.Feed,
             pagingSource = { userDao.pagingSource(listKey) },

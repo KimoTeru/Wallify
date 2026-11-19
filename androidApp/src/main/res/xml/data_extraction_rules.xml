@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12 and higher: nothing leaves the device. The session token lies in DataStore next to the settings, and
+    the database is a copy of the backend's data. `allowBackup="false"` stops only the cloud backup there, a
+    device-to-device transfer copies everything unless this file excludes it.
+    https://developer.android.com/identity/data/autobackup#include-exclude-android-12
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="external" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="external" path="." />
+    </device-transfer>
+</data-extraction-rules>
