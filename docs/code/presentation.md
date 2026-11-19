@@ -190,7 +190,9 @@ fun XxxUi(
 ```
 
 - У каждого Ui есть `@Preview` с именем `PreviewXxxUi` над самим Ui: тема + фейковый компонент с `UiState()`
-  (`androidx.compose.ui.tooling.preview.Preview`, зависимость приходит от `wallify.compose`).
+  (`androidx.compose.ui.tooling.preview.Preview`, зависимость приходит от `wallify.compose`). Рендерер превью
+  `ui-tooling` тот же плагин кладёт в `androidRuntimeClasspath` модуля: у Android-KMP библиотеки нет debug-варианта,
+  а без рендерера Android Studio превью модуля не показывает.
 - Контракт — `object XxxContract` (или `interface`) в файле Ui; `UiState` помечаем `@Immutable`.
 - `LaunchedEffect(Unit)` — для разовых эффектов экрана (например, задержка сплеша); ключ — то, что реально
   перезапускает эффект.
