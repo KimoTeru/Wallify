@@ -18,6 +18,7 @@ import org.kimoteru.wallify.core.domain.usecase.settings.ObserveUserSettingsUseC
 import org.kimoteru.wallify.core.domain.usecase.settings.UpdateUserSettingsUseCase
 import org.kimoteru.wallify.core.network.headers.HeadersCollectorRepository
 import org.kimoteru.wallify.core.network.session.SessionExpiryCollector
+import org.kimoteru.wallify.core.platform.managers.image.ImageCacheManager
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Factory
@@ -76,6 +77,7 @@ class DataModule {
         fileDownloader: FileDownloader,
         userRepository: UserRepository,
         requestStatsRepository: RequestStatsRepository,
+        imageCacheManager: ImageCacheManager,
         scope: CoroutineScope
     ): SessionDataCleaner = SessionDataCleaner(
         session = session,
@@ -83,6 +85,7 @@ class DataModule {
         fileDownloader = fileDownloader,
         userRepository = userRepository,
         requestStatsRepository = requestStatsRepository,
+        imageCacheManager = imageCacheManager,
         scope = scope
     ).also { it.start() }
 

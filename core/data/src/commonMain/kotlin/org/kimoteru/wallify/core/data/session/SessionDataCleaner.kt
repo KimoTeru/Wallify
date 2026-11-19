@@ -10,6 +10,7 @@ import org.kimoteru.wallify.core.data.download.FileDownloader
 import org.kimoteru.wallify.core.domain.repository.RequestStatsRepository
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
+import org.kimoteru.wallify.core.platform.managers.image.ImageCacheManager
 
 /**
  * Wipes everything the app saved about the user when the session ends: the tables of the database (photos, users,
@@ -19,8 +20,7 @@ import org.kimoteru.wallify.core.domain.repository.UserRepository
  * removed by anything else. It also runs at the start of an app that has no session, which is cheap and finishes a
  * wipe that an earlier run was stopped in. At the start it also drops what was not loaded for a long time
  * ([CacheDatabaseCleaner.pruneStale]). The settings of the app (theme, layouts, language) are not user data and
- * stay. Cached images are not here: the image loader belongs to the UI, which clears it when the sign-in screen
- * shows up (`ClearImageCacheEffect`).
+ * stay. The cached images (memory and disk of the image loader) go too, through [ImageCacheManager].
  */
 class SessionDataCleaner(
     private val session: SessionRepository,
@@ -28,6 +28,7 @@ class SessionDataCleaner(
     private val fileDownloader: FileDownloader,
     private val userRepository: UserRepository,
     private val requestStatsRepository: RequestStatsRepository,
+    private val imageCacheManager: ImageCacheManager,
     private val scope: CoroutineScope
 ) {
 
@@ -54,6 +55,7 @@ class SessionDataCleaner(
         userRepository.clearCurrentUser()
         attempt { databaseCleaner.clearAll() }
         attempt { fileDownloader.clear() }
+        attempt { imageCacheManager.clear() }
         requestStatsRepository.reset()
     }
 

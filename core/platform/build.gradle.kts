@@ -10,6 +10,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.koin.core)
             implementation(libs.koin.annotations)
+            implementation(libs.coil.singleton)
         }
         androidMain.dependencies {
             implementation(libs.kotlinx.coroutines.android)

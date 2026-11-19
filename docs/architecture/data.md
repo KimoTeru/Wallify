@@ -221,8 +221,8 @@ Related: `setup/config-and-secrets.md`, `code/di.md`, `design/foundations.md` §
   стартует с сохранённым пользователем, пока бэкенд не ответил.
 - Очистка. Когда сессия закончилась (выход, 401 или токен убран другим способом), `SessionDataCleaner` стирает всё
   пользовательское: каждую таблицу (`CacheDatabaseCleaner`), скачанные файлы (`FileDownloader.clear()`),
-  вошедшего пользователя и счётчики запросов (`RequestStatsRepository.reset()`); кэши картинок чистит UI при показе экрана входа (`ClearImageCacheEffect`). Настройки
-  приложения (тема, компоновка, язык) остаются. Room KMP не умеет `clearAllTables`, поэтому новая таблица
+  вошедшего пользователя, счётчики запросов (`RequestStatsRepository.reset()`) и кэш картинок, память и диск Coil
+  (`ImageCacheManager` в `core:platform`). Настройки приложения (тема, компоновка, язык) остаются. Room KMP не умеет `clearAllTables`, поэтому новая таблица
   обязательно добавляется в `CacheDatabaseCleaner.clearAll()`.
 - Рост базы. При старте приложения `CacheDatabaseCleaner.pruneStale()` удаляет то, что не загружалось дольше
   `CacheTtl.Retention`, и строки, на которые больше не ссылается ни один список. Новая таблица добавляется и в

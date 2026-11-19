@@ -22,7 +22,7 @@ Related: `setup/gradle-conventions.md`, `architecture/data.md`.
 | `core:model` | Чистые `@Serializable` модели |
 | `core:network` | Ktor-клиент, `Response`-обёртка запросов, API-классы, модели запросов и ответов с мапперами в доменные модели, мониторинг сети |
 | `core:database`, `core:datastore`, `core:storage` | Room (кэш данных), DataStore, каталог для скачанных файлов |
-| `core:platform` | `expect`/`actual`: диспетчеры, время, язык, буфер обмена, переходы по системным ссылкам |
+| `core:platform` | `expect`/`actual`: диспетчеры, время, язык, буфер обмена, переходы по системным ссылкам, кэш картинок |
 | `core:common` | Без зависимостей на другие `core`: `Response`, `AppDispatchers`, пагинация, расширения, flow-утилиты |
 
 ## Граф зависимостей
