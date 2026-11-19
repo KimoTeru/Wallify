@@ -10,11 +10,11 @@ import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.errors.AuthApiError
-import org.kimoteru.wallify.feature.auth.presentation.ui.AuthContract
 import org.kimoteru.wallify.feature.auth.presentation.ui.AuthContract.UiEvent
+import org.kimoteru.wallify.feature.auth.presentation.ui.AuthContract.UiState
 import org.koin.core.annotation.Factory
 
-interface AuthComponent : BaseComponent<AuthContract.UiState, UiEvent>
+interface AuthComponent : BaseComponent<UiState, UiEvent>
 
 /**
  * Starts the sign-in in the browser and shows that it is waiting. The screen never leaves by itself: once the
@@ -23,12 +23,12 @@ interface AuthComponent : BaseComponent<AuthContract.UiState, UiEvent>
 @Factory
 class AuthLogic(
     private val authRepository: AuthRepository,
-) : BaseLogic<AuthContract.UiState, UiEvent, AuthNavigationEvent>() {
+) : BaseLogic<UiState, UiEvent, AuthNavigationEvent>() {
 
     private var signInJob: Job? = null
 
-    override val uiState: StateFlow<AuthContract.UiState>
-        field = MutableStateFlow(AuthContract.UiState())
+    override val uiState: StateFlow<UiState>
+        field = MutableStateFlow(UiState())
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {

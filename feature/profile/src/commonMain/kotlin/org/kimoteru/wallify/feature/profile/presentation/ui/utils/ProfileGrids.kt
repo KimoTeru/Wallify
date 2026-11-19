@@ -49,7 +49,10 @@ import org.kimoteru.wallify.core.resources.generated.resources.common_photos_emp
 import org.kimoteru.wallify.core.resources.generated.resources.profile_collection_back
 import org.kimoteru.wallify.core.resources.generated.resources.profile_collection_photos
 import org.kimoteru.wallify.core.resources.generated.resources.profile_collections_empty
-import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.CollectionCardUi
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.Tab
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiEvent
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiState
 
 private const val HEADER_KEY = "profile_header"
 private const val SUB_HEADER_KEY = "profile_sub_header"
@@ -65,18 +68,18 @@ private const val PLACEHOLDER_CONTENT_TYPE = "placeholder"
 @Composable
 internal fun ProfileGrid(
     modifier: Modifier = Modifier,
-    uiState: ProfileContract.UiState,
+    uiState: UiState,
     photos: Flow<PagingData<PhotoCardUi>>,
-    collections: Flow<PagingData<ProfileContract.CollectionCardUi>>,
+    collections: Flow<PagingData<CollectionCardUi>>,
     collectionPhotos: Flow<PagingData<PhotoCardUi>>,
     contentPadding: PaddingValues,
-    obtainEvent: (ProfileContract.UiEvent) -> Unit
+    obtainEvent: (UiEvent) -> Unit
 ) {
     val appRatio = AppTheme.ratio
 
     val openedCollection = uiState.shownCollection
     val photoPaging = when {
-        uiState.selectedTab == ProfileContract.Tab.Photos -> photos.collectAsLazyPagingItems()
+        uiState.selectedTab == Tab.Photos -> photos.collectAsLazyPagingItems()
         openedCollection != null -> collectionPhotos.collectAsLazyPagingItems()
         else -> null
     }
@@ -95,7 +98,7 @@ internal fun ProfileGrid(
         RefreshErrorEffect(
             paging = paging,
             retries = uiState.listRetries,
-            onChange = { list, error -> obtainEvent(ProfileContract.UiEvent.ListRefreshError(list, error)) }
+            onChange = { list, error -> obtainEvent(UiEvent.ListRefreshError(list, error)) }
         )
     }
 
@@ -127,7 +130,7 @@ internal fun ProfileGrid(
                 item(key = SUB_HEADER_KEY, span = StaggeredGridItemSpan.FullLine) {
                     CollectionTitle(
                         collection = collection,
-                        onBack = { obtainEvent(ProfileContract.UiEvent.CloseCollection) }
+                        onBack = { obtainEvent(UiEvent.CloseCollection) }
                     )
                 }
             }
@@ -147,7 +150,7 @@ internal fun ProfileGrid(
                         PhotoCard(
                             card = card,
                             mode = PhotoGridMode.Grid,
-                            onClick = { obtainEvent(ProfileContract.UiEvent.OpenPhoto(card.id)) }
+                            onClick = { obtainEvent(UiEvent.OpenPhoto(card.id)) }
                         )
                     } else {
                         PhotoCardPlaceholder(mode = PhotoGridMode.Grid)
@@ -170,7 +173,7 @@ internal fun ProfileGrid(
                     if (card != null) {
                         CollectionCard(
                             card = card,
-                            onClick = { obtainEvent(ProfileContract.UiEvent.OpenCollection(card.collection)) }
+                            onClick = { obtainEvent(UiEvent.OpenCollection(card.collection)) }
                         )
                     } else {
                         PhotoCardPlaceholder(
@@ -256,7 +259,7 @@ private fun CollectionTitle(
 
 @Composable
 private fun CollectionCard(
-    card: ProfileContract.CollectionCardUi,
+    card: CollectionCardUi,
     onClick: () -> Unit
 ) {
     val collection = card.collection

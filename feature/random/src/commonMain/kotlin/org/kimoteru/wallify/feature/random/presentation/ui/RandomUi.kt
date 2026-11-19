@@ -29,6 +29,8 @@ import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.photo.PhotoCard
 import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.feature.random.presentation.components.RandomComponent
+import org.kimoteru.wallify.feature.random.presentation.ui.RandomContract.UiEvent
+import org.kimoteru.wallify.feature.random.presentation.ui.RandomContract.UiState
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.nav_random
 import org.kimoteru.wallify.core.resources.generated.resources.random_shuffle
@@ -57,7 +59,7 @@ fun PreviewRandomUi() {
             modifier = Modifier.background(AppTheme.color.basic.background),
             component = object : RandomComponent {
                 @Composable
-                override fun getUiState(): RandomContract.UiState = RandomContract.UiState()
+                override fun getUiState(): UiState = UiState()
             }
         )
     }
@@ -90,7 +92,7 @@ fun RandomUi(
                         text = stringResource(Res.string.random_shuffle),
                         icon = AppIcons.Refresh,
                         enabled = !uiState.isLoading,
-                        onClick = { obtainEvent(RandomContract.UiEvent.Shuffle) }
+                        onClick = { obtainEvent(UiEvent.Shuffle) }
                     )
                 }
             )
@@ -99,7 +101,7 @@ fun RandomUi(
         // Goes back to the photos when the connection returns after a failed load.
         RetryOnReconnect(
             isFailed = uiState.error != null && uiState.photos.isEmpty(),
-            onRetry = { obtainEvent(RandomContract.UiEvent.Shuffle) }
+            onRetry = { obtainEvent(UiEvent.Shuffle) }
         )
 
         val listPadding = PaddingValues(
@@ -119,14 +121,14 @@ fun RandomUi(
 
             uiState.error != null && uiState.photos.isEmpty() -> ErrorContentLayout(
                 error = uiState.error,
-                onRetry = { obtainEvent(RandomContract.UiEvent.Shuffle) }
+                onRetry = { obtainEvent(UiEvent.Shuffle) }
             )
 
             // Pulling the set down is the same as the shuffle button: a new set.
             else -> DefaultPullToRefreshBox(
                 modifier = Modifier.fillMaxSize(),
                 isRefreshing = uiState.isLoading,
-                onRefresh = { obtainEvent(RandomContract.UiEvent.Shuffle) },
+                onRefresh = { obtainEvent(UiEvent.Shuffle) },
                 indicatorPadding = PaddingValues(top = topPadding)
             ) {
                 PhotoGridLayout(
@@ -142,7 +144,7 @@ fun RandomUi(
                         PhotoCard(
                             card = card,
                             mode = PhotoGridMode.Grid,
-                            onClick = { obtainEvent(RandomContract.UiEvent.OpenPhoto(card.id)) }
+                            onClick = { obtainEvent(UiEvent.OpenPhoto(card.id)) }
                         )
                     }
                 }

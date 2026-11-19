@@ -11,7 +11,8 @@ import org.kimoteru.wallify.feature.main.presentation.components.DefaultMainGrap
 import org.kimoteru.wallify.feature.photo.presentation.components.DefaultPhotoComponent
 import org.kimoteru.wallify.feature.profile.presentation.components.DefaultProfileComponent
 import org.kimoteru.wallify.feature.profile.presentation.components.ProfileTarget
-import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract
+import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract.UiEvent
+import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract.UiState
 import org.kimoteru.wallify.feature.splash.presentation.components.DefaultSplashComponent
 import org.koin.core.component.get
 
@@ -23,8 +24,8 @@ class DefaultRootGraphComponent(
         RootGraphComponent.Child,
         DefaultRootGraphComponent.Config,
         RootGraphLogic,
-        RootGraphContract.UiState,
-        RootGraphContract.UiEvent,
+        UiState,
+        UiEvent,
         RootGraphNavigationEvent,
         Nothing
         >(

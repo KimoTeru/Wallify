@@ -25,6 +25,8 @@ import org.kimoteru.wallify.core.designsystem.ui.glass.GlassCard
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassLevel
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.feature.auth.presentation.components.AuthComponent
+import org.kimoteru.wallify.feature.auth.presentation.ui.AuthContract.UiEvent
+import org.kimoteru.wallify.feature.auth.presentation.ui.AuthContract.UiState
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.auth_cancel
 import org.kimoteru.wallify.core.resources.generated.resources.auth_description
@@ -52,7 +54,7 @@ fun PreviewAuthUi() {
             modifier = Modifier.background(AppTheme.color.basic.background),
             component = object : AuthComponent {
                 @Composable
-                override fun getUiState(): AuthContract.UiState = AuthContract.UiState()
+                override fun getUiState(): UiState = UiState()
             }
         )
     }
@@ -117,13 +119,13 @@ fun AuthUi(
                     GlassButton(
                         text = stringResource(Res.string.auth_cancel),
                         style = GlassButtonStyle.Ghost,
-                        onClick = { obtainEvent(AuthContract.UiEvent.CancelSignIn) }
+                        onClick = { obtainEvent(UiEvent.CancelSignIn) }
                     )
                 } else {
                     GlassButton(
                         text = stringResource(Res.string.auth_sign_in),
                         style = GlassButtonStyle.Solid,
-                        onClick = { obtainEvent(AuthContract.UiEvent.SignIn) }
+                        onClick = { obtainEvent(UiEvent.SignIn) }
                     )
                 }
             }

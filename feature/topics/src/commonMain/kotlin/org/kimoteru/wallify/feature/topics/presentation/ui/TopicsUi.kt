@@ -43,6 +43,8 @@ import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.photo.PhotoCard
 import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.feature.topics.presentation.components.TopicsComponent
+import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsContract.UiEvent
+import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsContract.UiState
 import org.kimoteru.wallify.feature.topics.presentation.ui.utils.TopicChips
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.common_photos_empty
@@ -81,7 +83,7 @@ fun PreviewTopicsUi() {
                 override val photos = flowOf(PagingData.empty<PhotoCardUi>())
 
                 @Composable
-                override fun getUiState(): TopicsContract.UiState = TopicsContract.UiState()
+                override fun getUiState(): UiState = UiState()
             }
         )
     }
@@ -107,7 +109,7 @@ fun TopicsUi(
     RefreshErrorEffect(
         paging = topics,
         retries = uiState.listRetries,
-        onChange = { list, error -> obtainEvent(TopicsContract.UiEvent.ListRefreshError(list, error)) }
+        onChange = { list, error -> obtainEvent(UiEvent.ListRefreshError(list, error)) }
     )
 
     // `peek` reads one item without copying the list (`itemSnapshotList` copies all of it on every composition) and
@@ -115,7 +117,7 @@ fun TopicsUi(
     val firstSlug = if (topics.itemCount > 0) topics.peek(0)?.slug else null
 
     LaunchedEffect(firstSlug) {
-        firstSlug?.let { slug -> obtainEvent(TopicsContract.UiEvent.FirstTopicShown(slug)) }
+        firstSlug?.let { slug -> obtainEvent(UiEvent.FirstTopicShown(slug)) }
     }
 
     // Another topic is another list: it opens at the top, not at the place where the previous one was left.
@@ -197,7 +199,7 @@ fun TopicsUi(
                 itemKey = { photo -> photo.id },
                 emptyText = stringResource(Res.string.common_photos_empty),
                 refreshRetries = uiState.listRetries,
-                onRefreshError = { list, error -> obtainEvent(TopicsContract.UiEvent.ListRefreshError(list, error)) },
+                onRefreshError = { list, error -> obtainEvent(UiEvent.ListRefreshError(list, error)) },
                 mode = PhotoGridMode.Grid,
                 state = gridState,
                 contentPadding = contentPadding
@@ -205,7 +207,7 @@ fun TopicsUi(
                 PhotoCard(
                     card = card,
                     mode = PhotoGridMode.Grid,
-                    onClick = { obtainEvent(TopicsContract.UiEvent.OpenPhoto(card.id)) }
+                    onClick = { obtainEvent(UiEvent.OpenPhoto(card.id)) }
                 )
             }
         }

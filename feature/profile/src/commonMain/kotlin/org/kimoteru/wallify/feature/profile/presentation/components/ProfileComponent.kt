@@ -38,7 +38,7 @@ import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.core.presentation.photo.profileSubtitle
 import org.kimoteru.wallify.core.presentation.photo.toAvatarUi
 import org.kimoteru.wallify.core.presentation.photo.toCardUi
-import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.Tab
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.CollectionCardUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.ComponentEvent
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.EditField
@@ -272,7 +272,7 @@ class ProfileLogic(
         uiState.update { it.copy(statistics = statistics) }
     }
 
-    private fun updateSelectedTab(tab: ProfileContract.Tab) {
+    private fun updateSelectedTab(tab: Tab) {
         uiState.update { it.copy(selectedTab = tab) }
     }
 

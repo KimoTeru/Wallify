@@ -32,6 +32,10 @@ import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.model.user.UpdateUserParams
 import org.kimoteru.wallify.core.model.user.User
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.presentation.base.BaseContract.UiEvent
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.CollectionCardUi
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.ComponentEvent
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiState
 import org.kimoteru.wallify.core.presentation.photo.AvatarUi
 import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
 import org.kimoteru.wallify.feature.profile.presentation.components.ProfileComponent
@@ -170,11 +174,11 @@ fun PreviewProfileUi() {
             component = object : ProfileComponent {
                 override val canNavigateBack = false
                 override val photos = flowOf(PagingData.empty<PhotoCardUi>())
-                override val collections = flowOf(PagingData.empty<ProfileContract.CollectionCardUi>())
+                override val collections = flowOf(PagingData.empty<CollectionCardUi>())
                 override val collectionPhotos = flowOf(PagingData.empty<PhotoCardUi>())
 
                 @Composable
-                override fun getUiState(): ProfileContract.UiState = ProfileContract.UiState()
+                override fun getUiState(): UiState = UiState()
             }
         )
     }
@@ -196,7 +200,7 @@ fun ProfileUi(
 
     component.collectComponentEvents { event ->
         when (event) {
-            is ProfileContract.ComponentEvent.OpenUrl -> uriHandler.openUri(event.url)
+            is ComponentEvent.OpenUrl -> uriHandler.openUri(event.url)
         }
     }
 
@@ -239,7 +243,7 @@ fun ProfileUi(
                     .statusBarsPadding()
                     .padding(appPadding.medium),
                 icon = AppIcons.Back,
-                onClick = { component.obtainBaseEvent(BaseContract.UiEvent.NavigateBack) }
+                onClick = { component.obtainBaseEvent(UiEvent.NavigateBack) }
             )
         }
     }

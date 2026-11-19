@@ -10,7 +10,7 @@ import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassChip
 import org.kimoteru.wallify.core.designsystem.ui.paging.keyAt
 import org.kimoteru.wallify.core.model.topic.Topic
-import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsContract
+import org.kimoteru.wallify.feature.topics.presentation.ui.TopicsContract.UiEvent
 
 /** Horizontal list of topic chips. The selected slug is highlighted. */
 @Composable
@@ -19,7 +19,7 @@ internal fun TopicChips(
     topics: LazyPagingItems<Topic>,
     selectedSlug: String?,
     contentPadding: PaddingValues = PaddingValues(),
-    obtainEvent: (TopicsContract.UiEvent) -> Unit
+    obtainEvent: (UiEvent) -> Unit
 ) {
     val appPadding = AppTheme.padding
 
@@ -36,7 +36,7 @@ internal fun TopicChips(
                 GlassChip(
                     text = topic.title,
                     selected = topic.slug == selectedSlug,
-                    onClick = { obtainEvent(TopicsContract.UiEvent.SelectTopic(topic.slug)) }
+                    onClick = { obtainEvent(UiEvent.SelectTopic(topic.slug)) }
                 )
             }
         }
