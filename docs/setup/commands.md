@@ -27,6 +27,7 @@ Related: `setup/gradle-conventions.md`.
 ./gradlew :desktopApp:run               # Desktop
 ./gradlew :desktopApp:hotRun --auto     # Desktop с hot reload
 ./gradlew allTests                      # тесты всех модулей
+./gradlew buildRelease                  # release-APK и установщик Desktop для текущей ОС
 ```
 
 - Первый запуск после правок сборки — Gradle sync в IDE. Ошибки компиляции пользователь присылает целиком, агент
@@ -34,6 +35,11 @@ Related: `setup/gradle-conventions.md`.
 - Если после sync Gradle жалуется на модуль, которого нет, проверь `settings.gradle.kts` и `.idea/gradle.xml`
   (`.idea` в git не лежит).
 - `./gradlew allTests` — корневая задача-агрегатор из `build.gradle.kts`.
+- `./gradlew buildRelease` — тоже корневая: собирает release-APK и установщик Desktop и копирует их в
+  `build/release/` как `Wallify-<версия>.<apk|dmg|msi|deb>` (задачи `copyReleaseApk` и `copyReleaseInstaller` в
+  convention-плагинах приложений). Стандартные выходы AGP и Compose не переносим: их ищет IDE. APK берём из Artifacts
+  API (`SingleArtifact.APK`), а не по пути `build/outputs`: AGP сам свяжет копирование со сборкой. Установщик
+  собирается только под ОС, на которой запущена задача: DMG на macOS, MSI на Windows, DEB на Linux.
 
 ## Тесты
 

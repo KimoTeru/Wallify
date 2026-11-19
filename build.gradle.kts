@@ -16,6 +16,12 @@ tasks.register("allTests") {
     description = "Runs Kotlin tests in every module that defines them."
 }
 
+tasks.register("buildRelease") {
+    group = "build"
+    description = "Builds the release APK and the desktop installer for the current OS into build/release."
+    dependsOn(":androidApp:copyReleaseApk", ":desktopApp:copyReleaseInstaller")
+}
+
 gradle.projectsEvaluated {
     tasks.named("allTests").configure {
         val testTasks = subprojects.mapNotNull { project ->

@@ -20,10 +20,16 @@ Related: `setup/commands.md`, `architecture/overview.md`.
    библиотеки приносят свои. Правило узкое (класс и член, а не `-keep class lib.** { *; }`): широкий `-keep`
    выключает оптимизацию библиотеки. Перед новым правилом смотрим, нет ли его уже в jar библиотеки
    (`META-INF/proguard`, `META-INF/com.android.tools`).
+   Приложение нигде не публикуется, поэтому release подписан debug-ключом (`wallify.android.application`): APK
+   ставится как есть, своего keystore и паролей в сборке нет. Поверх APK, собранного на другой машине (там свой
+   `~/.android/debug.keystore`), обновление не встанет — сначала удалить старое.
 7. Desktop собирается через ProGuard задачами `…Release…` (`packageReleaseDmg`, `runRelease`); правила —
    `desktopApp/proguard-rules.pro` (`wallify.desktop.application`), имена не обфусцируем. Правила библиотек здесь
    применяются не гарантированно, поэтому нужные (ServiceLoader, JNI, сериализация, protobuf DataStore) скопированы
-   в файл из jar текущих версий: обновили библиотеку — сверяем её правила.
+   в файл из jar текущих версий: обновили библиотеку — сверяем её правила. Пакеты (DMG, MSI, DEB) не
+   подписываются: подпись macOS и Windows требует платных сертификатов, а приложение не публикуется. DMG, собранный на
+   этом же Mac, открывается без предупреждений; скачанный (из CI) macOS блокирует при первом запуске — «Системные
+   настройки → Конфиденциальность и безопасность → Всё равно открыть» или `xattr -dr com.apple.quarantine` на `.app`.
 
 ## Convention-плагины
 
@@ -32,7 +38,7 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 | `wallify.kmp.library` | KMP-библиотека: таргеты Android (KMP-library) и JVM, `namespace` из пути модуля без дефисов (`:core:design-system` → `org.kimoteru.wallify.core.designsystem`), `commonTest` с `kotlin-test` |
 | `wallify.compose` | Compose Multiplatform и compiler plugin, базовые Compose-зависимости |
 | `wallify.feature` | `kmp.library` + `compose` + serialization + Decompose, Koin и его компиляторный плагин, `common`, `model`, `domain`, `design-system`, `resources`, `presentation` |
-| `wallify.api.config` | Генерирует `ApiBuildConfig` (два обязательных ключа бэкенда и флаг логирования) из `local.properties` или окружения; без ключей задача падает; подключён в `core:network` |
+| `wallify.api.config` | Генерирует `ApiBuildConfig` (два обязательных ключа бэкенда `API_ACCESS_KEY`, `API_SECRET_KEY`) из `local.properties` или окружения; без ключей падает уже Gradle Sync; подключён в `core:network` |
 | `wallify.android.application` | Android-приложение: SDK, Compose, граф Koin |
 | `wallify.desktop.application` | Desktop-приложение: JVM, окно, пакеты, граф Koin |
 

@@ -5,6 +5,10 @@ The project is a photo browser on a modular architecture: networking, session ha
 design system (night and day schemes, adaptive phone / tablet / desktop navigation) and the screens: feed with search,
 curated topics, random photos, photo details, photographer profile and settings.
 
+> Wallify is a portfolio project and is not affiliated with or endorsed by Unsplash. To run it, register your own
+> application at [unsplash.com/developers](https://unsplash.com/developers), use your own keys and follow the
+> [Unsplash API Guidelines](https://help.unsplash.com/en/articles/2511245-unsplash-api-guidelines).
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -46,9 +50,10 @@ Wallify/
 │   ├── design-system/   # Theme, tokens, UI components
 │   └── resources/       # All strings, fonts and images (public Res)
 ├── feature/
-│   ├── root/            # Navigation graph, tab navigation, error dialog, snackbars, offline banner
+│   ├── root/            # Top-level navigation graph, error dialog, snackbars, offline banner
 │   ├── splash/
 │   ├── auth/            # Sign-in screen, shown until the user has a session
+│   ├── main/            # Tabs of the signed-in user: dock, rail or drawer
 │   ├── feed/            # Photo feed with search and filters
 │   ├── topics/          # Curated topics and their photos
 │   ├── random/          # Random photos
@@ -63,24 +68,25 @@ The module dependency graph and the rules behind it are in
 
 ## Getting Started
 
-1. Open the project in Android Studio or IntelliJ IDEA and let Gradle sync.
-2. Configure the backend (see below). The access key and the secret key are required: without them the build fails
-   with a message naming the missing values.
+1. Configure the backend (see below). The access key and the secret key are required: without them Gradle Sync
+   fails with a message naming the missing values.
+2. Open the project in Android Studio or IntelliJ IDEA and let Gradle sync.
 3. Run:
    - Android: `./gradlew :androidApp:assembleDebug`
    - Desktop: `./gradlew :desktopApp:run` (hot reload: `./gradlew :desktopApp:hotRun --auto`)
    - Tests: `./gradlew allTests`
+   - Release APK and desktop installer for the current OS: `./gradlew buildRelease` (into `build/release/`)
 
 ### Backend configuration
 
 The backend address is embedded in `core:network`. The keys of your Unsplash application (see
 [Registering your application](https://unsplash.com/documentation#registering-your-application)) never go into
-version control. Put them in `local.properties` or the environment:
+version control. Put them in `local.properties` or the environment, under the same names:
 
-| Value | `local.properties` | Environment variable |
-|---|---|---|
-| Access key (required) | `api.accessKey` | `API_ACCESS_KEY` |
-| Secret key (required) | `api.secretKey` | `API_SECRET_KEY` |
+```
+API_ACCESS_KEY=your-access-key
+API_SECRET_KEY=your-secret-key
+```
 
 The build reads them and generates constants for `core:network` (Android and Desktop alike); rebuild after changing them.
 A new application is in demo mode: 50 requests per hour. Follow the
@@ -98,10 +104,11 @@ download tracking and attribution (`docs/architecture/data.md` § Бэкенд �
 ## Known Limitations
 
 - iOS targets are not enabled.
-- The API layer covers every documented endpoint: API classes and full response models (with their `toDomain()`
-  mappers) in `core:network`, remote data sources and repositories in `core:data`, trimmed domain models in
-  `core:model`. No screen uses it yet.
 - Signing in opens the system browser and needs two redirect URIs in the application on the backend
   (`docs/setup/config-and-secrets.md` § Вход пользователя). Nothing is downloaded and no server of your own is needed.
 - The secret key is built into the application. For a public release move requests that need it behind your own proxy
   (`docs/setup/config-and-secrets.md`).
+
+## License
+
+[MIT](LICENSE).

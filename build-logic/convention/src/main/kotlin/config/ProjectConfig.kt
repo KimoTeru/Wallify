@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 /** Constants shared by all convention plugins. */
 internal object ProjectConfig {
+    const val APP_NAME = "Wallify"
     const val APPLICATION_ID = "org.kimoteru.wallify"
     const val VERSION_CODE = 1
     const val VERSION_NAME = "1.0.0"

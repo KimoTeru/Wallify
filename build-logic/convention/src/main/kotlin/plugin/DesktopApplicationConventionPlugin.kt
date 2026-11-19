@@ -2,7 +2,9 @@ package org.kimoteru.wallify.buildlogic.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.RelativePath
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.JavaExec
 import org.gradle.kotlin.dsl.dependencies
 import org.jetbrains.compose.ComposeExtension
@@ -55,6 +57,21 @@ class DesktopApplicationConventionPlugin : Plugin<Project> {
         // The argument is added right before the start, so the task setup of the Compose plugin cannot drop it.
         tasks.withType(JavaExec::class.java).configureEach {
             doFirst { jvmArgs("-Dwallify.debug=true") }
+        }
+
+        // `buildRelease` (root) collects the release builds into `build/release/` as `Wallify-<version>.<ext>`.
+        // Only the current version is taken: installers of older versions may still lie in the same folder.
+        tasks.register("copyReleaseInstaller", Copy::class.java) {
+            dependsOn("packageReleaseDistributionForCurrentOS")
+            val version = ProjectConfig.VERSION_NAME
+            from(layout.buildDirectory.dir("compose/binaries/main-release")) {
+                include("**/*$version*.dmg", "**/*$version*.msi", "**/*$version*.deb")
+            }
+            into(rootProject.layout.buildDirectory.dir("release"))
+            includeEmptyDirs = false
+            eachFile {
+                relativePath = RelativePath(true, "${ProjectConfig.APP_NAME}-$version.${file.extension}")
+            }
         }
 
         val composeDependencies = extensions.getByType(ComposeExtension::class.java).dependencies

@@ -79,6 +79,9 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+# OkHttp 5 ships no ProGuard rules; its `okhttp3.internal.graal` classes are used only by GraalVM native-image.
+-dontwarn org.graalvm.nativeimage.**
+-dontwarn com.oracle.svm.core.annotate.**
 -dontwarn org.codehaus.mojo.animal_sniffer.*
 -dontwarn java.lang.instrument.**
 -dontwarn sun.misc.Signal
