@@ -52,15 +52,16 @@ import org.kimoteru.wallify.core.resources.generated.resources.photo_stats_downl
 import org.kimoteru.wallify.core.resources.generated.resources.photo_stats_title
 import org.kimoteru.wallify.core.resources.generated.resources.photo_stats_views
 import org.kimoteru.wallify.core.resources.generated.resources.photo_tags
-import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiEvent
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
 
 /** Everything about the photo except the image: author, actions, statistics, camera data, tags, collections. */
 @Composable
 internal fun PhotoDetails(
     modifier: Modifier = Modifier,
     photo: Photo,
-    uiState: PhotoContract.UiState,
-    obtainEvent: (PhotoContract.UiEvent) -> Unit
+    uiState: UiState,
+    obtainEvent: (UiEvent) -> Unit
 ) {
     val appColor = AppTheme.color
     val appPadding = AppTheme.padding
@@ -74,7 +75,7 @@ internal fun PhotoDetails(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .debouncedClickable(onClick = { obtainEvent(PhotoContract.UiEvent.OpenAuthor) }),
+                    .debouncedClickable(onClick = { obtainEvent(UiEvent.OpenAuthor) }),
                 horizontalArrangement = Arrangement.spacedBy(appPadding.medium),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -116,14 +117,14 @@ internal fun PhotoDetails(
                 style = GlassButtonStyle.Solid,
                 icon = AppIcons.Download,
                 enabled = !uiState.isDownloading,
-                onClick = { obtainEvent(PhotoContract.UiEvent.Download) }
+                onClick = { obtainEvent(UiEvent.Download) }
             )
 
             if (photo.htmlUrl != null) {
                 GlassButton(
                     text = stringResource(Res.string.photo_open_source),
                     icon = AppIcons.OpenInNew,
-                    onClick = { obtainEvent(PhotoContract.UiEvent.OpenSource) }
+                    onClick = { obtainEvent(UiEvent.OpenSource) }
                 )
             }
         }
@@ -152,7 +153,7 @@ internal fun PhotoDetails(
 }
 
 @Composable
-private fun PhotoStatistics(uiState: PhotoContract.UiState) {
+private fun PhotoStatistics(uiState: UiState) {
     val appPadding = AppTheme.padding
     val appSize = AppTheme.size
 
@@ -236,8 +237,8 @@ private fun PhotoExifCard(exif: PhotoExif?) {
 
 @Composable
 private fun PhotoCollections(
-    uiState: PhotoContract.UiState,
-    obtainEvent: (PhotoContract.UiEvent) -> Unit
+    uiState: UiState,
+    obtainEvent: (UiEvent) -> Unit
 ) {
     val appColor = AppTheme.color
     val appCorner = AppTheme.corner
@@ -266,7 +267,7 @@ private fun PhotoCollections(
                 corners = appCorner.medium,
                 paddingValues = PaddingValues(appPadding.medium),
                 onClick = {
-                    if (!isPending) obtainEvent(PhotoContract.UiEvent.ToggleCollection(collection.id))
+                    if (!isPending) obtainEvent(UiEvent.ToggleCollection(collection.id))
                 }
             ) {
                 Row(

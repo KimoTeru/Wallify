@@ -15,6 +15,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.feature.splash.presentation.components.SplashComponent
+import org.kimoteru.wallify.feature.splash.presentation.ui.SplashContract.UiEvent
+import org.kimoteru.wallify.feature.splash.presentation.ui.SplashContract.UiState
 import org.kimoteru.wallify.feature.splash.presentation.ui.utils.SPLASH_DURATION_MS
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.app_name
@@ -34,7 +36,7 @@ fun PreviewSplashUi() {
         SplashUi(
             component = object : SplashComponent {
                 @Composable
-                override fun getUiState(): SplashContract.UiState = SplashContract.UiState()
+                override fun getUiState(): UiState = UiState()
             }
         )
     }
@@ -52,7 +54,7 @@ fun SplashUi(
 
     LaunchedEffect(Unit) {
         delay(SPLASH_DURATION_MS)
-        obtainEvent(SplashContract.UiEvent.EndAnimation)
+        obtainEvent(UiEvent.EndAnimation)
     }
 
     Box(

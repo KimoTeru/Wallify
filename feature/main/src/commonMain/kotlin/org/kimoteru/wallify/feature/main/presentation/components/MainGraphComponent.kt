@@ -7,7 +7,7 @@ import org.kimoteru.wallify.core.presentation.base.BaseNavigationComponentCore
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationLogicCore
 import org.kimoteru.wallify.feature.feed.presentation.components.FeedComponent
-import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract
+import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract.Tab
 import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract.UiEvent
 import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract.UiState
 import org.kimoteru.wallify.feature.profile.presentation.components.ProfileComponent
@@ -26,12 +26,12 @@ interface MainGraphComponent : BaseNavigationComponentCore<UiState, UiEvent, Mai
     }
 }
 
-fun MainGraphComponent.Child.toTab(): MainGraphContract.Tab = when (this) {
-    is MainGraphComponent.Child.Feed -> MainGraphContract.Tab.Feed
-    is MainGraphComponent.Child.Topics -> MainGraphContract.Tab.Topics
-    is MainGraphComponent.Child.Random -> MainGraphContract.Tab.Random
-    is MainGraphComponent.Child.Studio -> MainGraphContract.Tab.Studio
-    is MainGraphComponent.Child.Settings -> MainGraphContract.Tab.Settings
+fun MainGraphComponent.Child.toTab(): Tab = when (this) {
+    is MainGraphComponent.Child.Feed -> Tab.Feed
+    is MainGraphComponent.Child.Topics -> Tab.Topics
+    is MainGraphComponent.Child.Random -> Tab.Random
+    is MainGraphComponent.Child.Studio -> Tab.Studio
+    is MainGraphComponent.Child.Settings -> Tab.Settings
 }
 
 @Factory
@@ -47,18 +47,18 @@ class MainGraphLogic : BaseNavigationLogicCore<UiState, UiEvent, MainGraphNaviga
     }
 
     /** The stack of the tabs shows [tab]: the back press or a switch from elsewhere changes it too. */
-    fun onTabShown(tab: MainGraphContract.Tab) = updateSelectedTab(tab)
+    fun onTabShown(tab: Tab) = updateSelectedTab(tab)
 
     /** A tap on the tab already on screen changes nothing. */
-    private fun selectTab(tab: MainGraphContract.Tab) {
+    private fun selectTab(tab: Tab) {
         if (tab != uiState.value.selectedTab) navigate(MainGraphNavigationEvent.SelectTab(tab))
     }
 
-    private fun updateSelectedTab(tab: MainGraphContract.Tab) {
+    private fun updateSelectedTab(tab: Tab) {
         uiState.update { it.copy(selectedTab = tab) }
     }
 }
 
 sealed interface MainGraphNavigationEvent : BaseNavigationEvent {
-    data class SelectTab(val tab: MainGraphContract.Tab) : MainGraphNavigationEvent
+    data class SelectTab(val tab: Tab) : MainGraphNavigationEvent
 }

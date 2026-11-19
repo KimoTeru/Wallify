@@ -24,6 +24,9 @@ import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.settings.UserSettings
 import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.presentation.base.BaseContract
+import org.kimoteru.wallify.core.presentation.base.BaseContract.UiEvent
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.ComponentEvent
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
 import org.kimoteru.wallify.core.presentation.photo.AvatarUi
 import org.kimoteru.wallify.feature.photo.presentation.components.PhotoComponent
 import org.kimoteru.wallify.feature.photo.presentation.ui.utils.PhotoCompactContent
@@ -87,7 +90,7 @@ fun PreviewPhotoUi() {
             modifier = Modifier.background(AppTheme.color.basic.background),
             component = object : PhotoComponent {
                 @Composable
-                override fun getUiState(): PhotoContract.UiState = PhotoContract.UiState()
+                override fun getUiState(): UiState = UiState()
             }
         )
     }
@@ -111,7 +114,7 @@ fun PhotoUi(
 
     component.collectComponentEvents { event ->
         when (event) {
-            is PhotoContract.ComponentEvent.OpenUrl -> uriHandler.openUri(event.url)
+            is ComponentEvent.OpenUrl -> uriHandler.openUri(event.url)
         }
     }
 
@@ -128,7 +131,7 @@ fun PhotoUi(
         bar = {
             DefaultTopBar(
                 paddingValues = screenPadding.header,
-                onBack = { component.obtainBaseEvent(BaseContract.UiEvent.NavigateBack) }
+                onBack = { component.obtainBaseEvent(UiEvent.NavigateBack) }
             )
         }
     ) { _ ->

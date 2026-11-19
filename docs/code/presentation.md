@@ -59,7 +59,10 @@ override val logic: XxxLogic = retainedLogic { get<XxxLogic>() }
    только вместе, это один метод с говорящим именем. Списки вариантов экрана (`Xxx.entries`, языки) —
    поля `UiState` со значением по умолчанию, не локальные `val` в composable.
 4. Действия пользователя — `UiEvent` (`sealed interface`, `data object` / `data class`). Метод на каждое действие в
-   Ui не заводим: один `obtainUiEvent`.
+   Ui не заводим: один `obtainUiEvent`. В вызовах пишем `obtainEvent(UiEvent.SelectTheme(it))` с импортом
+   `XxxContract.UiEvent`, а не `XxxContract.UiEvent.SelectTheme(it)`. Если в файле уже импортирован `BaseContract.UiEvent`
+   (`NavigateBack` через `obtainBaseEvent(UiEvent.NavigateBack)`), короткое имя занято: события фичи остаются с
+   префиксом `XxxContract.UiEvent.Xxx`.
 5. Одноразовые эффекты: навигация — `navigate(NavigationEvent)` логики; сообщение пользователю — `NotifierManager`
    (без сети отдельный снекбар уже виден, текст логика берёт `getString`); сбой действия — `handleResponse`
    (§ Ошибка действия); действие, которое

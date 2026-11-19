@@ -42,6 +42,8 @@ import org.kimoteru.wallify.core.presentation.settings.PhotoLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ScreenLayoutUi
 import org.kimoteru.wallify.core.presentation.settings.ThemeModeUi
 import org.kimoteru.wallify.feature.settings.presentation.components.SettingsComponent
+import org.kimoteru.wallify.feature.settings.presentation.ui.SettingsContract.UiEvent
+import org.kimoteru.wallify.feature.settings.presentation.ui.SettingsContract.UiState
 import org.kimoteru.wallify.feature.settings.presentation.ui.utils.EndpointShare
 import org.kimoteru.wallify.feature.settings.presentation.ui.utils.ImageQualityChoice
 import org.kimoteru.wallify.feature.settings.presentation.ui.utils.RequestDays
@@ -152,7 +154,7 @@ fun PreviewSettingsUi() {
             modifier = Modifier.background(AppTheme.color.basic.background),
             component = object : SettingsComponent {
                 @Composable
-                override fun getUiState(): SettingsContract.UiState = SettingsContract.UiState()
+                override fun getUiState(): UiState =UiState()
             }
         )
     }
@@ -237,7 +239,7 @@ fun SettingsUi(
                         modifier = Modifier.fillMaxWidth(),
                         text = stringResource(Res.string.auth_sign_out),
                         icon = AppIcons.Logout,
-                        onClick = { obtainEvent(SettingsContract.UiEvent.SignOut) }
+                        onClick = { obtainEvent(UiEvent.SignOut) }
                     )
                 }
             }
@@ -248,7 +250,7 @@ fun SettingsUi(
                     options = uiState.themeModes.map { mode -> stringResource(mode.label) },
                     selectedIndex = uiState.themeModes.indexOf(uiState.themeMode),
                     onSelect = { index ->
-                        obtainEvent(SettingsContract.UiEvent.SelectTheme(uiState.themeModes[index]))
+                        obtainEvent(UiEvent.SelectTheme(uiState.themeModes[index]))
                     }
                 )
             }
@@ -261,7 +263,7 @@ fun SettingsUi(
                         language.tag == uiState.languageTag
                     },
                     onSelect = { index ->
-                        obtainEvent(SettingsContract.UiEvent.SelectLanguage(uiState.languages[index].tag))
+                        obtainEvent(UiEvent.SelectLanguage(uiState.languages[index].tag))
                     }
                 )
 
@@ -280,7 +282,7 @@ fun SettingsUi(
                         options = uiState.screenLayouts.map { screenLayout -> stringResource(screenLayout.label) },
                         selectedIndex = uiState.screenLayouts.indexOf(uiState.screenLayout),
                         onSelect = { index ->
-                            obtainEvent(SettingsContract.UiEvent.SelectScreenLayout(uiState.screenLayouts[index]))
+                            obtainEvent(UiEvent.SelectScreenLayout(uiState.screenLayouts[index]))
                         }
                     )
 
@@ -303,7 +305,7 @@ fun SettingsUi(
                             mode = photoLayout.gridMode,
                             label = stringResource(photoLayout.label),
                             selected = photoLayout == uiState.photoLayout,
-                            onClick = { obtainEvent(SettingsContract.UiEvent.SelectPhotoLayout(photoLayout)) }
+                            onClick = { obtainEvent(UiEvent.SelectPhotoLayout(photoLayout)) }
                         )
                     }
                 }
@@ -322,7 +324,7 @@ fun SettingsUi(
                         },
                         selectedIndex = uiState.columnOptions.indexOf(uiState.photoColumns),
                         onSelect = { index ->
-                            obtainEvent(SettingsContract.UiEvent.SelectPhotoColumns(uiState.columnOptions[index]))
+                            obtainEvent(UiEvent.SelectPhotoColumns(uiState.columnOptions[index]))
                         }
                     )
                 }
@@ -339,21 +341,21 @@ fun SettingsUi(
                     title = stringResource(Res.string.settings_image_quality_list),
                     qualities = uiState.viewImageQualities,
                     selected = uiState.listImageQuality,
-                    onSelect = { obtainEvent(SettingsContract.UiEvent.SelectListImageQuality(it)) }
+                    onSelect = { obtainEvent(UiEvent.SelectListImageQuality(it)) }
                 )
 
                 ImageQualityChoice(
                     title = stringResource(Res.string.settings_image_quality_detail),
                     qualities = uiState.viewImageQualities,
                     selected = uiState.detailImageQuality,
-                    onSelect = { obtainEvent(SettingsContract.UiEvent.SelectDetailImageQuality(it)) }
+                    onSelect = { obtainEvent(UiEvent.SelectDetailImageQuality(it)) }
                 )
 
                 ImageQualityChoice(
                     title = stringResource(Res.string.settings_image_quality_download),
                     qualities = uiState.downloadImageQualities,
                     selected = uiState.downloadImageQuality,
-                    onSelect = { obtainEvent(SettingsContract.UiEvent.SelectDownloadImageQuality(it)) }
+                    onSelect = { obtainEvent(UiEvent.SelectDownloadImageQuality(it)) }
                 )
 
                 Text(
@@ -410,7 +412,7 @@ fun SettingsUi(
                     text = stringResource(Res.string.settings_requests_reset),
                     icon = AppIcons.Refresh,
                     enabled = uiState.canResetRequestStats,
-                    onClick = { obtainEvent(SettingsContract.UiEvent.ResetRequestStats) }
+                    onClick = { obtainEvent(UiEvent.ResetRequestStats) }
                 )
 
                 Text(

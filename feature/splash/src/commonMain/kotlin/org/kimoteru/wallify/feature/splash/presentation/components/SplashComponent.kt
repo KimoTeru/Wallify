@@ -5,17 +5,17 @@ import kotlinx.coroutines.flow.StateFlow
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
-import org.kimoteru.wallify.feature.splash.presentation.ui.SplashContract
 import org.kimoteru.wallify.feature.splash.presentation.ui.SplashContract.UiEvent
+import org.kimoteru.wallify.feature.splash.presentation.ui.SplashContract.UiState
 import org.koin.core.annotation.Factory
 
-interface SplashComponent : BaseComponent<SplashContract.UiState, UiEvent>
+interface SplashComponent : BaseComponent<UiState, UiEvent>
 
 @Factory
-class SplashLogic : BaseLogic<SplashContract.UiState, UiEvent, SplashNavigationEvent>() {
+class SplashLogic : BaseLogic<UiState, UiEvent, SplashNavigationEvent>() {
 
-    override val uiState: StateFlow<SplashContract.UiState>
-        field = MutableStateFlow(SplashContract.UiState())
+    override val uiState: StateFlow<UiState>
+        field = MutableStateFlow(UiState())
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {

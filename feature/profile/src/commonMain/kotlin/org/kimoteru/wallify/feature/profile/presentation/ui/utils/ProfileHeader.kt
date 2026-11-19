@@ -34,14 +34,16 @@ import org.kimoteru.wallify.core.resources.generated.resources.profile_stat_phot
 import org.kimoteru.wallify.core.resources.generated.resources.profile_tab_collections
 import org.kimoteru.wallify.core.resources.generated.resources.profile_tab_photos
 import org.kimoteru.wallify.core.resources.generated.resources.profile_upload
-import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.Tab
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiEvent
+import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileContract.UiState
 
 /** Avatar, name, short bio, counters and the tab switch of a profile. */
 @Composable
 internal fun ProfileHeader(
     modifier: Modifier = Modifier,
-    uiState: ProfileContract.UiState,
-    obtainEvent: (ProfileContract.UiEvent) -> Unit
+    uiState: UiState,
+    obtainEvent: (UiEvent) -> Unit
 ) {
     val appColor = AppTheme.color
     val appCorner = AppTheme.corner
@@ -64,7 +66,7 @@ internal fun ProfileHeader(
                 // Without the user the profile has nothing to show: the failure takes the place of the header.
                 ErrorContentLayout(
                     error = uiState.error,
-                    onRetry = { obtainEvent(ProfileContract.UiEvent.Retry) }
+                    onRetry = { obtainEvent(UiEvent.Retry) }
                 )
             } else {
                 ShimmerBox(
@@ -118,7 +120,7 @@ internal fun ProfileHeader(
                             .fillMaxHeight(),
                         text = stringResource(Res.string.profile_edit),
                         icon = AppIcons.Edit,
-                        onClick = { obtainEvent(ProfileContract.UiEvent.ShowEdit) }
+                        onClick = { obtainEvent(UiEvent.ShowEdit) }
                     )
 
                     GlassButton(
@@ -128,7 +130,7 @@ internal fun ProfileHeader(
                         text = stringResource(Res.string.profile_upload),
                         style = GlassButtonStyle.Solid,
                         icon = AppIcons.Upload,
-                        onClick = { obtainEvent(ProfileContract.UiEvent.Upload) }
+                        onClick = { obtainEvent(UiEvent.Upload) }
                     )
                 }
             }
@@ -176,7 +178,7 @@ internal fun ProfileHeader(
             ),
             selectedIndex = uiState.selectedTab.ordinal,
             onSelect = { index ->
-                obtainEvent(ProfileContract.UiEvent.SelectTab(ProfileContract.Tab.entries[index]))
+                obtainEvent(UiEvent.SelectTab(Tab.entries[index]))
             }
         )
     }

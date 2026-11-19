@@ -20,7 +20,7 @@ import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoUi
 import org.kimoteru.wallify.feature.profile.presentation.ui.ProfileUi
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent
 import org.kimoteru.wallify.feature.root.presentation.components.RootGraphComponent.Child
-import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract
+import org.kimoteru.wallify.feature.root.presentation.ui.RootGraphContract.UiState
 import org.kimoteru.wallify.feature.splash.presentation.ui.SplashUi
 
 /**
@@ -36,7 +36,7 @@ import org.kimoteru.wallify.feature.splash.presentation.ui.SplashUi
 internal fun RootGraphStack(
     modifier: Modifier = Modifier,
     component: RootGraphComponent,
-    uiState: RootGraphContract.UiState
+    uiState: UiState
 ) {
     CompositionLocalProvider(
         LocalPhotoGridMode provides uiState.photoLayout.gridMode,

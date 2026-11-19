@@ -24,7 +24,9 @@ import androidx.compose.ui.layout.ContentScale
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.image.ProgressiveAsyncImage
 import org.kimoteru.wallify.core.model.photo.Photo
-import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.PhotoImageUi
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiEvent
+import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
 
 private const val COMPACT_MIN_IMAGE_RATIO = 0.6f
 private const val COMPACT_MAX_IMAGE_RATIO = 1.5f
@@ -33,10 +35,10 @@ private const val COMPACT_MAX_IMAGE_RATIO = 1.5f
 @Composable
 internal fun PhotoCompactContent(
     photo: Photo,
-    image: PhotoContract.PhotoImageUi,
-    uiState: PhotoContract.UiState,
+    image: PhotoImageUi,
+    uiState: UiState,
     scroll: ScrollState,
-    obtainEvent: (PhotoContract.UiEvent) -> Unit
+    obtainEvent: (UiEvent) -> Unit
 ) {
     val appCorner = AppTheme.corner
     val appPadding = AppTheme.padding
@@ -75,10 +77,10 @@ internal fun PhotoCompactContent(
 @Composable
 internal fun PhotoWideContent(
     photo: Photo,
-    image: PhotoContract.PhotoImageUi,
-    uiState: PhotoContract.UiState,
+    image: PhotoImageUi,
+    uiState: UiState,
     scroll: ScrollState,
-    obtainEvent: (PhotoContract.UiEvent) -> Unit
+    obtainEvent: (UiEvent) -> Unit
 ) {
     val appColor = AppTheme.color
     val appCorner = AppTheme.corner
@@ -133,7 +135,7 @@ internal fun PhotoWideContent(
 @Composable
 private fun PhotoImage(
     modifier: Modifier = Modifier,
-    image: PhotoContract.PhotoImageUi,
+    image: PhotoImageUi,
     contentScale: ContentScale
 ) {
     ProgressiveAsyncImage(

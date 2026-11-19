@@ -47,6 +47,8 @@ import org.kimoteru.wallify.core.presentation.photo.PhotoColorUi
 import org.kimoteru.wallify.core.presentation.photo.PhotoOrientationUi
 import org.kimoteru.wallify.core.presentation.photo.SearchOrderUi
 import org.kimoteru.wallify.feature.feed.presentation.components.FeedComponent
+import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract.UiEvent
+import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract.UiState
 import org.kimoteru.wallify.feature.feed.presentation.ui.utils.FeedFiltersOverlay
 import org.kimoteru.wallify.core.resources.generated.resources.Res
 import org.kimoteru.wallify.core.resources.generated.resources.common_photos_empty
@@ -114,7 +116,7 @@ fun PreviewFeedUi() {
                 override val photos = flowOf(PagingData.empty<PhotoCardUi>())
 
                 @Composable
-                override fun getUiState(): FeedContract.UiState = FeedContract.UiState()
+                override fun getUiState(): UiState = UiState()
             }
         )
     }
@@ -148,10 +150,10 @@ fun FeedUi(
                 GlassSearchField(
                     modifier = Modifier.weight(1f),
                     value = uiState.queryInput,
-                    onValueChange = { obtainEvent(FeedContract.UiEvent.ChangeQuery(it)) },
+                    onValueChange = { obtainEvent(UiEvent.ChangeQuery(it)) },
                     hint = stringResource(Res.string.feed_search_hint),
-                    onSearch = { obtainEvent(FeedContract.UiEvent.Search) },
-                    onClear = { obtainEvent(FeedContract.UiEvent.ClearQuery) },
+                    onSearch = { obtainEvent(UiEvent.Search) },
+                    onClear = { obtainEvent(UiEvent.ClearQuery) },
                     level = GlassLevel.Standard
                 )
 
@@ -159,7 +161,7 @@ fun FeedUi(
                     GlassIconButton(
                         icon = AppIcons.Tune,
                         level = GlassLevel.Standard,
-                        onClick = { obtainEvent(FeedContract.UiEvent.ShowFilters) }
+                        onClick = { obtainEvent(UiEvent.ShowFilters) }
                     )
 
                     if (uiState.filters.activeCount > 0) {
@@ -180,7 +182,7 @@ fun FeedUi(
             itemKey = { photo -> photo.id },
             emptyText = stringResource(Res.string.common_photos_empty),
             refreshRetries = uiState.listRetries,
-            onRefreshError = { list, error -> obtainEvent(FeedContract.UiEvent.ListRefreshError(list, error)) },
+            onRefreshError = { list, error -> obtainEvent(UiEvent.ListRefreshError(list, error)) },
             state = gridState,
             contentPadding = PaddingValues(
                 start = screenPadding.start,
@@ -193,7 +195,7 @@ fun FeedUi(
             // compose the cards again.
             PhotoCard(
                 card = card,
-                onClick = { obtainEvent(FeedContract.UiEvent.OpenPhoto(card.id)) }
+                onClick = { obtainEvent(UiEvent.OpenPhoto(card.id)) }
             )
         }
     }

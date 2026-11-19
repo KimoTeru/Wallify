@@ -34,14 +34,14 @@ import org.kimoteru.wallify.core.resources.generated.resources.feed_filter_order
 import org.kimoteru.wallify.core.resources.generated.resources.feed_filter_orientation
 import org.kimoteru.wallify.core.resources.generated.resources.feed_filters_note
 import org.kimoteru.wallify.core.resources.generated.resources.feed_filters_title
-import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract
 import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract.UiEvent
+import org.kimoteru.wallify.feature.feed.presentation.ui.FeedContract.UiState
 
 /** Search filters over the feed: a bottom sheet on phones, a dialog on wider windows. */
 @Composable
 internal fun FeedFiltersOverlay(
     isSheet: Boolean,
-    uiState: FeedContract.UiState,
+    uiState: UiState,
     obtainEvent: (UiEvent) -> Unit
 ) {
     GlassOverlay(
@@ -58,7 +58,7 @@ internal fun FeedFiltersOverlay(
 
 @Composable
 private fun ColumnScope.FeedFiltersContent(
-    uiState: FeedContract.UiState,
+    uiState: UiState,
     obtainEvent: (UiEvent) -> Unit,
     close: () -> Unit
 ) {

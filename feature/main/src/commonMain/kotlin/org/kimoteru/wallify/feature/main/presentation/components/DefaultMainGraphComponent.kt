@@ -9,7 +9,7 @@ import com.arkivanov.essenty.backhandler.BackCallback
 import kotlinx.serialization.Serializable
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationDefaultComponentCore
 import org.kimoteru.wallify.feature.feed.presentation.components.DefaultFeedComponent
-import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract
+import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract.Tab
 import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract.UiEvent
 import org.kimoteru.wallify.feature.main.presentation.ui.MainGraphContract.UiState
 import org.kimoteru.wallify.feature.profile.presentation.components.DefaultProfileComponent
@@ -102,12 +102,12 @@ class DefaultMainGraphComponent(
         }
     }
 
-    private fun MainGraphContract.Tab.toConfig(): Config = when (this) {
-        MainGraphContract.Tab.Feed -> Config.Feed
-        MainGraphContract.Tab.Topics -> Config.Topics
-        MainGraphContract.Tab.Random -> Config.Random
-        MainGraphContract.Tab.Studio -> Config.Studio
-        MainGraphContract.Tab.Settings -> Config.Settings
+    private fun Tab.toConfig(): Config = when (this) {
+        Tab.Feed -> Config.Feed
+        Tab.Topics -> Config.Topics
+        Tab.Random -> Config.Random
+        Tab.Studio -> Config.Studio
+        Tab.Settings -> Config.Settings
     }
 
     @Serializable
