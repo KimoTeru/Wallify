@@ -1,5 +1,7 @@
 package org.kimoteru.wallify.core.data.repository
 
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -8,12 +10,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
-import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.getOrNull
 import org.kimoteru.wallify.core.common.response.responseOf
@@ -37,7 +39,8 @@ import org.koin.core.annotation.Singleton
  * by one (they wait in the collector's queue meanwhile, none is lost), and a moment after the last change the
  * counters are saved, so a burst of requests is one write. Created at start: otherwise nobody reads the queue until
  * the settings screen opens. Every request is also counted to the local day of the user it was answered on; only
- * the last [HISTORY_DAYS] days are kept.
+ * the last [HISTORY_DAYS] days are kept. The rate limit is reset to the full one at the start of every hour, like the
+ * backend does, so [stats] is current without a request.
  */
 @Singleton(createdAtStart = true)
 class RequestStatsRepositoryImpl(
@@ -48,6 +51,7 @@ class RequestStatsRepositoryImpl(
     private val timeZone: TimeZoneProvider,
     scope: CoroutineScope,
 ) : RequestStatsRepository {
+
     private val loaded = CompletableDeferred<Unit>()
     private val writeMutex = Mutex()
 
@@ -56,8 +60,17 @@ class RequestStatsRepositoryImpl(
 
     init {
         scope.launch(dispatchers.io) {
-            stats.value = responseOf { local.read() }.getOrNull() ?: RequestStats.Empty
+            val saved = responseOf { local.read() }.getOrNull() ?: RequestStats.Empty
+            stats.value = saved.withHourReset()
             loaded.complete(Unit)
+
+            launch {
+                while (true) {
+                    val windowMillis = RATE_LIMIT_WINDOW.inWholeMilliseconds
+                    delay((windowMillis - time.nowEpochMillis() % windowMillis).milliseconds)
+                    stats.update { current -> current.withHourReset() }
+                }
+            }
 
             launch {
                 collector.records.collect { record ->
@@ -67,7 +80,6 @@ class RequestStatsRepositoryImpl(
 
             launch {
                 stats
-                    .mapDistinctBy { current -> current.copy(rateLimit = null) }
                     .collectLatest { current ->
                         delay(SAVE_DELAY)
                         write(current)
@@ -81,8 +93,17 @@ class RequestStatsRepositoryImpl(
 
     override suspend fun reset(): Response<Unit> = withContext(dispatchers.io) {
         loaded.await()
-        stats.update { current -> RequestStats.Empty.copy(rateLimit = current.rateLimit) }
-        write(RequestStats.Empty)
+        val cleared = stats.updateAndGet { current -> RequestStats.Empty.copy(rateLimit = current.rateLimit) }
+        write(cleared)
+    }
+
+    // The backend resets the limit at the start of every hour: a limit of an earlier hour is the full one since then.
+    private fun RequestStats.withHourReset(): RequestStats {
+        val known = rateLimit ?: return this
+        val hourStart = time.nowEpochMillis().let { now -> now - now % RATE_LIMIT_WINDOW.inWholeMilliseconds }
+        if (known.receivedAtMillis >= hourStart) return this
+
+        return copy(rateLimit = known.copy(remaining = known.limit, receivedAtMillis = hourStart))
     }
 
     private suspend fun write(current: RequestStats): Response<Unit> = responseOf {
@@ -102,7 +123,11 @@ class RequestStatsRepositoryImpl(
         return copy(
             total = total.inc(),
             endpoints = counted.sortedByDescending { it.count },
-            rateLimit = if (limit != null && remaining != null) RateLimit(limit, remaining) else rateLimit,
+            rateLimit = if (limit != null && remaining != null) {
+                RateLimit(limit = limit, remaining = remaining, receivedAtMillis = time.nowEpochMillis())
+            } else {
+                rateLimit
+            },
             daily = daily.plusRequest(day = today(), keepDays = HISTORY_DAYS)
         )
     }
@@ -114,6 +139,9 @@ class RequestStatsRepositoryImpl(
 
     private companion object {
         val SAVE_DELAY = 1.seconds
+
+        /** The backend gives the limit per clock hour and resets it at its start. */
+        val RATE_LIMIT_WINDOW = 1.hours
 
         /** One day more than the settings screen shows: a change of the time zone may move today by a day. */
         const val HISTORY_DAYS = 31

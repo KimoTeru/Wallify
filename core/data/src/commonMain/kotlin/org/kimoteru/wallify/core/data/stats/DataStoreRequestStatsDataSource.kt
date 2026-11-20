@@ -6,7 +6,7 @@ import org.kimoteru.wallify.core.datastore.prefs.DataStorePrefs
 import org.kimoteru.wallify.core.model.stats.RequestStats
 import org.koin.core.annotation.Singleton
 
-/** Keeps the counters as one JSON value; the rate limit is not saved, it is stale after an hour. */
+/** Keeps the counters and the last known rate limit with its time as one JSON value. */
 @Singleton
 class DataStoreRequestStatsDataSource(
     private val prefs: DataStorePrefs,
@@ -19,7 +19,7 @@ class DataStoreRequestStatsDataSource(
     }
 
     override suspend fun write(stats: RequestStats) {
-        prefs.save(key, json.encodeToString(RequestStats.serializer(), stats.copy(rateLimit = null)))
+        prefs.save(key, json.encodeToString(RequestStats.serializer(), stats))
     }
 
     private companion object {
