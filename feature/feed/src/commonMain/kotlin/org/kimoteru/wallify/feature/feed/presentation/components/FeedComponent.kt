@@ -150,7 +150,7 @@ class FeedLogic(
 
     /** «Повторить» on a failed refresh of the photos: the list on screen repeats itself when the count grows. */
     private fun addListRetry() {
-        uiState.update { it.copy(listRetries = it.listRetries + 1) }
+        uiState.update { it.copy(listRetries = it.listRetries.inc()) }
     }
 
     private fun Photo.toCard(quality: ImageQuality): PhotoCardUi = toCardUi(

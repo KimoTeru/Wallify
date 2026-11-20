@@ -93,14 +93,14 @@ class RequestStatsRepositoryImpl(
         val counted = endpoints.toMutableList()
         val index = counted.indexOfFirst { it.endpoint == record.endpoint }
         if (index >= 0) {
-            counted[index] = counted[index].let { it.copy(count = it.count + 1) }
+            counted[index] = counted[index].let { it.copy(count = it.count.inc()) }
         } else {
             counted += EndpointStat(endpoint = record.endpoint, count = 1L)
         }
         val limit = record.rateLimit
         val remaining = record.rateLimitRemaining
         return copy(
-            total = total + 1,
+            total = total.inc(),
             endpoints = counted.sortedByDescending { it.count },
             rateLimit = if (limit != null && remaining != null) RateLimit(limit, remaining) else rateLimit,
             daily = daily.plusRequest(day = today(), keepDays = HISTORY_DAYS)

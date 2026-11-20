@@ -159,7 +159,7 @@ override val logic: XxxLogic = retainedLogic { get<XxxLogic>() }
 7. Снекбар с повтором не переживает экран: повтор запускается в `coroutineScope` логики, а при `onDestroy` логика
    закрывает свой снекбар (`NotifierManager.dismiss`). Повтор из уже закрытого экрана и не выполнился бы: scope
    отменён.
-8. Сбой загрузки без контента (`Resource.Error`, `PagingLoadException` пустого списка) через `handleResponse` не идёт:
+8. Сбой загрузки без контента (`Resource.Error`, `ResponseException` пустого списка) через `handleResponse` не идёт:
    экран держит его в состоянии и рисует `ErrorContentLayout` (правило 6 раздела «Правила»).
 
 ## Каркас Ui

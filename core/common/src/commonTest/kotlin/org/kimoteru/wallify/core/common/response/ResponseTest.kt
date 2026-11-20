@@ -68,4 +68,17 @@ class ResponseTest {
         val mapped = detailed.map { it.toString() }
         assertEquals(DetailedResponse.Error(401), mapped)
     }
+
+    @Test
+    fun responseOfCapturesException() = runTest {
+        val response = responseOf<Int> { error("bad") }
+        assertEquals("bad", assertIs<Response.Error>(response).errorData.message)
+    }
+
+    @Test
+    fun responseExceptionKeepsItsError() {
+        val error = ResponseError("nope", 404)
+        assertEquals(error, ResponseException(error).responseError)
+        assertEquals("boom", IllegalStateException("boom").responseError.message)
+    }
 }

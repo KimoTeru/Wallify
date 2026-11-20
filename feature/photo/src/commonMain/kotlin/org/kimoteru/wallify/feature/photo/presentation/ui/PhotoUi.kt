@@ -20,7 +20,6 @@ import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.settings.UserSettings
-import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.base.BaseContract.UiEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
@@ -50,9 +49,6 @@ object PhotoContract {
         val image: PhotoImageUi? = null,
         /** The avatar of the author of [photo]. */
         val author: AvatarUi? = null,
-        val statistics: Statistics? = null,
-        /** Views per day of [statistics] for the chart; built with them, so the chart does not map the series. */
-        val viewsSeries: List<Long> = emptyList(),
         val collections: List<PhotoCollection> = emptyList(),
         val memberCollectionIds: Set<Int> = emptySet(),
         val pendingCollectionIds: Set<Int> = emptySet(),

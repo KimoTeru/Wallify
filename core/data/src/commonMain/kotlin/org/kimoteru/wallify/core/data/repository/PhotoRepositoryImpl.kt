@@ -12,27 +12,23 @@ import org.kimoteru.wallify.core.data.cache.CacheStore
 import org.kimoteru.wallify.core.data.cache.CacheTtl
 import org.kimoteru.wallify.core.data.cache.ItemKeys
 import org.kimoteru.wallify.core.data.cache.ListKeys
-import org.kimoteru.wallify.core.data.cache.StatisticsKeys
 import org.kimoteru.wallify.core.data.cache.canUseStaleData
 import org.kimoteru.wallify.core.data.cache.pager
 import org.kimoteru.wallify.core.data.cache.refreshableFlow
 import org.kimoteru.wallify.core.data.remote.PhotoRemoteDataSource
 import org.kimoteru.wallify.core.database.dao.PhotoDao
-import org.kimoteru.wallify.core.database.dao.StatsDao
 import org.kimoteru.wallify.core.database.entity.toDomain
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.RandomPhotoQuery
 import org.kimoteru.wallify.core.model.photo.UpdatePhotoParams
-import org.kimoteru.wallify.core.model.stats.Statistics
 import org.koin.core.annotation.Singleton
 
 @Singleton
 class PhotoRepositoryImpl(
     private val photoRemoteDataSource: PhotoRemoteDataSource,
     private val photoDao: PhotoDao,
-    private val statsDao: StatsDao,
     private val cacheLoader: CacheLoader,
     private val cacheStore: CacheStore,
     private val dispatchers: AppDispatchers
@@ -98,20 +94,6 @@ class PhotoRepositoryImpl(
                 if (saved.isEmpty()) response else Response.Success(saved.map { entity -> entity.toDomain() })
             }
         }
-    }
-
-    override fun getPhotoStatisticsFlow(id: String, quantity: Int?): Flow<Resource<Statistics>> {
-        val key = StatisticsKeys.photo(id, quantity)
-        return refreshableFlow(
-            loader = cacheLoader,
-            dispatchers = dispatchers,
-            key = ItemKeys.photoStatistics(id, quantity),
-            ttl = CacheTtl.Stats,
-            roomFlow = { statsDao.observeStatistics(key) },
-            remoteCall = { photoRemoteDataSource.getPhotoStatistics(id = id, quantity = quantity) },
-            save = { statistics -> cacheStore.saveStatistics(key, statistics) },
-            toDomain = { entity -> entity.toDomain() }
-        )
     }
 
     /** A download is an action: it is reported every time and never answered from the database. */

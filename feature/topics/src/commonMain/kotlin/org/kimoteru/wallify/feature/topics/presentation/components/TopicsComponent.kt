@@ -99,7 +99,7 @@ class TopicsLogic(
 
     /** «Повторить» on a failed refresh of a list: the failed list on screen repeats itself when the count grows. */
     private fun addListRetry() {
-        uiState.update { it.copy(listRetries = it.listRetries + 1) }
+        uiState.update { it.copy(listRetries = it.listRetries.inc()) }
     }
 }
 

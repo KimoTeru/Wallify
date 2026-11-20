@@ -188,12 +188,8 @@
     <string name="photo_exif_empty">Фотограф не указал данные камеры.</string>
     <!-- Section title: tags of a photo -->
     <string name="photo_tags">Теги</string>
-    <!-- Section title: views and downloads of a photo for the last days -->
-    <string name="photo_stats_title">Последние 30 дней</string>
-    <!-- Caption of the number of views -->
-    <string name="photo_stats_views">Просмотры</string>
-    <!-- Caption of the number of downloads -->
-    <string name="photo_stats_downloads">Скачивания</string>
+    <!-- Caption of the total number of downloads of a photo -->
+    <string name="photo_downloads_count">Скачивания</string>
     <!-- Section title: collections of the signed-in user, where the photo can be added or removed -->
     <string name="photo_collections_title">Ваши коллекции</string>
     <!-- Message when the signed-in user has no collections -->

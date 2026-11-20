@@ -71,8 +71,6 @@ internal object ListKeys {
 
 /** Keys of the saved statistics rows. */
 internal object StatisticsKeys {
-    fun photo(id: String, quantity: Int?): String = "photo:$id:${quantity ?: 0}"
-
     fun user(username: String, quantity: Int?): String = "user:${username.lowercase()}:${quantity ?: 0}"
 }
 
@@ -91,8 +89,6 @@ internal object ItemKeys {
     fun userStatistics(username: String, quantity: Int?): String = "item:${StatisticsKeys.user(username, quantity)}"
 
     fun photo(id: String): String = "item:photo:$id:details"
-
-    fun photoStatistics(id: String, quantity: Int?): String = "item:${StatisticsKeys.photo(id, quantity)}"
 
     fun collection(id: Int): String = "item:collection:$id"
 

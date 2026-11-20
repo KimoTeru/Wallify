@@ -188,12 +188,8 @@
     <string name="photo_exif_empty">The photographer did not share camera data.</string>
     <!-- Section title: tags of a photo -->
     <string name="photo_tags">Tags</string>
-    <!-- Section title: views and downloads of a photo for the last days -->
-    <string name="photo_stats_title">Last 30 days</string>
-    <!-- Caption of the number of views -->
-    <string name="photo_stats_views">Views</string>
-    <!-- Caption of the number of downloads -->
-    <string name="photo_stats_downloads">Downloads</string>
+    <!-- Caption of the total number of downloads of a photo -->
+    <string name="photo_downloads_count">Downloads</string>
     <!-- Section title: collections of the signed-in user, where the photo can be added or removed -->
     <string name="photo_collections_title">Your collections</string>
     <!-- Message when the signed-in user has no collections -->

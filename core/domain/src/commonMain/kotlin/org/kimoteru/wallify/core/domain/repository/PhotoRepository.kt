@@ -8,7 +8,6 @@ import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.RandomPhotoQuery
 import org.kimoteru.wallify.core.model.photo.UpdatePhotoParams
-import org.kimoteru.wallify.core.model.stats.Statistics
 
 interface PhotoRepository {
 
@@ -35,9 +34,6 @@ interface PhotoRepository {
         query: RandomPhotoQuery = RandomPhotoQuery(),
         forceRefresh: Boolean = true
     ): Response<List<Photo>>
-
-    /** [quantity] is the number of days, 1..30; `null` means the backend default. Behaves like [getPhotoFlow]. */
-    fun getPhotoStatisticsFlow(id: String, quantity: Int? = null): Flow<Resource<Statistics>>
 
     /**
      * Reports that the app downloads the photo; call it every time before the file is fetched.

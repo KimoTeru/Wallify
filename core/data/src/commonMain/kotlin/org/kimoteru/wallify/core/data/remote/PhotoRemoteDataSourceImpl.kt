@@ -6,12 +6,10 @@ import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.RandomPhotoQuery
 import org.kimoteru.wallify.core.model.photo.UpdatePhotoParams
-import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.network.api.PhotosApi
 import org.kimoteru.wallify.core.network.model.request.photo.toRequest
 import org.kimoteru.wallify.core.network.model.response.photo.toDomain
 import org.kimoteru.wallify.core.network.model.response.photo.toFileUrl
-import org.kimoteru.wallify.core.network.model.response.stats.toDomain
 import org.koin.core.annotation.Singleton
 
 @Singleton
@@ -37,11 +35,6 @@ class PhotoRemoteDataSourceImpl(
     override suspend fun getRandomPhotos(count: Int, query: RandomPhotoQuery): Response<List<Photo>> {
         return photosApi.getRandomPhotos(count = count, query = query)
             .map { photos -> photos.map { photo -> photo.toDomain() } }
-    }
-
-    override suspend fun getPhotoStatistics(id: String, quantity: Int?): Response<Statistics> {
-        return photosApi.getPhotoStatistics(id = id, quantity = quantity)
-            .map { it.toDomain() }
     }
 
     override suspend fun trackDownload(id: String, quality: ImageQuality): Response<String> {

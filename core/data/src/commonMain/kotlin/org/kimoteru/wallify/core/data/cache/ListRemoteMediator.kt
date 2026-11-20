@@ -8,8 +8,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import org.kimoteru.wallify.core.common.dispatcher.AppDispatchers
 import org.kimoteru.wallify.core.common.paging.FIRST_PAGE
-import org.kimoteru.wallify.core.common.paging.PagingLoadException
 import org.kimoteru.wallify.core.common.response.Response
+import org.kimoteru.wallify.core.common.response.ResponseException
 import org.kimoteru.wallify.core.database.dao.ListDao
 import org.kimoteru.wallify.core.database.entity.ListStateEntity
 import kotlin.time.Duration
@@ -23,7 +23,7 @@ import kotlin.time.Duration
  *   If the backend fails, the saved list stays and Paging reports the failure through `LoadState.refresh`. A refresh
  *   of the user (`LazyPagingItems.refresh()`) always runs, whatever the age of the list.
  * - Append: the next page is derived from how many items are saved, so it works after a restart too.
- * - The last page is the first one shorter than requested.
+ * - The last page is the first one shorter than requested; a list saved to its end asks the backend for nothing more.
  */
 @OptIn(ExperimentalPagingApi::class)
 internal class ListRemoteMediator<E : Any, T : Any>(
@@ -58,10 +58,11 @@ internal class ListRemoteMediator<E : Any, T : Any>(
         return try {
             val pageSize = state.config.pageSize
             val isRefresh = loadType == LoadType.REFRESH
-            val page = if (isRefresh) FIRST_PAGE else listDao.countEntries(listKey) / pageSize + FIRST_PAGE
+            val page = if (isRefresh) FIRST_PAGE else nextPage(pageSize)
+            if (page == null) return MediatorResult.Success(endOfPaginationReached = true)
 
             when (val response = fetch(page, pageSize)) {
-                is Response.Error -> MediatorResult.Error(PagingLoadException(response.errorData))
+                is Response.Error -> MediatorResult.Error(ResponseException(response.errorData))
 
                 is Response.Success -> {
                     val items = response.data
@@ -82,5 +83,18 @@ internal class ListRemoteMediator<E : Any, T : Any>(
         } catch (exception: Exception) {
             MediatorResult.Error(exception)
         }
+    }
+
+    /**
+     * The page after the saved ones, or `null` when the saved list already reached its end. Every page but the last is
+     * full, so a count that is not a whole number of pages ends with the last page, and a fresh empty list is an empty
+     * answer of the backend. The end is read from the database, so it holds for a new pager too (another opening of
+     * the screen), and the last page is not asked for again.
+     */
+    private suspend fun nextPage(pageSize: Int): Int? {
+        val savedCount = listDao.countEntries(listKey)
+        val isComplete = savedCount % pageSize != 0 || savedCount == 0 && loader.isFresh(listKey, ttl)
+
+        return if (isComplete) null else savedCount / pageSize + FIRST_PAGE
     }
 }

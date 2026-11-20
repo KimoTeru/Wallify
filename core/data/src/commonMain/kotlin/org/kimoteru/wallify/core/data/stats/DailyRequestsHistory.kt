@@ -17,7 +17,7 @@ internal fun List<DailyRequests>.plusRequest(day: Long, keepDays: Int): List<Dai
     val counted = filter { it.day > day - keepDays }.toMutableList()
     val index = counted.indexOfFirst { it.day == day }
     if (index >= 0) {
-        counted[index] = counted[index].let { it.copy(count = it.count + 1) }
+        counted[index] = counted[index].let { it.copy(count = it.count.inc()) }
     } else {
         counted += DailyRequests(day = day, count = 1L)
     }

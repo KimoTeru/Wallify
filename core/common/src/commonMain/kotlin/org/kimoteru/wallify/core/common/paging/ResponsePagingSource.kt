@@ -4,8 +4,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import kotlinx.coroutines.CancellationException
 import org.kimoteru.wallify.core.common.response.Response
-import org.kimoteru.wallify.core.common.response.ResponseError
-import org.kimoteru.wallify.core.common.response.ResponseErrorType
+import org.kimoteru.wallify.core.common.response.ResponseException
 
 const val FIRST_PAGE = 1
 const val DEFAULT_PAGE_SIZE = 30
@@ -32,7 +31,7 @@ class ResponsePagingSource<T : Any>(
                     nextKey = if (response.data.size < loadSize) null else page + 1
                 )
 
-                is Response.Error -> LoadResult.Error(PagingLoadException(response.errorData))
+                is Response.Error -> LoadResult.Error(ResponseException(response.errorData))
             }
         } catch (cancellation: CancellationException) {
             throw cancellation
@@ -43,22 +42,3 @@ class ResponsePagingSource<T : Any>(
 
     override fun getRefreshKey(state: PagingState<Int, T>): Int? = state.getRefreshKeyOrNull()
 }
-
-/** Failure reported by a paging loader; [error] keeps the HTTP status and the [ResponseErrorType] for the screen. */
-class PagingLoadException(
-    val error: ResponseError,
-) : Exception(error.message) {
-    /** HTTP status or [ResponseError.DEBUG_ERROR_CODE]. */
-    val code: Int
-        get() = error.code
-
-    val type: ResponseErrorType
-        get() = error.type
-}
-
-/**
- * Error behind a failed paging load: the [ResponseError] of a [PagingLoadException], otherwise (a thrown exception)
- * an error without an HTTP status.
- */
-val Throwable.responseError: ResponseError
-    get() = (this as? PagingLoadException)?.error ?: ResponseError(message = message ?: "Unknown error")

@@ -19,8 +19,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.paging.compose.LazyPagingItems
-import org.kimoteru.wallify.core.common.paging.responseError
 import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.common.response.responseError
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.WindowType
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberWindowType

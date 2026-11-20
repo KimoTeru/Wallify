@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,7 +17,6 @@ import org.kimoteru.wallify.core.common.extensions.Bullet
 import org.kimoteru.wallify.core.common.extensions.Space
 import org.kimoteru.wallify.core.common.extensions.toCompactString
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
-import org.kimoteru.wallify.core.designsystem.ui.chart.Sparkline
 import org.kimoteru.wallify.core.designsystem.ui.click.debouncedClickable
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButton
 import org.kimoteru.wallify.core.designsystem.ui.glass.GlassButtonStyle
@@ -37,6 +35,7 @@ import org.kimoteru.wallify.core.resources.generated.resources.photo_collections
 import org.kimoteru.wallify.core.resources.generated.resources.photo_collections_title
 import org.kimoteru.wallify.core.resources.generated.resources.photo_dimensions
 import org.kimoteru.wallify.core.resources.generated.resources.photo_download
+import org.kimoteru.wallify.core.resources.generated.resources.photo_downloads_count
 import org.kimoteru.wallify.core.resources.generated.resources.photo_exif_aperture
 import org.kimoteru.wallify.core.resources.generated.resources.photo_exif_aperture_value
 import org.kimoteru.wallify.core.resources.generated.resources.photo_exif_camera
@@ -48,14 +47,11 @@ import org.kimoteru.wallify.core.resources.generated.resources.photo_exif_focal_
 import org.kimoteru.wallify.core.resources.generated.resources.photo_exif_iso
 import org.kimoteru.wallify.core.resources.generated.resources.photo_exif_title
 import org.kimoteru.wallify.core.resources.generated.resources.photo_open_source
-import org.kimoteru.wallify.core.resources.generated.resources.photo_stats_downloads
-import org.kimoteru.wallify.core.resources.generated.resources.photo_stats_title
-import org.kimoteru.wallify.core.resources.generated.resources.photo_stats_views
 import org.kimoteru.wallify.core.resources.generated.resources.photo_tags
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiEvent
 import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
 
-/** Everything about the photo except the image: author, actions, statistics, camera data, tags, collections. */
+/** Everything about the photo except the image: author, actions, downloads, camera data, tags, collections. */
 @Composable
 internal fun PhotoDetails(
     modifier: Modifier = Modifier,
@@ -129,7 +125,14 @@ internal fun PhotoDetails(
             }
         }
 
-        PhotoStatistics(uiState = uiState)
+        // The total comes with the whole photo; the statistics by day would cost one more request per photo.
+        photo.downloads?.let { downloads ->
+            GlassStat(
+                modifier = Modifier.fillMaxWidth(),
+                value = downloads.toLong().toCompactString(),
+                label = stringResource(Res.string.photo_downloads_count)
+            )
+        }
 
         PhotoExifCard(exif = photo.exif)
 
@@ -148,39 +151,6 @@ internal fun PhotoDetails(
         PhotoCollections(
             uiState = uiState,
             obtainEvent = obtainEvent
-        )
-    }
-}
-
-@Composable
-private fun PhotoStatistics(uiState: UiState) {
-    val appPadding = AppTheme.padding
-    val appSize = AppTheme.size
-
-    val statistics = uiState.statistics ?: return
-
-    Column(verticalArrangement = Arrangement.spacedBy(appPadding.medium)) {
-        SectionTitle(text = stringResource(Res.string.photo_stats_title))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(appPadding.mediumSpecial)) {
-            GlassStat(
-                modifier = Modifier.weight(1f),
-                value = statistics.views.change.toCompactString(),
-                label = stringResource(Res.string.photo_stats_views)
-            )
-
-            GlassStat(
-                modifier = Modifier.weight(1f),
-                value = statistics.downloads.change.toCompactString(),
-                label = stringResource(Res.string.photo_stats_downloads)
-            )
-        }
-
-        Sparkline(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(appSize.chart.sparklineHeight),
-            values = uiState.viewsSeries
         )
     }
 }

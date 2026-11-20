@@ -82,11 +82,24 @@ class UserRepositoryImpl(
 
     override fun retryCurrentUserLoad() = currentUserSync.retry()
 
-    /** Writes the answer into the database; [currentUser] follows from there. */
+    /**
+     * Writes the answer into the database; [currentUser] follows from there. A saved user loaded less than
+     * [CacheTtl.Item] ago is not asked again, so a start of the app costs no request. The answer is the full profile,
+     * so it also counts as the load of [getUserFlow]: the own profile does not ask for the same user once more.
+     */
     private suspend fun refreshCurrentUser(): Response<User> = withContext(dispatchers.io) {
-        userRemoteDataSource.getCurrentUser()
-            .onSuccess { user -> cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) } }
+        // The saved user belongs to this token: a sign-out or an expired session deletes it before a new token comes.
+        val freshUser = userDao.getCurrent()
+            ?.takeIf { saved -> cacheLoader.isFresh(ItemKeys.user(saved.username), CacheTtl.Item) }
+
+        if (freshUser != null) Response.Success(freshUser.toDomain()) else loadCurrentUser()
     }
+
+    private suspend fun loadCurrentUser(): Response<User> = userRemoteDataSource.getCurrentUser()
+        .onSuccess { user ->
+            cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) }
+            cacheLoader.markLoaded(ItemKeys.user(user.username))
+        }
 
     override fun clearCurrentUser() {
         scope.launch { userDao.deleteCurrent() }
