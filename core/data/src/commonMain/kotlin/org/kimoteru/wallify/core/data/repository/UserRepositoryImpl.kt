@@ -1,5 +1,6 @@
 package org.kimoteru.wallify.core.data.repository
 
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.paging.PagingData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,7 @@ import org.kimoteru.wallify.core.database.dao.PhotoDao
 import org.kimoteru.wallify.core.database.dao.StatsDao
 import org.kimoteru.wallify.core.database.dao.UserDao
 import org.kimoteru.wallify.core.database.entity.toDomain
+import org.kimoteru.wallify.core.datastore.prefs.DataStorePrefs
 import org.kimoteru.wallify.core.domain.repository.ConnectivityRepository
 import org.kimoteru.wallify.core.domain.repository.SessionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
@@ -58,6 +60,7 @@ class UserRepositoryImpl(
     private val statsDao: StatsDao,
     private val cacheLoader: CacheLoader,
     private val cacheStore: CacheStore,
+    private val prefs: DataStorePrefs,
     private val dispatchers: AppDispatchers,
     private val scope: CoroutineScope,
     headersCollector: HeadersCollectorRepository,
@@ -82,15 +85,38 @@ class UserRepositoryImpl(
 
     override fun retryCurrentUserLoad() = currentUserSync.retry()
 
-    /** Writes the answer into the database; [currentUser] follows from there. */
-    private suspend fun refreshCurrentUser(): Response<User> = withContext(dispatchers.io) {
-        userRemoteDataSource.getCurrentUser()
-            .onSuccess { user -> cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) } }
+    /**
+     * Writes the answer into the database; [currentUser] follows from there. A saved user loaded less than
+     * [CacheTtl.Item] ago for the same [authorization] is not asked again, so a start of the app costs no request.
+     * A user saved for another session (a sign-in, maybe into another account) is always loaded anew. The answer is
+     * the full profile, so it also counts as the load of [getUserFlow]: the own profile does not ask for the same
+     * user once more.
+     */
+    private suspend fun refreshCurrentUser(authorization: String): Response<User> = withContext(dispatchers.io) {
+        val session = authorization.sessionId()
+        val freshUser = userDao.getCurrent()
+            ?.takeIf { prefs.getNullable(currentUserSessionKey) == session }
+            ?.takeIf { saved -> cacheLoader.isFresh(ItemKeys.user(saved.username), CacheTtl.Item) }
+
+        if (freshUser != null) Response.Success(freshUser.toDomain()) else loadCurrentUser(session)
     }
 
+    private suspend fun loadCurrentUser(session: Int): Response<User> = userRemoteDataSource.getCurrentUser()
+        .onSuccess { user ->
+            cacheLoader.saveQuietly { cacheStore.saveCurrentUser(user) }
+            cacheLoader.markLoaded(ItemKeys.user(user.username))
+            cacheLoader.saveQuietly { prefs.save(currentUserSessionKey, session) }
+        }
+
     override fun clearCurrentUser() {
-        scope.launch { userDao.deleteCurrent() }
+        scope.launch {
+            userDao.deleteCurrent()
+            prefs.remove(currentUserSessionKey)
+        }
     }
+
+    /** Only tells sessions apart, so a hash and not the token itself: the token is not kept twice. */
+    private fun String.sessionId(): Int = hashCode()
 
     override suspend fun updateCurrentUser(params: UpdateUserParams): Response<User> =
         withContext(dispatchers.io) {
@@ -196,5 +222,10 @@ class UserRepositoryImpl(
             save = { statistics -> cacheStore.saveStatistics(key, statistics) },
             toDomain = { entity -> entity.toDomain() }
         )
+    }
+
+    private companion object {
+        /** The session the saved current user was loaded for. */
+        val currentUserSessionKey = intPreferencesKey("current_user_session")
     }
 }

@@ -1,15 +1,17 @@
 package org.kimoteru.wallify.feature.photo.presentation.components
 
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.extensions.toArgbOrNull
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.common.response.successData
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.PhotoRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
@@ -19,7 +21,6 @@ import org.kimoteru.wallify.core.model.collection.CollectionPhotoChange
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
-import org.kimoteru.wallify.core.model.stats.Statistics
 import org.kimoteru.wallify.core.presentation.base.BaseComponent
 import org.kimoteru.wallify.core.presentation.base.BaseLogic
 import org.kimoteru.wallify.core.presentation.base.BaseNavigationEvent
@@ -33,18 +34,17 @@ import org.kimoteru.wallify.feature.photo.presentation.ui.PhotoContract.UiState
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
 
-private const val STATISTICS_DAYS = 30
-
 /** Proportions of a photo the backend sent no size for. */
 private const val SQUARE_RATIO = 1f
 
 interface PhotoComponent : BaseComponent<UiState, UiEvent>
 
 /**
- * Loads the whole photo, its 30-day statistics and the signed-in user's collections independently, so a failing
- * extra never hides the photo. The download goes through the browser: the logic reports the download to the backend
- * and opens the address of the file.
+ * Loads the whole photo and the signed-in user's collections independently, so a failing extra never hides the photo.
+ * The download goes through the browser: the logic reports the download to the backend and opens the address of the
+ * file.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @Factory
 class PhotoLogic(
     @InjectedParam private val photoId: String,
@@ -57,7 +57,11 @@ class PhotoLogic(
     override val uiState: StateFlow<UiState>
         field = MutableStateFlow(UiState())
 
-    private var photoJob: Job? = null
+    /** The photo can be added to the collections of the signed-in user; `null` without a session. */
+    private val collectionsOwner: String? = userRepository.currentUser.value?.username
+
+    /** Every change follows the photo in the database again, and the backend is asked again (a retry). */
+    private val photoReloadKey = MutableStateFlow(0)
 
     override fun onCreate() {
         coroutineScope.launch {
@@ -66,64 +70,45 @@ class PhotoLogic(
                     .mapDistinctBy { settings -> settings.detailImageQuality to settings.listImageQuality }
                     .collect { (detailQuality, listQuality) -> updateImageQualities(detailQuality, listQuality) }
             }
-        }
 
-        loadPhoto()
-        loadStatistics()
-        loadCollections()
-    }
-
-    override fun obtainUiEvent(event: UiEvent) {
-        when (event) {
-            is UiEvent.Retry -> loadPhoto()
-            is UiEvent.Download -> download()
-            is UiEvent.OpenSource -> uiState.value.photo?.htmlUrl?.let(intentNavigator::openUrl)
-            is UiEvent.OpenAuthor -> uiState.value.photo?.user?.username?.let { username ->
-                navigate(PhotoNavigationEvent.OpenProfile(username))
+            launch {
+                photoReloadKey
+                    .flatMapLatest { photoRepository.getPhotoFlow(photoId) }
+                    .collect { resource ->
+                        when (resource) {
+                            is Resource.Loading -> showLoading()
+                            is Resource.Success -> showPhoto(resource.data)
+                            is Resource.Error -> showLoadError(resource.error)
+                        }
+                    }
             }
-            is UiEvent.ToggleCollection -> toggleCollection(event.collectionId)
-        }
-    }
 
-    /** Follows the photo in the database: the saved one first, then the one the backend answered with. */
-    private fun loadPhoto() {
-        photoJob?.cancel()
-        photoJob = coroutineScope.launch {
-            photoRepository.getPhotoFlow(photoId).collect { resource ->
-                when (resource) {
-                    is Resource.Loading -> {
-                        updateError(null)
-                        updateIsLoading(true)
-                    }
-                    is Resource.Success -> {
-                        showPhoto(resource.data)
-                        updateIsLoading(false)
-                    }
-                    is Resource.Error -> {
-                        updateError(resource.error)
-                        updateIsLoading(false)
-                    }
+            collectionsOwner?.let { username ->
+                launch {
+                    userRepository.getUserCollectionListFlow(username)
+                        .successData()
+                        .collect { collections -> updateCollections(collections) }
                 }
             }
         }
     }
 
-    private fun loadStatistics() {
-        coroutineScope.launch {
-            photoRepository.getPhotoStatisticsFlow(photoId, STATISTICS_DAYS).collect { resource ->
-                if (resource is Resource.Success) updateStatistics(resource.data)
+    override fun obtainUiEvent(event: UiEvent) {
+        when (event) {
+            is UiEvent.Retry -> reloadPhoto()
+            is UiEvent.Download -> download()
+            is UiEvent.OpenSource -> uiState.value.photo?.htmlUrl?.let(intentNavigator::openUrl)
+            is UiEvent.OpenAuthor -> uiState.value.photo?.user?.username?.let { username ->
+                navigate(PhotoNavigationEvent.OpenProfile(username))
             }
+
+            is UiEvent.ToggleCollection -> toggleCollection(event.collectionId)
         }
     }
 
-    private fun loadCollections() {
-        val username = userRepository.currentUser.value?.username ?: return
-
-        coroutineScope.launch {
-            userRepository.getUserCollectionListFlow(username).collect { resource ->
-                if (resource is Resource.Success) updateCollections(resource.data)
-            }
-        }
+    /** «Повторить»: `flatMapLatest` drops the failed subscription and follows the photo again. */
+    private fun reloadPhoto() {
+        photoReloadKey.update { it.inc() }
     }
 
     private fun download() {
@@ -171,12 +156,14 @@ class PhotoLogic(
         }
     }
 
-    private fun updateIsLoading(isLoading: Boolean) {
-        uiState.update { it.copy(isLoading = isLoading) }
+    /** The photo is asked for again: the failure of the last try is over. */
+    private fun showLoading() {
+        uiState.update { it.copy(isLoading = true, error = null) }
     }
 
-    private fun updateError(error: ResponseError?) {
-        uiState.update { it.copy(error = error) }
+    /** Nothing is saved and the backend failed: the failure takes the screen. */
+    private fun showLoadError(error: ResponseError) {
+        uiState.update { it.copy(isLoading = false, error = error) }
     }
 
     /**
@@ -189,17 +176,9 @@ class PhotoLogic(
                 photo = photo,
                 image = photo.toImageUi(detailQuality = it.detailImageQuality, listQuality = it.listImageQuality),
                 author = photo.user?.let { user -> user.toAvatarUi(imageUrl = user.profileImage?.medium) },
+                isLoading = false,
                 error = null,
                 memberCollectionIds = photo.currentUserCollectionIds.toSet()
-            )
-        }
-    }
-
-    private fun updateStatistics(statistics: Statistics) {
-        uiState.update {
-            it.copy(
-                statistics = statistics,
-                viewsSeries = statistics.views.values.map { point -> point.value }
             )
         }
     }

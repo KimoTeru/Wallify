@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.transform
 
 /** Loading state wrapper for UI: loading, data or error. */
 sealed interface Resource<out T> {
@@ -27,6 +28,11 @@ fun <T> Flow<T>.asResource(): Flow<Resource<T>> = map<T, Resource<T>> { value ->
         if (throwable is CancellationException) throw throwable
         emit(Resource.Error(ResponseError(message = throwable.message ?: "Unknown error")))
     }
+
+/** Only the data of [Resource.Success]: for an extra of a screen that shows neither its loading nor its failure. */
+fun <T> Flow<Resource<T>>.successData(): Flow<T> = transform { resource ->
+    if (resource is Resource.Success) emit(resource.data)
+}
 
 fun <T> Flow<Response<T>>.asResourceFlow(): Flow<Resource<T>> = map { response -> response.asResource() }
     .onStart { emit(Resource.Loading) }

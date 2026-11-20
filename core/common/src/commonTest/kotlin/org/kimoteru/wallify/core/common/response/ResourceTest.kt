@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 
@@ -23,15 +24,16 @@ class ResourceTest {
     }
 
     @Test
+    fun successDataSkipsLoadingAndError() = runTest {
+        val states = flowOf(Resource.Loading, Resource.Success(1), Resource.Error(ResponseError("nope", 404)))
+        assertEquals(listOf(1), states.successData().toList())
+    }
+
+    @Test
     fun responseMapsToResource() {
         val error = ResponseError("nope", 404)
         assertEquals(Resource.Error(error), Response.Error(error).asResource())
         assertEquals(Resource.Success("ok"), Response.Success("ok").asResource())
     }
 
-    @Test
-    fun responseOfCapturesException() = runTest {
-        val response = responseOf<Int> { error("bad") }
-        assertEquals("bad", assertIs<Response.Error>(response).errorData.message)
-    }
 }

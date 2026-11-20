@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.common.response.ResponseErrorType
+import org.kimoteru.wallify.core.common.response.ResponseException
 
 class ResponsePagingSourceTest {
     private fun refresh(key: Int?, loadSize: Int) = PagingSource.LoadParams.Refresh(
@@ -44,7 +45,7 @@ class ResponsePagingSourceTest {
 
         val result = assertIs<PagingSource.LoadResult.Error<Int, Int>>(source.load(refresh(key = null, loadSize = 3)))
 
-        val error = assertIs<PagingLoadException>(result.throwable)
+        val error = assertIs<ResponseException>(result.throwable)
         assertEquals("boom", error.message)
         assertEquals(500, error.code)
         assertEquals(ResponseErrorType.Server, error.type)

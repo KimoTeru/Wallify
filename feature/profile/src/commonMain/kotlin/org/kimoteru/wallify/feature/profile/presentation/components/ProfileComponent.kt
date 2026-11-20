@@ -4,12 +4,9 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -20,6 +17,7 @@ import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
 import org.kimoteru.wallify.core.common.response.Resource
 import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.common.response.successData
 import org.kimoteru.wallify.core.domain.repository.CollectionRepository
 import org.kimoteru.wallify.core.domain.repository.UserRepository
 import org.kimoteru.wallify.core.domain.usecase.invoke
@@ -88,6 +86,11 @@ class ProfileLogic(
     /** Every change builds the photo list again, which loads it from the backend if it was made stale. */
     private val photosReloadKey = MutableStateFlow(0)
 
+    /** Every change follows the user and the statistics in the database again, and the backend is asked again. */
+    private val profileReloadKey = MutableStateFlow(0)
+
+    private val profileUsername: Flow<String> = combine(username, profileReloadKey) { login, _ -> login }
+
     private val listImageQuality: Flow<ImageQuality> = uiState.mapDistinctBy { state -> state.listImageQuality }
 
     // The lists give ready cards to the Ui. The quality is joined after `cachedIn`, which may be collected again.
@@ -115,8 +118,6 @@ class ProfileLogic(
             photos.map { photo -> photo.toCard(quality) }
         }
 
-    private var loadJob: Job? = null
-
     private var isUploadPending = false
 
     override fun onCreate() {
@@ -126,10 +127,28 @@ class ProfileLogic(
                     .mapDistinctBy { settings -> settings.listImageQuality }
                     .collect { quality -> updateListImageQuality(quality) }
             }
+
+            launch {
+                profileUsername
+                    .flatMapLatest { login -> userRepository.getUserFlow(login) }
+                    .collect { resource ->
+                        when (resource) {
+                            is Resource.Loading -> showLoading()
+                            is Resource.Success -> showUser(resource.data)
+                            is Resource.Error -> showLoadError(resource.error)
+                        }
+                    }
+            }
+
+            launch {
+                profileUsername
+                    .flatMapLatest { login -> userRepository.getUserStatisticsFlow(login) }
+                    .successData()
+                    .collect { statistics -> updateStatistics(statistics) }
+            }
         }
 
         showSavedUser()
-        load()
     }
 
     /** The user comes back from the browser after the upload page: the new photos and the counters are loaded. */
@@ -141,7 +160,7 @@ class ProfileLogic(
 
     override fun obtainUiEvent(event: UiEvent) {
         when (event) {
-            is UiEvent.Retry -> load()
+            is UiEvent.Retry -> reloadProfile()
             is UiEvent.SelectTab -> updateSelectedTab(event.tab)
             is UiEvent.OpenCollection -> updateOpenedCollection(event.collection)
             is UiEvent.CloseCollection -> updateOpenedCollection(null)
@@ -159,43 +178,11 @@ class ProfileLogic(
     private fun showSavedUser() {
         val saved = userRepository.currentUser.value.takeIf { target is ProfileTarget.CurrentUser } ?: return
         showUser(saved)
-        updateIsLoading(false)
     }
 
-    /**
-     * Follows the user and the statistics in the database: the saved ones first, then the backend's answer. The own
-     * profile starts over when the username changes.
-     */
-    private fun load() {
-        loadJob?.cancel()
-        loadJob = coroutineScope.launch {
-            if (uiState.value.user == null) updateIsLoading(true)
-
-            username.collectLatest { login ->
-                coroutineScope {
-                    launch {
-                        userRepository.getUserStatisticsFlow(login).collect { resource ->
-                            if (resource is Resource.Success) updateStatistics(resource.data)
-                        }
-                    }
-
-                    userRepository.getUserFlow(login).collect { resource ->
-                        when (resource) {
-                            is Resource.Loading -> updateIsLoading(true)
-                            is Resource.Success -> {
-                                showUser(resource.data)
-                                updateIsLoading(false)
-                            }
-
-                            is Resource.Error -> {
-                                updateError(resource.error)
-                                updateIsLoading(false)
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    /** «Повторить»: `flatMapLatest` drops the failed subscriptions and follows the user and the statistics again. */
+    private fun reloadProfile() {
+        profileReloadKey.update { it.inc() }
     }
 
     private fun upload() {
@@ -206,8 +193,8 @@ class ProfileLogic(
     private fun reloadAfterUpload() {
         coroutineScope.launch {
             userRepository.invalidateUserPhotos(username.first())
-            photosReloadKey.update { it + 1 }
-            load()
+            photosReloadKey.update { it.inc() }
+            reloadProfile()
         }
     }
 
@@ -242,12 +229,14 @@ class ProfileLogic(
         }
     }
 
-    private fun updateIsLoading(isLoading: Boolean) {
-        uiState.update { it.copy(isLoading = isLoading) }
+    /** Nothing is saved yet: the header waits for the backend, a failure of the last try is over. */
+    private fun showLoading() {
+        uiState.update { it.copy(isLoading = true, error = null) }
     }
 
-    private fun updateError(error: ResponseError?) {
-        uiState.update { it.copy(error = error) }
+    /** Nothing is saved and the backend failed: the failure takes the place of the header. */
+    private fun showLoadError(error: ResponseError) {
+        uiState.update { it.copy(isLoading = false, error = error) }
     }
 
     /**
@@ -256,12 +245,14 @@ class ProfileLogic(
      */
     private fun showUser(user: User) {
         val isOwn = target is ProfileTarget.CurrentUser || user.id == userRepository.currentUser.value?.id
+
         uiState.update {
             it.copy(
                 user = user,
                 avatar = user.toAvatarUi(imageUrl = user.profileImage?.large),
                 userSubtitle = user.profileSubtitle(),
                 isOwn = isOwn,
+                isLoading = false,
                 error = null
             )
         }
@@ -293,7 +284,7 @@ class ProfileLogic(
 
     /** «Повторить» on a failed refresh of the list of the tab: it repeats itself when the count grows. */
     private fun addListRetry() {
-        uiState.update { it.copy(listRetries = it.listRetries + 1) }
+        uiState.update { it.copy(listRetries = it.listRetries.inc()) }
     }
 
     /** All photos of a profile are the same author's, so the cards show none. */

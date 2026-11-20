@@ -14,7 +14,6 @@ internal object EndpointTemplates {
         "photos",
         "photos/random",
         "photos/{id}",
-        "photos/{id}/statistics",
         "photos/{id}/download",
         "collections",
         "collections/{id}",

@@ -19,8 +19,8 @@ import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.flow.flowOf
 import org.jetbrains.compose.resources.stringResource
-import org.kimoteru.wallify.core.common.paging.responseError
 import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.common.response.responseError
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberIsShortWindow
 import org.kimoteru.wallify.core.designsystem.ui.glass.FloatingBarScreen

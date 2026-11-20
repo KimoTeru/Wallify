@@ -35,6 +35,7 @@ class TopicRepositoryImpl(
 
     override fun getTopicsFlow(ids: List<String>, order: TopicsOrder?): Flow<PagingData<Topic>> {
         val listKey = ListKeys.topics(ids, order)
+
         return cacheLoader.pager(
             dispatchers = dispatchers,
             listKey = listKey,
@@ -68,6 +69,7 @@ class TopicRepositoryImpl(
         order: PhotosOrder?
     ): Flow<PagingData<Photo>> {
         val listKey = ListKeys.topicPhotos(idOrSlug, orientation, order)
+
         return cacheLoader.pager(
             dispatchers = dispatchers,
             listKey = listKey,

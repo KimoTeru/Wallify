@@ -10,8 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.paging.compose.LazyPagingItems
-import org.kimoteru.wallify.core.common.paging.responseError
 import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.common.response.responseError
 
 /**
  * Reports a failed refresh of a list that already shows items (the saved list stays on screen) to [onChange] and

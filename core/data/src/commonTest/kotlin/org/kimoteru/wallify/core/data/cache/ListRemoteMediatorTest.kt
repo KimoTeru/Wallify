@@ -6,9 +6,9 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import kotlinx.coroutines.test.runTest
-import org.kimoteru.wallify.core.common.paging.PagingLoadException
 import org.kimoteru.wallify.core.common.response.Response
 import org.kimoteru.wallify.core.common.response.ResponseError
+import org.kimoteru.wallify.core.common.response.ResponseException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -102,14 +102,36 @@ class ListRemoteMediatorTest {
     }
 
     @Test
-    fun `append of an already complete list does not duplicate the last page`() = runTest {
+    fun `append of a list saved to its end asks the backend for nothing`() = runTest {
         backend = listOf("a", "b", "c")
         mediator.load(LoadType.REFRESH, state)
         mediator.load(LoadType.APPEND, state)
 
+        val result = mediator.load(LoadType.APPEND, state)
+
+        assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = true), result)
+        assertEquals(listOf(1, 2), requestedPages)
+        assertEquals(listOf("a", "b", "c"), listDao.itemIds(LIST_KEY))
+    }
+
+    @Test
+    fun `append of a fresh empty list asks the backend for nothing`() = runTest {
+        mediator.load(LoadType.REFRESH, state)
+
+        val result = mediator.load(LoadType.APPEND, state)
+
+        assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = true), result)
+        assertEquals(listOf(1), requestedPages)
+    }
+
+    @Test
+    fun `append of a list of whole pages asks for the next page`() = runTest {
+        backend = listOf("a", "b", "c", "d")
+        mediator.load(LoadType.REFRESH, state)
+
         mediator.load(LoadType.APPEND, state)
 
-        assertEquals(listOf("a", "b", "c"), listDao.itemIds(LIST_KEY))
+        assertEquals(listOf(1, 2), requestedPages)
     }
 
     @Test
@@ -134,7 +156,7 @@ class ListRemoteMediatorTest {
         val result = mediator.load(LoadType.REFRESH, state)
 
         val error = assertIs<RemoteMediator.MediatorResult.Error>(result)
-        val cause = assertIs<PagingLoadException>(error.throwable)
+        val cause = assertIs<ResponseException>(error.throwable)
         assertEquals(ResponseError.DEBUG_ERROR_CODE, cause.code)
         assertEquals(listOf("a", "b"), listDao.itemIds(LIST_KEY))
     }

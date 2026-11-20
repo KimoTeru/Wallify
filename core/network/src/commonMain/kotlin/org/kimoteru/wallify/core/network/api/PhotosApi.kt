@@ -11,7 +11,6 @@ import org.kimoteru.wallify.core.model.photo.RandomPhotoQuery
 import org.kimoteru.wallify.core.network.model.request.photo.UpdatePhotoRequest
 import org.kimoteru.wallify.core.network.model.response.photo.PhotoDownloadResponse
 import org.kimoteru.wallify.core.network.model.response.photo.PhotoResponse
-import org.kimoteru.wallify.core.network.model.response.stats.PhotoStatisticsResponse
 import org.kimoteru.wallify.core.network.response.executeRequest
 import org.koin.core.annotation.Singleton
 
@@ -48,12 +47,6 @@ class PhotosApi(
                 parameter(QueryParam.COUNT, count)
                 randomFilters(query)
             }
-        }
-    }
-
-    suspend fun getPhotoStatistics(id: String, quantity: Int?): Response<PhotoStatisticsResponse> {
-        return executeRequest {
-            client.get("photos/$id/statistics") { statisticsRange(quantity) }
         }
     }
 

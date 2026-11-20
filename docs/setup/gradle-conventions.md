@@ -17,8 +17,9 @@ Related: `setup/commands.md`, `architecture/overview.md`.
 6. Release-сборка Android идёт через R8 (`isMinifyEnabled`, `isShrinkResources` в `wallify.android.application`):
    без него Compose заметно медленнее. Плавность и рывки меряем только на release. Свои правила R8 — в
    `androidApp/proguard-rules.pro` и только под то, о чём сообщил R8 (`missing_rules.txt`) или что упало на release:
-   библиотеки приносят свои. Правило узкое (класс и член, а не `-keep class lib.** { *; }`): широкий `-keep`
-   выключает оптимизацию библиотеки. Перед новым правилом смотрим, нет ли его уже в jar библиотеки
+   библиотеки приносят свои. Исключение — `-assumenosideeffects` для `log` из `core:common`: он убирает лог из
+   release и стоит в правилах обоих приложений (`code/code-style.md` § Прочее). Правило узкое (класс и член, а не
+   `-keep class lib.** { *; }`): широкий `-keep` выключает оптимизацию библиотеки. Перед новым правилом смотрим, нет ли его уже в jar библиотеки
    (`META-INF/proguard`, `META-INF/com.android.tools`).
    Приложение нигде не публикуется, поэтому release подписан debug-ключом (`wallify.android.application`): APK
    ставится как есть, своего keystore и паролей в сборке нет. Поверх APK, собранного на другой машине (там свой

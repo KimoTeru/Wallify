@@ -19,8 +19,10 @@ import kotlin.time.Duration
  * Collect it in the presentation layer with `cachedIn(scope)`. The mediator loads, decodes and saves the pages on
  * `dispatchers.io` of the repository, not on the main thread that collects the list.
  *
- * `initialLoadSize` equals the page size, so every request has the same size and the page arithmetic of the mediator
- * stays correct.
+ * `initialLoadSize` equals the page size. Paging asks the mediator for the next page whenever the first load of a
+ * source reaches the end of the saved rows (`PageFetcherSnapshot`, not `prefetchDistance`), and every saved page makes
+ * a new source: a larger first load would reach the end again after each page and load page after page without a
+ * scroll (a refresh cost four requests instead of two).
  *
  * Placeholders are on: Room invalidates the source on any write to its tables, and the reloaded source starts at the
  * refresh key `anchorPosition - initialLoadSize / 2`, which is an offset in the table. Without placeholders the

@@ -5,7 +5,6 @@ import org.kimoteru.wallify.core.model.photo.ImageQuality
 import org.kimoteru.wallify.core.model.photo.Photo
 import org.kimoteru.wallify.core.model.photo.RandomPhotoQuery
 import org.kimoteru.wallify.core.model.photo.UpdatePhotoParams
-import org.kimoteru.wallify.core.model.stats.Statistics
 
 interface PhotoRemoteDataSource {
 
@@ -16,8 +15,6 @@ interface PhotoRemoteDataSource {
     suspend fun getRandomPhoto(query: RandomPhotoQuery): Response<Photo>
 
     suspend fun getRandomPhotos(count: Int, query: RandomPhotoQuery): Response<List<Photo>>
-
-    suspend fun getPhotoStatistics(id: String, quantity: Int?): Response<Statistics>
 
     suspend fun trackDownload(id: String, quality: ImageQuality): Response<String>
 

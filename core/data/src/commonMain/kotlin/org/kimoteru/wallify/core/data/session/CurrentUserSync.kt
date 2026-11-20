@@ -34,7 +34,7 @@ internal class CurrentUserSync(
     private val headersCollector: HeadersCollectorRepository,
     private val session: SessionRepository,
     private val connectivityRepository: ConnectivityRepository,
-    private val refresh: suspend () -> Response<User>,
+    private val refresh: suspend (authorization: String) -> Response<User>,
     private val clear: () -> Unit
 ) {
 
@@ -53,7 +53,7 @@ internal class CurrentUserSync(
                     if (authorization == null) {
                         clearUserIfSignedOut()
                     } else {
-                        loadUser()
+                        loadUser(authorization)
                     }
                 }
         }
@@ -72,11 +72,11 @@ internal class CurrentUserSync(
         if (session.authToken.first().isNullOrBlank()) clear()
     }
 
-    private suspend fun loadUser() {
+    private suspend fun loadUser(authorization: String) {
         while (true) {
             loadError.value = null
 
-            when (val response = refresh()) {
+            when (val response = refresh(authorization)) {
                 is Response.Success -> return
 
                 is Response.Error -> {

@@ -129,3 +129,11 @@ Related: `code/presentation.md`, `code/di.md`, `architecture/overview.md` § П�
 - Публичный API модуля делаем минимальным: `internal` по умолчанию для деталей реализации.
 - Строковые константы в `object`/`private const val`, не «магические» строки в коде.
 - `@Suppress` — точечно и с причиной в комментарии.
+- Лог — `log(tag) { "…" }` или `log { "…" }` (тег `Wallify`) из `core:common` (`log/Log.kt`); внутри Kermit: на
+  Android — Logcat с тегом, на Desktop — консоль. `println`, `android.util.Log` и Kermit напрямую не используем:
+  `println` попадает в Logcat под тегом `System.out`, и фильтр по тегу его не видит. Под капотом глобальный
+  `Logger` Kermit без DI и без настройки. В release вызовов `log` нет: R8 и ProGuard удаляют их вместе с
+  сообщением (`-assumenosideeffects` в `proguard-rules.pro` обоих приложений), поэтому проверок debug/release в коде
+  нет. Значит, внутри `log { … }` только сборка строки, без побочных эффектов. Тег — константа (`private const val`).
+  Запросы к бэкенду — одна строка на ответ под тегом `WallifyApi` в `RequestStatsPlugin` (метод, путь с
+  параметрами, статус, остаток лимита): все запросы экрана видны одним фильтром, второй лог запросов не заводим.

@@ -8,6 +8,7 @@ import org.kimoteru.wallify.core.database.dao.TopicDao
 import org.kimoteru.wallify.core.database.dao.UserDao
 import org.kimoteru.wallify.core.database.entity.ListStateEntity
 import org.kimoteru.wallify.core.database.entity.PhotoEntity
+import org.kimoteru.wallify.core.database.entity.UserEntity
 import org.kimoteru.wallify.core.database.entity.toEntity
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.model.photo.Photo
@@ -109,21 +110,23 @@ class CacheStore(
     suspend fun saveUserSummaries(users: List<User>) {
         if (users.isEmpty()) return
         val saved = userDao.getByIds(users.map { it.id }).associateBy { it.id }
-        userDao.upsertAll(
-            users.map { user ->
-                val old = saved[user.id]
-                val summary = user.toEntity(isCurrent = old?.isCurrent ?: false, isDetailed = false)
-                if (old != null && old.isDetailed) {
-                    old.copy(
-                        username = summary.username,
-                        name = summary.name,
-                        profileImage = summary.profileImage,
-                        profileUrl = summary.profileUrl
-                    )
-                } else {
-                    summary
-                }
-            }
+        val changed = users
+            .map { user -> user.toSummaryEntity(saved[user.id]) }
+            .filter { entity -> entity != saved[entity.id] }
+
+        if (changed.isNotEmpty()) userDao.upsertAll(changed)
+    }
+
+    /** A detailed profile saved before ([old]) takes only the fields a list carries; the rest stays. */
+    private fun User.toSummaryEntity(old: UserEntity?): UserEntity {
+        val summary = toEntity(isCurrent = old?.isCurrent ?: false, isDetailed = false)
+        if (old == null || !old.isDetailed) return summary
+
+        return old.copy(
+            username = summary.username,
+            name = summary.name,
+            profileImage = summary.profileImage,
+            profileUrl = summary.profileUrl
         )
     }
 

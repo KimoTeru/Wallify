@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 /**
  * Requests the app sent to the backend on this device since the last reset.
  * [endpoints] are sorted by [EndpointStat.count], the most requested first. [rateLimit] comes from the last answer of
- * the backend and is `null` until the first answer after the start of the app: the limit resets every hour.
+ * the backend and is `null` until the first one; it is kept across restarts.
  * [daily] holds only the recent local days of the user that had requests, the oldest first; the defaults let the
  * counters saved before a field appeared be read.
  */
@@ -49,7 +49,10 @@ data class EndpointStat(
     val count: Long,
 )
 
-/** Requests allowed per hour ([limit]) and how many of them are left ([remaining]). */
+/**
+ * Requests allowed per hour ([limit]) and how many of them were left ([remaining]) when the answer that brought them
+ * came ([receivedAtMillis], epoch millis): the backend tells it only in answers, so it is the last known value.
+ */
 @Serializable
 data class RateLimit(
     @SerialName("limit")
@@ -57,4 +60,7 @@ data class RateLimit(
 
     @SerialName("remaining")
     val remaining: Int,
+
+    @SerialName("received_at")
+    val receivedAtMillis: Long = 0L,
 )

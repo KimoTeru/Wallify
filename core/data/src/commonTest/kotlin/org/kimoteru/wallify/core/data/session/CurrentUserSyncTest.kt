@@ -44,6 +44,17 @@ class CurrentUserSyncTest {
     }
 
     @Test
+    fun eachTokenLoadsTheUserForItsOwnSession() = runTest(UnconfinedTestDispatcher()) {
+        val users = FakeUsers(Response.Success(USER))
+        createSync(users, scope = backgroundScope)
+
+        headers.updateAuthorization("Bearer first")
+        headers.updateAuthorization("Bearer second")
+
+        assertEquals(listOf("Bearer first", "Bearer second"), users.refreshedAuthorizations)
+    }
+
+    @Test
     fun lostTokenClearsTheUser() = runTest(UnconfinedTestDispatcher()) {
         val users = FakeUsers(Response.Success(USER))
         createSync(users, scope = backgroundScope)
@@ -176,9 +187,12 @@ private class FakeUsers(vararg results: Response<User>) {
     var clearCalls = 0
         private set
 
-    suspend fun refresh(): Response<User> {
+    val refreshedAuthorizations = mutableListOf<String>()
+
+    suspend fun refresh(authorization: String): Response<User> {
         val answer = answers[minOf(refreshCalls, answers.lastIndex)]
         refreshCalls++
+        refreshedAuthorizations += authorization
         if (answer is Response.Success) current = answer.data
         return answer
     }
