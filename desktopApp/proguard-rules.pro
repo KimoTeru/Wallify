@@ -90,3 +90,8 @@
 
 # Readable stack traces in crash reports.
 -keepattributes SourceFile,LineNumberTable
+
+# A release build logs nothing: every call of `log` (`core:common`) is removed together with its message.
+-assumenosideeffects class org.kimoteru.wallify.core.common.log.LogKt {
+    *** log(...);
+}

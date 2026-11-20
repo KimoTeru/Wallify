@@ -6,3 +6,8 @@
 # Readable stack traces in crash reports: the mapping file restores the names, these keep the line numbers.
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# A release build logs nothing: every call of `log` (`core:common`) is removed together with its message.
+-assumenosideeffects class org.kimoteru.wallify.core.common.log.LogKt {
+    *** log(...);
+}
