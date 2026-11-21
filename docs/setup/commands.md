@@ -41,6 +41,17 @@ Related: `setup/gradle-conventions.md`.
   API (`SingleArtifact.APK`), а не по пути `build/outputs`: AGP сам свяжет копирование со сборкой. Установщик
   собирается только под ОС, на которой запущена задача: DMG на macOS, MSI на Windows, DEB на Linux.
 
+## MCP Hot Reload
+
+- `.mcp.json` в корне подключает MCP-сервер Compose Hot Reload: Claude Code сам запускает задачу
+  `:desktopApp:hotMcpServer`, агент `./gradlew` не вызывает. Задача приходит с плагином Compose Multiplatform
+  (Hot Reload 1.2.0+), отдельной зависимости нет.
+- В конфиге полный путь задачи: короткое `hotMcpServer` совпадёт и с `hotMcpServerJvm` KMP-модулей с Compose, и
+  Gradle запустит несколько серверов.
+- Приложение запускает пользователь (`./gradlew :desktopApp:hotRun --auto`). Сервер ждёт его и подключается сам; через
+  него агент видит экран Desktop (скриншот, дерево семантики, ошибки UI, логи) и проверяет свою правку после reload.
+- Сервер работает только с Desktop: вёрстку Android он не показывает.
+
 ## Тесты
 
 - Тесты лежат в `commonTest` модуля; платформенные — в `jvmTest` (только если нужен платформенный API).
