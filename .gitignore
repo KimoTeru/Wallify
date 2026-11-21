@@ -31,11 +31,6 @@ GoogleService-Info.plist
 *.iws
 .fleet/
 .vscode/
-# Cursor: the rules and hooks that make agents read docs/ are part of the project, the rest is local
-.cursor/*
-!.cursor/rules/
-!.cursor/hooks.json
-!.cursor/hooks/
 
 # Android
 captures/

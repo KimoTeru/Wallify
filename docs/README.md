@@ -51,6 +51,7 @@ docs/
 | Задача / сигнал | Доки |
 |---|---|
 | Что проверять и как, «как собрать» | `setup/commands.md` |
+| Новая логика без UI (утилита, маппер, источник данных, репозиторий, use case, `Logic`), исправление бага, тест | `setup/commands.md` § Тесты, § TDD |
 | Новый модуль, зависимость, версия, правка `*.gradle.kts` / `libs.versions.toml` / `settings.gradle.kts` | `setup/gradle-conventions.md` |
 | Адрес бэкенда, ключи, `local.properties`, `ApiBuildConfig` | `setup/config-and-secrets.md` |
 | Новый эндпоинт, модель ответа / запроса, API-класс, источник данных, маппер, репозиторий над бэкендом | `architecture/data.md` § Сеть, § Бэкенд фото, `architecture/layers.md` |
@@ -61,7 +62,7 @@ docs/
 | Кэш данных бэкенда, офлайн, очистка данных при выходе, новая таблица Room | `architecture/data.md` § Кэш |
 | Скачивание файла по ссылке | `architecture/data.md` § Загрузка файлов |
 | Постраничный список, `LazyColumn` / сетка с подгрузкой | `architecture/data.md` § Пагинация, `design/foundations.md` § Списки |
-| Новый экран или фича | `code/presentation.md`, `code/navigation.md`, `code/di.md`, `design/foundations.md` |
+| Новый экран или фича | `code/presentation.md`, `code/navigation.md`, `code/di.md`, `design/foundations.md`, `setup/commands.md` § TDD |
 | Состояние экрана, события, диалог ошибки, снекбар | `code/presentation.md` |
 | Новый `Koin`-модуль, регистрация зависимости | `code/di.md` |
 | Переход между экранами, back, корневой граф | `code/navigation.md` |
@@ -85,8 +86,6 @@ docs/
 
 Агент читает доки не по желанию, а принудительно.
 
-Claude Code:
-
 1. `CLAUDE.md` загружается сам и подключает этот индекс (`@docs/README.md`), так что таблица «Что когда читать» всегда
    в контексте, в том числе у субагентов.
 2. Хук `.claude/hooks/require-docs.sh` (`PreToolUse`, `.claude/settings.json`) блокирует `Write`, `Edit` и другие
@@ -97,12 +96,8 @@ Claude Code:
    звёздочные импорты, `onCreate() = …`, строки длиннее 120 символов, в фичах — `Color(0x…)`, `TextStyle(`, `N.dp`,
    `instanceKeeper.getOrCreate`, в модулях — `repositories {}`. Сообщает только о строках, которых нет в `HEAD`.
    Новое правило, которое можно проверить поиском, добавляем и туда.
-
-Cursor:
-
-1. `AGENTS.md` и `.cursor/rules/read-docs.mdc` (`alwaysApply`) требуют прочитать этот индекс первым действием.
-2. Хук `.cursor/hooks/require-docs.sh` (`preToolUse`, `.cursor/hooks.json`) блокирует `Write`, `StrReplace` и другие
-   правки, пока в этом чате не вызван `Read` на `docs/README.md`. Для субагентов чат свой, они читают доки заново.
+4. `AGENTS.md` — указатель для других агентов (Codex, Copilot): требует прочитать этот индекс первым действием, хуков
+   у них нет.
 
 Правило про доки меняем во всех этих местах сразу.
 
