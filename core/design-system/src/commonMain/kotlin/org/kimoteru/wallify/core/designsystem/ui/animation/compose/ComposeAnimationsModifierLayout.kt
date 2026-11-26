@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
+import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIf
 import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIfNotNull
 import kotlin.math.roundToInt
 
@@ -138,10 +139,9 @@ fun Modifier.animatedSize(
                 }
             }
         }
-        .then(
-            if (initialized) Modifier.size(with(density) { animatedSize.toDpSize() })
-            else Modifier
-        )
+        .applyIf(initialized) {
+            size(with(density) { animatedSize.toDpSize() })
+        }
 }
 
 @Composable

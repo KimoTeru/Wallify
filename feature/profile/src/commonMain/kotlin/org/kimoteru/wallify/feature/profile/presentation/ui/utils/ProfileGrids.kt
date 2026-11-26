@@ -32,6 +32,7 @@ import org.kimoteru.wallify.core.designsystem.ui.icon.AppIcons
 import org.kimoteru.wallify.core.designsystem.ui.image.CachedAsyncImage
 import org.kimoteru.wallify.core.designsystem.ui.indicator.DefaultProgressIndicator
 import org.kimoteru.wallify.core.designsystem.ui.paging.RefreshErrorEffect
+import org.kimoteru.wallify.core.designsystem.ui.paging.ScrollToTopOnRefreshEffect
 import org.kimoteru.wallify.core.designsystem.ui.paging.isAppending
 import org.kimoteru.wallify.core.designsystem.ui.paging.isEmpty
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
@@ -40,7 +41,7 @@ import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoCardPlaceholder
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridLayout
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
-import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.DefaultPullToRefreshBox
+import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.rememberRefreshLine
 import org.kimoteru.wallify.core.model.collection.PhotoCollection
 import org.kimoteru.wallify.core.presentation.photo.PhotoCard
 import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
@@ -100,91 +101,92 @@ internal fun ProfileGrid(
             retries = uiState.listRetries,
             onChange = { list, error -> obtainEvent(UiEvent.ListRefreshError(list, error)) }
         )
+        ScrollToTopOnRefreshEffect(
+            paging = paging,
+            state = gridState
+        )
     }
 
-    DefaultPullToRefreshBox(
+    PhotoGridLayout(
         modifier = modifier,
-        isRefreshing = listPaging?.let { it.isRefreshing && it.itemCount > 0 } == true,
-        onRefresh = { listPaging?.refresh() },
-        indicatorPadding = PaddingValues(top = contentPadding.calculateTopPadding())
+        mode = PhotoGridMode.Grid,
+        state = gridState,
+        contentPadding = contentPadding,
+        refreshLine = rememberRefreshLine(
+            isRefreshing = listPaging?.let { it.isRefreshing && it.itemCount > 0 } == true,
+            onRefresh = { listPaging?.refresh() }
+        )
     ) {
-        PhotoGridLayout(
-            modifier = Modifier.fillMaxSize(),
-            mode = PhotoGridMode.Grid,
-            state = gridState,
-            contentPadding = contentPadding
-        ) {
-            item(key = HEADER_KEY, span = StaggeredGridItemSpan.FullLine) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    ProfileHeader(
-                        uiState = uiState,
-                        obtainEvent = obtainEvent
+        item(key = HEADER_KEY, span = StaggeredGridItemSpan.FullLine) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                ProfileHeader(
+                    uiState = uiState,
+                    obtainEvent = obtainEvent
+                )
+            }
+        }
+
+        openedCollection?.let { collection ->
+            item(key = SUB_HEADER_KEY, span = StaggeredGridItemSpan.FullLine) {
+                CollectionTitle(
+                    collection = collection,
+                    onBack = { obtainEvent(UiEvent.CloseCollection) }
+                )
+            }
+        }
+
+        photoPaging?.let { paging ->
+            items(
+                count = paging.itemCount,
+                key = { index -> paging.keyAt(index) { card -> card.id } },
+                // A type per kind of item lets the grid reuse the nodes of a card for another card.
+                contentType = { index ->
+                    if (paging.peek(index) != null) PHOTO_CONTENT_TYPE else PLACEHOLDER_CONTENT_TYPE
+                }
+            ) { index ->
+                val card = paging[index]
+
+                if (card != null) {
+                    PhotoCard(
+                        card = card,
+                        mode = PhotoGridMode.Grid,
+                        onClick = { obtainEvent(UiEvent.OpenPhoto(card.id)) }
+                    )
+                } else {
+                    PhotoCardPlaceholder(mode = PhotoGridMode.Grid)
+                }
+            }
+
+            statusItems(paging = paging, emptyText = emptyText)
+        }
+
+        collectionPaging?.let { paging ->
+            items(
+                count = paging.itemCount,
+                key = { index -> paging.keyAt(index) { card -> card.collection.id } },
+                contentType = { index ->
+                    if (paging.peek(index) != null) COLLECTION_CONTENT_TYPE else PLACEHOLDER_CONTENT_TYPE
+                }
+            ) { index ->
+                val card = paging[index]
+
+                if (card != null) {
+                    CollectionCard(
+                        card = card,
+                        onClick = { obtainEvent(UiEvent.OpenCollection(card.collection)) }
+                    )
+                } else {
+                    PhotoCardPlaceholder(
+                        mode = PhotoGridMode.Grid,
+                        aspectRatio = appRatio.image.landscape
                     )
                 }
             }
 
-            openedCollection?.let { collection ->
-                item(key = SUB_HEADER_KEY, span = StaggeredGridItemSpan.FullLine) {
-                    CollectionTitle(
-                        collection = collection,
-                        onBack = { obtainEvent(UiEvent.CloseCollection) }
-                    )
-                }
-            }
-
-            photoPaging?.let { paging ->
-                items(
-                    count = paging.itemCount,
-                    key = { index -> paging.keyAt(index) { card -> card.id } },
-                    // A type per kind of item lets the grid reuse the nodes of a card for another card.
-                    contentType = { index ->
-                        if (paging.peek(index) != null) PHOTO_CONTENT_TYPE else PLACEHOLDER_CONTENT_TYPE
-                    }
-                ) { index ->
-                    val card = paging[index]
-
-                    if (card != null) {
-                        PhotoCard(
-                            card = card,
-                            mode = PhotoGridMode.Grid,
-                            onClick = { obtainEvent(UiEvent.OpenPhoto(card.id)) }
-                        )
-                    } else {
-                        PhotoCardPlaceholder(mode = PhotoGridMode.Grid)
-                    }
-                }
-
-                statusItems(paging = paging, emptyText = emptyText)
-            }
-
-            collectionPaging?.let { paging ->
-                items(
-                    count = paging.itemCount,
-                    key = { index -> paging.keyAt(index) { card -> card.collection.id } },
-                    contentType = { index ->
-                        if (paging.peek(index) != null) COLLECTION_CONTENT_TYPE else PLACEHOLDER_CONTENT_TYPE
-                    }
-                ) { index ->
-                    val card = paging[index]
-
-                    if (card != null) {
-                        CollectionCard(
-                            card = card,
-                            onClick = { obtainEvent(UiEvent.OpenCollection(card.collection)) }
-                        )
-                    } else {
-                        PhotoCardPlaceholder(
-                            mode = PhotoGridMode.Grid,
-                            aspectRatio = appRatio.image.landscape
-                        )
-                    }
-                }
-
-                statusItems(paging = paging, emptyText = emptyText)
-            }
+            statusItems(paging = paging, emptyText = emptyText)
         }
     }
 }

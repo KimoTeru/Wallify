@@ -38,6 +38,14 @@ interface ListDao {
     @Query("SELECT updatedAtEpochMillis FROM list_state WHERE listKey = :listKey")
     suspend fun getUpdatedAt(listKey: String): Long?
 
+    /** Whether the saved list reached its last page; `null` when the list has no state row. */
+    @Query("SELECT isEnded FROM list_state WHERE listKey = :listKey")
+    suspend fun isEnded(listKey: String): Boolean?
+
+    /** Sets the end of a list that has a state row, without touching its age. */
+    @Query("UPDATE list_state SET isEnded = :isEnded WHERE listKey = :listKey")
+    suspend fun setEnded(listKey: String, isEnded: Boolean)
+
     /**
      * Makes the lists whose key starts with [prefix] stale: they are loaded again the next time they are opened,
      * while the saved items stay on screen until the new ones arrive. `substr`, not `LIKE`, so `_` and `%` in a key

@@ -38,6 +38,7 @@ import org.kimoteru.wallify.core.network.model.response.photo.PhotoDownloadRespo
 import org.kimoteru.wallify.core.network.model.response.photo.PhotoResponse
 import org.kimoteru.wallify.core.network.model.response.search.SearchPhotosResponse
 import org.kimoteru.wallify.core.network.model.response.topic.TopicResponse
+import org.kimoteru.wallify.core.network.model.response.topic.toDomain
 import org.kimoteru.wallify.core.network.session.SessionExpiryCollectorImpl
 import org.kimoteru.wallify.core.network.stats.RequestStatsCollectorImpl
 
@@ -251,6 +252,16 @@ class ApiEndpointsTest {
         assertEquals("wallpapers", topic.slug)
         assertEquals(1, topic.previewPhotos.size)
         client.close()
+    }
+
+    @Test
+    fun illustrationTopicIsMarkedByItsSlug() {
+        val photoTopic = TopicResponse(id = "t1", slug = "wallpapers", title = "Wallpapers").toDomain()
+        val illustrationTopic = TopicResponse(id = "t2", slug = "illustration-wallpapers", title = "Wallpapers")
+            .toDomain()
+
+        assertEquals(false, photoTopic.isIllustration)
+        assertEquals(true, illustrationTopic.isIllustration)
     }
 
     @Test

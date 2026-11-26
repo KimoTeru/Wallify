@@ -4,6 +4,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import org.kimoteru.wallify.core.designsystem.theme.compositions.AppColors
 import org.kimoteru.wallify.core.designsystem.theme.compositions.AppDurationAnim
 import org.kimoteru.wallify.core.designsystem.theme.compositions.AppTypography
@@ -28,10 +30,12 @@ import org.kimoteru.wallify.core.designsystem.ui.locale.LocalAppLocale
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridColumns
 import org.kimoteru.wallify.core.designsystem.ui.photo.LocalPhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
+import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.LocalRefreshRequests
 
 /**
  * The one global provider of the app: the tokens, the language ([languageTag], `null` keeps the default locale) and
- * the choices of the user on the whole app that the root passes in. Nested providers are only for a part of the tree
+ * the choices of the user on the whole app that the root passes in ([refreshRequests] are the keys of the desktop
+ * window that refresh the list on screen). Nested providers are only for a part of the tree
  * (a forced scheme, the blur of a screen, the padding of the navigation).
  */
 @Composable
@@ -42,6 +46,7 @@ fun AppTheme(
     photoGridMode: PhotoGridMode = PhotoGridMode.Masonry,
     photoGridColumns: Int? = null,
     windowTypeOverride: WindowType? = null,
+    refreshRequests: Flow<Unit> = emptyFlow(),
     content: @Composable () -> Unit
 ) {
     languageTag?.let {
@@ -78,7 +83,8 @@ fun AppTheme(
         LocalAppLocale provides languageTag,
         LocalPhotoGridMode provides photoGridMode,
         LocalPhotoGridColumns provides photoGridColumns,
-        LocalWindowTypeOverride provides windowTypeOverride
+        LocalWindowTypeOverride provides windowTypeOverride,
+        LocalRefreshRequests provides refreshRequests
     ) {
         content()
     }

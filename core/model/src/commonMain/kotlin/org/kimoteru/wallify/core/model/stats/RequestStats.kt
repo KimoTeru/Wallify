@@ -52,6 +52,8 @@ data class EndpointStat(
 /**
  * Requests allowed per hour ([limit]) and how many of them were left ([remaining]) when the answer that brought them
  * came ([receivedAtMillis], epoch millis): the backend tells it only in answers, so it is the last known value.
+ * [isEstimated] is `true` when [remaining] is a guess (the full limit assumed after the hour changed) and not taken
+ * from the headers of an answer; the counters saved before the field appeared are exact.
  */
 @Serializable
 data class RateLimit(
@@ -63,4 +65,7 @@ data class RateLimit(
 
     @SerialName("received_at")
     val receivedAtMillis: Long = 0L,
+
+    @SerialName("is_estimated")
+    val isEstimated: Boolean = false,
 )

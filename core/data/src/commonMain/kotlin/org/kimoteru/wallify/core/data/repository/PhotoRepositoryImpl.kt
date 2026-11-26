@@ -52,7 +52,7 @@ class PhotoRepositoryImpl(
             loader = cacheLoader,
             dispatchers = dispatchers,
             key = ItemKeys.photo(id),
-            ttl = CacheTtl.Item,
+            ttl = CacheTtl.Photo,
             roomFlow = { photoDao.observe(id) },
             remoteCall = { photoRemoteDataSource.getPhoto(id = id) },
             save = cacheStore::savePhoto,

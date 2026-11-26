@@ -4,7 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
@@ -18,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
 import org.kimoteru.wallify.core.common.response.ResponseError
 import org.kimoteru.wallify.core.common.response.responseError
@@ -27,13 +30,17 @@ import org.kimoteru.wallify.core.designsystem.ui.adaptive.rememberWindowType
 import org.kimoteru.wallify.core.designsystem.ui.indicator.DefaultProgressIndicator
 import org.kimoteru.wallify.core.designsystem.ui.layout.ContentMessageLayout
 import org.kimoteru.wallify.core.designsystem.ui.layout.ErrorContentLayout
+import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIfNotNull
 import org.kimoteru.wallify.core.designsystem.ui.paging.RefreshErrorEffect
+import org.kimoteru.wallify.core.designsystem.ui.paging.ScrollToTopOnRefreshEffect
 import org.kimoteru.wallify.core.designsystem.ui.paging.isAppending
 import org.kimoteru.wallify.core.designsystem.ui.paging.isEmpty
 import org.kimoteru.wallify.core.designsystem.ui.paging.isRefreshing
 import org.kimoteru.wallify.core.designsystem.ui.paging.keyAt
 import org.kimoteru.wallify.core.designsystem.ui.paging.refreshError
-import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.DefaultPullToRefreshBox
+import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.RefreshLine
+import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.refreshLineItem
+import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.rememberRefreshLine
 import org.kimoteru.wallify.core.designsystem.ui.shimmer.ShimmerBox
 
 private const val ITEM_CONTENT_TYPE = "item"
@@ -51,6 +58,7 @@ fun rememberPhotoGridState(vararg keys: Any?): LazyStaggeredGridState =
 /**
  * Grid of photo cards: columns by window width and by [mode], cards separated by the grid spacing. [mode] is the
  * user's choice from the root by default; a screen that always shows equal cards passes [PhotoGridMode.Grid].
+ * [refreshLine] makes the grid pull to refresh: its line is the first item while it is shown.
  */
 @Composable
 fun PhotoGridLayout(
@@ -58,12 +66,24 @@ fun PhotoGridLayout(
     mode: PhotoGridMode = LocalPhotoGridMode.current,
     state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
     contentPadding: PaddingValues = PaddingValues(),
+    refreshLine: RefreshLine? = null,
     content: LazyStaggeredGridScope.() -> Unit
 ) {
     val appPadding = AppTheme.padding
     val appSize = AppTheme.size
 
+    val layoutDirection = LocalLayoutDirection.current
     val windowType = rememberWindowType()
+
+    // The zero-high line item still brings the grid spacing after it, and a lazy item cannot have a negative size, so
+    // the top padding gives that spacing back: the cards stay where they were without the line.
+    val padding = PaddingValues(
+        start = contentPadding.calculateStartPadding(layoutDirection),
+        top = (contentPadding.calculateTopPadding() - if (refreshLine != null) appSize.photoGrid.spacing else 0.dp)
+            .coerceAtLeast(0.dp),
+        end = contentPadding.calculateEndPadding(layoutDirection),
+        bottom = contentPadding.calculateBottomPadding()
+    )
     val chosenColumns = LocalPhotoGridColumns.current
 
     val columns = when (mode) {
@@ -82,14 +102,16 @@ fun PhotoGridLayout(
     // The grid is no blur source of its own: the screen marks the content around it (`FloatingBarScreen`), one
     // source per screen.
     LazyVerticalStaggeredGrid(
-        modifier = modifier,
+        modifier = modifier.applyIfNotNull { refreshLine?.modifier },
         state = state,
         columns = StaggeredGridCells.Fixed(columns),
-        contentPadding = contentPadding,
+        contentPadding = padding,
         horizontalArrangement = Arrangement.spacedBy(appPadding.medium),
-        verticalItemSpacing = appSize.photoGrid.spacing,
-        content = content
-    )
+        verticalItemSpacing = appSize.photoGrid.spacing
+    ) {
+        refreshLine?.let { refreshLineItem(it) }
+        content()
+    }
 }
 
 /** Placeholder grid shown while the first page loads. */
@@ -155,6 +177,11 @@ fun <T : Any> PagingPhotoGrid(
         onChange = onRefreshError
     )
 
+    ScrollToTopOnRefreshEffect(
+        paging = paging,
+        state = state
+    )
+
     when {
         paging.itemCount == 0 && paging.isRefreshing -> PhotoGridShimmer(
             modifier = modifier,
@@ -173,41 +200,38 @@ fun <T : Any> PagingPhotoGrid(
             title = emptyText
         )
 
-        else -> DefaultPullToRefreshBox(
+        else -> PhotoGridLayout(
             modifier = modifier,
-            isRefreshing = paging.isRefreshing,
-            onRefresh = { paging.refresh() },
-            indicatorPadding = PaddingValues(top = contentPadding.calculateTopPadding())
+            mode = mode,
+            state = state,
+            contentPadding = contentPadding,
+            refreshLine = rememberRefreshLine(
+                isRefreshing = paging.isRefreshing,
+                onRefresh = { paging.refresh() }
+            )
         ) {
-            PhotoGridLayout(
-                modifier = Modifier.fillMaxSize(),
-                mode = mode,
-                state = state,
-                contentPadding = contentPadding
-            ) {
-                // A type per kind of item lets the grid reuse the nodes of a card for another card, not a placeholder.
-                items(
-                    count = paging.itemCount,
-                    key = { index -> paging.keyAt(index) { itemKey(it) } },
-                    contentType = { index ->
-                        if (paging.peek(index) != null) ITEM_CONTENT_TYPE else PLACEHOLDER_CONTENT_TYPE
-                    }
-                ) { index ->
-                    val item = paging[index]
-
-                    if (item != null) itemContent(item) else PhotoCardPlaceholder(mode = mode)
+            // A type per kind of item lets the grid reuse the nodes of a card for another card, not a placeholder.
+            items(
+                count = paging.itemCount,
+                key = { index -> paging.keyAt(index) { itemKey(it) } },
+                contentType = { index ->
+                    if (paging.peek(index) != null) ITEM_CONTENT_TYPE else PLACEHOLDER_CONTENT_TYPE
                 }
+            ) { index ->
+                val item = paging[index]
 
-                if (paging.isAppending) {
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(appPadding.medium),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            DefaultProgressIndicator()
-                        }
+                if (item != null) itemContent(item) else PhotoCardPlaceholder(mode = mode)
+            }
+
+            if (paging.isAppending) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(appPadding.medium),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        DefaultProgressIndicator()
                     }
                 }
             }

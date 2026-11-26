@@ -12,6 +12,7 @@ import org.kimoteru.wallify.core.platform.time.TimeProvider
 internal class FakeListDao : ListDao {
     val entries = mutableListOf<ListEntryEntity>()
     val states = mutableMapOf<String, Long>()
+    private val endedKeys = mutableSetOf<String>()
 
     /** How many times rows were written: every write invalidates the lists on screen, so equal rows must not. */
     var insertCalls = 0
@@ -40,9 +41,16 @@ internal class FakeListDao : ListDao {
 
     override suspend fun upsertState(state: ListStateEntity) {
         states[state.listKey] = state.updatedAtEpochMillis
+        if (state.isEnded) endedKeys.add(state.listKey) else endedKeys.remove(state.listKey)
     }
 
     override suspend fun getUpdatedAt(listKey: String): Long? = states[listKey]
+
+    override suspend fun isEnded(listKey: String): Boolean? = if (listKey in states) listKey in endedKeys else null
+
+    override suspend fun setEnded(listKey: String, isEnded: Boolean) {
+        if (listKey in states) if (isEnded) endedKeys.add(listKey) else endedKeys.remove(listKey)
+    }
 
     override suspend fun deleteStatesByPrefix(prefix: String) {
         states.keys.removeAll { it.startsWith(prefix) }

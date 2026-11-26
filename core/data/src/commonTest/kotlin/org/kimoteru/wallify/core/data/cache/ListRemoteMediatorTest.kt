@@ -3,6 +3,7 @@ package org.kimoteru.wallify.core.data.cache
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.PagingConfig
+import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import kotlinx.coroutines.test.runTest
@@ -83,7 +84,7 @@ class ListRemoteMediatorTest {
         backend = listOf("a", "b", "c", "d", "e")
         mediator.load(LoadType.REFRESH, state)
 
-        val result = mediator.load(LoadType.APPEND, state)
+        val result = append()
 
         assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = false), result)
         assertEquals(listOf(1, 2), requestedPages)
@@ -95,7 +96,7 @@ class ListRemoteMediatorTest {
         backend = listOf("a", "b", "c")
         mediator.load(LoadType.REFRESH, state)
 
-        val result = mediator.load(LoadType.APPEND, state)
+        val result = append()
 
         assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = true), result)
         assertEquals(listOf("a", "b", "c"), listDao.itemIds(LIST_KEY))
@@ -105,9 +106,9 @@ class ListRemoteMediatorTest {
     fun `append of a list saved to its end asks the backend for nothing`() = runTest {
         backend = listOf("a", "b", "c")
         mediator.load(LoadType.REFRESH, state)
-        mediator.load(LoadType.APPEND, state)
+        append()
 
-        val result = mediator.load(LoadType.APPEND, state)
+        val result = append()
 
         assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = true), result)
         assertEquals(listOf(1, 2), requestedPages)
@@ -118,10 +119,38 @@ class ListRemoteMediatorTest {
     fun `append of a fresh empty list asks the backend for nothing`() = runTest {
         mediator.load(LoadType.REFRESH, state)
 
-        val result = mediator.load(LoadType.APPEND, state)
+        val result = append()
 
         assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = true), result)
         assertEquals(listOf(1), requestedPages)
+    }
+
+    @Test
+    fun `list that ends exactly on a page border is asked for its empty page only once`() = runTest {
+        backend = listOf("a", "b", "c", "d")
+        mediator.load(LoadType.REFRESH, state)
+        append()
+        val emptyPage = append()
+
+        val result = append()
+
+        assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = true), emptyPage)
+        assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = true), result)
+        assertEquals(listOf(1, 2, 3), requestedPages)
+    }
+
+    @Test
+    fun `refresh that finds a longer list lifts the saved end`() = runTest {
+        backend = listOf("a", "b")
+        mediator.load(LoadType.REFRESH, state)
+        append()
+        backend = listOf("a", "b", "c", "d")
+        mediator.load(LoadType.REFRESH, state)
+
+        append()
+
+        assertEquals(listOf(1, 2, 1, 2), requestedPages)
+        assertEquals(listOf("a", "b", "c", "d"), listDao.itemIds(LIST_KEY))
     }
 
     @Test
@@ -129,7 +158,7 @@ class ListRemoteMediatorTest {
         backend = listOf("a", "b", "c", "d")
         mediator.load(LoadType.REFRESH, state)
 
-        mediator.load(LoadType.APPEND, state)
+        append()
 
         assertEquals(listOf(1, 2), requestedPages)
     }
@@ -138,8 +167,8 @@ class ListRemoteMediatorTest {
     fun `refresh replaces the head and drops the old tail`() = runTest {
         backend = listOf("a", "b", "c", "d", "e")
         mediator.load(LoadType.REFRESH, state)
-        mediator.load(LoadType.APPEND, state)
-        mediator.load(LoadType.APPEND, state)
+        append()
+        append()
         backend = listOf("x")
 
         mediator.load(LoadType.REFRESH, state)
@@ -184,7 +213,7 @@ class ListRemoteMediatorTest {
     fun `refresh with the same items does not write the list again`() = runTest {
         backend = listOf("a", "b", "c", "d", "e")
         mediator.load(LoadType.REFRESH, state)
-        mediator.load(LoadType.APPEND, state)
+        append()
         val writes = listDao.insertCalls
 
         mediator.load(LoadType.REFRESH, state)
@@ -205,6 +234,52 @@ class ListRemoteMediatorTest {
         assertEquals(writes + 1, listDao.insertCalls)
         assertEquals(listOf("x", "a"), listDao.itemIds(LIST_KEY))
     }
+
+    @Test
+    fun `append of a source that has not seen the saved rows asks for nothing`() = runTest {
+        backend = listOf("a", "b", "c", "d", "e")
+        mediator.load(LoadType.REFRESH, state)
+
+        val result = mediator.load(LoadType.APPEND, state)
+
+        assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = false), result)
+        assertEquals(listOf(1), requestedPages)
+        assertEquals(listOf("a", "b"), listDao.itemIds(LIST_KEY))
+    }
+
+    @Test
+    fun `append of a source that shows only a part of the saved rows asks for nothing`() = runTest {
+        backend = listOf("a", "b", "c", "d", "e", "f")
+        mediator.load(LoadType.REFRESH, state)
+        append()
+
+        val result = mediator.load(LoadType.APPEND, stateLoaded(count = 2))
+
+        assertEquals(RemoteMediator.MediatorResult.Success(endOfPaginationReached = false), result)
+        assertEquals(listOf(1, 2), requestedPages)
+    }
+
+    @Test
+    fun `append after the rows of the list went under a refresh loads the next page`() = runTest {
+        backend = listOf("a", "b", "c", "d", "e", "f")
+        mediator.load(LoadType.REFRESH, state)
+        append()
+        mediator.load(LoadType.REFRESH, state)
+
+        mediator.load(LoadType.APPEND, stateLoaded(count = 6))
+
+        assertEquals(listOf(1, 2, 1, 2), requestedPages)
+    }
+
+    private suspend fun append(): RemoteMediator.MediatorResult =
+        mediator.load(LoadType.APPEND, stateLoaded(count = listDao.itemIds(LIST_KEY).size))
+
+    private fun stateLoaded(count: Int) = PagingState(
+        pages = listOf(PagingSource.LoadResult.Page(data = List(count) { "x$it" }, prevKey = null, nextKey = null)),
+        anchorPosition = null,
+        config = PagingConfig(pageSize = PAGE_SIZE),
+        leadingPlaceholderCount = 0
+    )
 
     private companion object {
         const val LIST_KEY = "test:list"

@@ -16,7 +16,8 @@ data class TopicEntity(
     val title: String,
     val description: String?,
     val totalPhotos: Int,
-    val coverPhoto: Photo?
+    val coverPhoto: Photo?,
+    val isIllustration: Boolean
 )
 
 fun Topic.toEntity(): TopicEntity = TopicEntity(
@@ -25,7 +26,8 @@ fun Topic.toEntity(): TopicEntity = TopicEntity(
     title = title,
     description = description,
     totalPhotos = totalPhotos,
-    coverPhoto = coverPhoto
+    coverPhoto = coverPhoto,
+    isIllustration = isIllustration
 )
 
 fun TopicEntity.toDomain(): Topic = Topic(
@@ -34,5 +36,6 @@ fun TopicEntity.toDomain(): Topic = Topic(
     title = title,
     description = description,
     totalPhotos = totalPhotos,
-    coverPhoto = coverPhoto
+    coverPhoto = coverPhoto,
+    isIllustration = isIllustration
 )

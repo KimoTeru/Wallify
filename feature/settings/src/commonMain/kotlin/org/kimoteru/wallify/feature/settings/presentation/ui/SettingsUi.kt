@@ -71,6 +71,7 @@ import org.kimoteru.wallify.core.resources.generated.resources.settings_screen_l
 import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_description
 import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_empty
 import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_remaining
+import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_remaining_estimated
 import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_remaining_unknown
 import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_remaining_value
 import org.kimoteru.wallify.core.resources.generated.resources.settings_requests_reset
@@ -376,7 +377,13 @@ fun SettingsUi(
                             rateLimit.limit.toLong().toCompactString()
                         )
                     } ?: stringResource(Res.string.settings_requests_remaining_unknown),
-                    secondLabel = stringResource(Res.string.settings_requests_remaining)
+                    secondLabel = stringResource(
+                        if (uiState.rateLimit?.isEstimated == true) {
+                            Res.string.settings_requests_remaining_estimated
+                        } else {
+                            Res.string.settings_requests_remaining
+                        }
+                    )
                 )
 
                 RequestDays(

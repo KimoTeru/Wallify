@@ -47,7 +47,7 @@ AsyncImage(
 платформенные приложения читают `rootComponent.getUiState()` и оборачивают `RootGraphUi` в `AppTheme`,
 сами `ThemeMode` не знают. `AppTheme` — единственный глобальный провайдер: приложения передают в него схему
 (`isDarkTheme()` из `ThemeModeUi.kt`), язык и выбор пользователя на всё приложение (`LocalPhotoGridMode`,
-`LocalPhotoGridColumns`, `LocalWindowTypeOverride`) из `UiState` корня. Новый local на всё
+`LocalPhotoGridColumns`, `LocalWindowTypeOverride`, `LocalRefreshRequests`) из `UiState` корня. Новый local на всё
 приложение — параметр `AppTheme` и строка в его `CompositionLocalProvider`, а не ещё один провайдер ниже по дереву;
 вложенные провайдеры — только для части дерева (`LightAppTheme` / `DarkAppTheme`, `BlurHost`,
 `LocalNavigationPadding`). Значения состояния корня приложения берут из `UiState` напрямую: расширения-геттеры на
@@ -319,7 +319,7 @@ if (uiState.isFiltersVisible) {
 - карточки (`card`), разделители (`divider`), бейдж (`badge`), нижняя панель (`bottom_bar`), верхняя панель
   (`top_bar`: `DefaultTopBar`), диалоги (`dialog`: `DefaultDialog`, `DefaultDescriptionDialog`);
 - индикаторы и загрузчики (`indicator`, `full_screen_loader`), скелетон-заглушка (`shimmer`: `ShimmerBox`),
-  pull-to-refresh (`pull_to_refresh`);
+  линия обновления списка (`pull_to_refresh`: `RefreshLine`, `rememberRefreshLine`);
 - изображения (`image`), иконки (`icon`: `AppIcons`, `iconContainer`), тени (`shadow`), модификаторы и анимации
   (`modifier`, `animation`, `compose`), раскладки (`layout`: ошибка и пустое состояние на весь контент —
   `ErrorContentLayout`, `ContentMessageLayout`);
@@ -345,8 +345,21 @@ if (uiState.isFiltersVisible) {
 - Пока список грузится, показываем `ShimmerBox`, а не пустой экран.
 - Состояние прокрутки сетки — `rememberPhotoGridState(keys…)`: в ключах всё, что заменяет список целиком (тема,
   запрос и фильтры, вкладка, новый набор). Новый список открывается сверху, тот же после поворота — на прежнем месте.
+- Обновление списка (фоновое по TTL или pull-to-refresh) заменяет его начало, поэтому после успешного обновления
+  прокрученная сетка возвращается наверх: `ScrollToTopOnRefreshEffect(paging, state)` (`ui/paging`). `PagingPhotoGrid`
+  подключает его сам, своя сетка — сама. Следит только за обновлением `RemoteMediator` (без него ничего не делает). Ошибка, подгрузка и первый показ
+  сохранённого списка не прокручивают.
 - `null`-элемент списка из Room рисуем `PhotoCardPlaceholder`, а не пропускаем: элемент нулевой высоты раскладывает
   в видимую область сотни заглушек и тянет загрузку всего списка. `PagingPhotoGrid` делает это сам.
-- Список с данными бэкенда обновляется жестом pull-to-refresh (`DefaultPullToRefreshBox`, отступ индикатора — под
-  плашку экрана). `PagingPhotoGrid` делает это сам; в своей сетке оборачиваем `PhotoGridLayout`.
+- Список с данными бэкенда обновляется жестом pull-to-refresh, а обновление показывает линия `RefreshLine`
+  (`ui/pull_to_refresh`): первый элемент сетки (тонкая скруглённая полоса с бегущим бликом цвета `basic.primary`), его
+  высота растёт вместе с жестом, остаётся пока идёт любое обновление (ручное или по возрасту списка) и сворачивается,
+  когда оно закончилось. Жест — свой `NestedScrollConnection` над `PullTracker` (логика без Compose): тач отпускается флингом, у колеса и
+  трекпада Desktop нет конца жеста, поэтому там тяга отпускается, когда новая прокрутка не приходит
+  `durationAnim.smallExtra` (`isPullReleasedOnIdle`); анимации — `AppTheme.durationAnim`, для
+  экранных дикторов у линии описание `common_refreshing`. `PagingPhotoGrid` подключает её сам; в своей сетке
+  `PhotoGridLayout(refreshLine = rememberRefreshLine(isRefreshing, onRefresh))`. Линия — всегда первый элемент сетки
+  нулевой высоты, поэтому `PhotoGridLayout` с линией уменьшает верхний отступ на шаг сетки (пустой элемент тоже
+  получает промежуток после себя, а у ленивого элемента не бывает отрицательной высоты). На Desktop список обновляют и клавиши F5 и Cmd/Ctrl+R: окно кладёт запросы в
+  `AppTheme(refreshRequests)` (`LocalRefreshRequests`), список подписывается сам.
 - Системные отступы и клавиатура — `WindowInsets`, а не константы.

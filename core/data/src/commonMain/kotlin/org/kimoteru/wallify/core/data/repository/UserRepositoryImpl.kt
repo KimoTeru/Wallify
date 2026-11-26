@@ -177,7 +177,7 @@ class UserRepositoryImpl(
         return cacheLoader.pager(
             dispatchers = dispatchers,
             listKey = listKey,
-            ttl = CacheTtl.Feed,
+            ttl = CacheTtl.UserCollections,
             pagingSource = { collectionDao.pagingSource(listKey) },
             toDomain = { entity -> entity.toDomain() },
             itemId = { collection -> collection.id.toString() },
@@ -195,7 +195,7 @@ class UserRepositoryImpl(
             loader = cacheLoader,
             dispatchers = dispatchers,
             key = listKey,
-            ttl = CacheTtl.Feed,
+            ttl = CacheTtl.UserCollections,
             roomFlow = { collectionDao.observeList(listKey = listKey, limit = DEFAULT_PAGE_SIZE) },
             remoteCall = {
                 userRemoteDataSource.getUserCollections(

@@ -70,10 +70,14 @@ fun FloatingBarScreen(
 
 /**
  * How far a staggered grid has scrolled. Once the first item has left, the exact distance is gone, and the bar only
- * needs to know that its background is fully shown.
+ * needs to know that its background is fully shown. The grid starts with the refresh line (`PhotoGridLayout`), which is
+ * zero high while idle and only adds the grid spacing, so the scroll in the first card counts after that spacing.
  */
-fun LazyStaggeredGridState.scrolledPx(): Int =
-    if (firstVisibleItemIndex > 0) Int.MAX_VALUE else firstVisibleItemScrollOffset
+fun LazyStaggeredGridState.scrolledPx(): Int = when (firstVisibleItemIndex) {
+    0 -> firstVisibleItemScrollOffset
+    1 -> layoutInfo.mainAxisItemSpacing + firstVisibleItemScrollOffset
+    else -> Int.MAX_VALUE
+}
 
 private enum class FloatingBarSlot {
     Bar,

@@ -19,10 +19,10 @@ import kotlin.time.Duration
  * Collect it in the presentation layer with `cachedIn(scope)`. The mediator loads, decodes and saves the pages on
  * `dispatchers.io` of the repository, not on the main thread that collects the list.
  *
- * `initialLoadSize` equals the page size. Paging asks the mediator for the next page whenever the first load of a
- * source reaches the end of the saved rows (`PageFetcherSnapshot`, not `prefetchDistance`), and every saved page makes
- * a new source: a larger first load would reach the end again after each page and load page after page without a
- * scroll (a refresh cost four requests instead of two).
+ * Paging calls the mediator for the next page whenever a load of the source returns `nextKey = null`
+ * (`PageFetcherSnapshot`, not `prefetchDistance`), and Room does so right after the first page is saved, so a refresh
+ * would cost two requests. [OpenEndPagingSource] hides that end until the list is saved to its last page, and
+ * `prefetchDistance` is a third of a page: the next page is asked for only when the user scrolls near the end.
  *
  * Placeholders are on: Room invalidates the source on any write to its tables, and the reloaded source starts at the
  * refresh key `anchorPosition - initialLoadSize / 2`, which is an offset in the table. Without placeholders the
@@ -42,7 +42,7 @@ internal fun <E : Any, T : Any> CacheLoader.pager(
 ): Flow<PagingData<T>> = Pager(
     config = PagingConfig(
         pageSize = DEFAULT_PAGE_SIZE,
-        prefetchDistance = DEFAULT_PAGE_SIZE,
+        prefetchDistance = DEFAULT_PAGE_SIZE / PREFETCH_DIVIDER,
         initialLoadSize = DEFAULT_PAGE_SIZE,
         enablePlaceholders = true
     ),
@@ -56,5 +56,7 @@ internal fun <E : Any, T : Any> CacheLoader.pager(
         itemId = itemId,
         saveItems = saveItems
     ),
-    pagingSourceFactory = pagingSource
+    pagingSourceFactory = { OpenEndPagingSource(pagingSource()) { listDao.isEnded(listKey) == true } }
 ).flow.map { data -> data.map(toDomain) }
+
+private const val PREFETCH_DIVIDER = 3

@@ -11,6 +11,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.coerceAtLeast
@@ -23,6 +29,7 @@ import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import java.awt.Dimension
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.debounce
 import org.jetbrains.compose.resources.stringResource
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
@@ -131,11 +138,22 @@ fun main() {
 
         val title = stringResource(Res.string.app_name)
 
+        // F5 and Cmd/Ctrl+R refresh the list on screen: the lists collect the requests from `AppTheme`.
+        val refreshRequests = remember { MutableSharedFlow<Unit>(extraBufferCapacity = 1) }
+
         Window(
             onCloseRequest = closeWindow,
             state = windowState,
             title = title,
-            undecorated = !IS_MAC
+            undecorated = !IS_MAC,
+            onPreviewKeyEvent = { event ->
+                val isReload = event.key == Key.R && (event.isCtrlPressed || event.isMetaPressed)
+                val isRefreshKey = event.key == Key.F5 || isReload
+
+                (event.type == KeyEventType.KeyDown && isRefreshKey).also { isRefresh ->
+                    if (isRefresh) refreshRequests.tryEmit(Unit)
+                }
+            }
         ) {
             // A window already below the new minimum is enlarged by the platform.
             LaunchedEffect(minimumWidth, windowSizes) {
@@ -169,7 +187,8 @@ fun main() {
                 languageTag = uiState.languageTag,
                 photoGridMode = uiState.photoLayout.gridMode,
                 photoGridColumns = uiState.photoColumns,
-                windowTypeOverride = requestedWindowType
+                windowTypeOverride = requestedWindowType,
+                refreshRequests = refreshRequests
             ) {
                 val appColor = AppTheme.color
 
