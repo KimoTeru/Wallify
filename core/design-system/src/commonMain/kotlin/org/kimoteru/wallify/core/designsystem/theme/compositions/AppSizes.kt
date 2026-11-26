@@ -17,6 +17,7 @@ data class AppSizes(
     val avatar: AvatarSize = AvatarSize(),
     val control: ControlSize = ControlSize(),
     val photoGrid: PhotoGridSize = PhotoGridSize(),
+    val refreshLine: RefreshLineSize = RefreshLineSize(),
     val panel: PanelSize = PanelSize(),
     val chart: ChartSize = ChartSize(),
     val window: WindowSizes = WindowSizes()
@@ -99,6 +100,16 @@ data class PhotoGridSize(
     val listColumns: Int = 1,
     val listWideColumns: Int = 2,
     val spacing: Dp = 12.dp
+)
+
+/**
+ * The line that shows a refresh at the top of a list: it is [thickness] thick and sits in an item that grows to
+ * [area] high while the list is pulled or refreshing. A pull of [threshold] (after damping) asks for a refresh.
+ */
+data class RefreshLineSize(
+    val thickness: Dp = 4.dp,
+    val area: Dp = 28.dp,
+    val threshold: Dp = 80.dp
 )
 
 /**

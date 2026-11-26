@@ -20,6 +20,15 @@ object CacheTtl {
     /** Single photos, users, collections and topics: their details almost never change, the counters may lag. */
     val Item: Duration = 1.days
 
+    /** The full photo (`GET /photos/{id}`): its details rarely change, and every open of a photo costs a request. */
+    val Photo: Duration = 7.days
+
+    /**
+     * Collections of the signed-in user. The photo screen (add to collection) and the profile share this list, so the
+     * TTL is one for both. Changes made in the app invalidate it (`CacheStore.invalidateLists`).
+     */
+    val UserCollections: Duration = 1.days
+
     /** Statistics of a user and the counters of the service: the backend counts them by day. */
     val Stats: Duration = 1.days
 

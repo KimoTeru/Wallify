@@ -23,7 +23,7 @@ import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridLayout
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridMode
 import org.kimoteru.wallify.core.designsystem.ui.photo.PhotoGridShimmer
 import org.kimoteru.wallify.core.designsystem.ui.photo.rememberPhotoGridState
-import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.DefaultPullToRefreshBox
+import org.kimoteru.wallify.core.designsystem.ui.pull_to_refresh.rememberRefreshLine
 import org.kimoteru.wallify.core.presentation.base.BaseContract
 import org.kimoteru.wallify.core.presentation.photo.PhotoCard
 import org.kimoteru.wallify.core.presentation.photo.PhotoCardUi
@@ -106,7 +106,7 @@ fun RandomUi(
 
         // A set of random photos is shown as a grid of equal cards whatever layout the feed uses.
         when {
-            uiState.isLoading -> PhotoGridShimmer(
+            uiState.isLoading && uiState.photos.isEmpty() -> PhotoGridShimmer(
                 modifier = Modifier.fillMaxSize(),
                 mode = PhotoGridMode.Grid,
                 contentPadding = listPadding
@@ -118,28 +118,25 @@ fun RandomUi(
             )
 
             // Pulling the set down is the same as the shuffle button: a new set.
-            else -> DefaultPullToRefreshBox(
+            else -> PhotoGridLayout(
                 modifier = Modifier.fillMaxSize(),
-                isRefreshing = uiState.isLoading,
-                onRefresh = { obtainEvent(UiEvent.Shuffle) },
-                indicatorPadding = PaddingValues(top = topPadding)
+                mode = PhotoGridMode.Grid,
+                state = gridState,
+                contentPadding = listPadding,
+                refreshLine = rememberRefreshLine(
+                    isRefreshing = uiState.isLoading,
+                    onRefresh = { obtainEvent(UiEvent.Shuffle) }
+                )
             ) {
-                PhotoGridLayout(
-                    modifier = Modifier.fillMaxSize(),
-                    mode = PhotoGridMode.Grid,
-                    state = gridState,
-                    contentPadding = listPadding
-                ) {
-                    items(
-                        items = uiState.photos,
-                        key = { card -> card.id }
-                    ) { card ->
-                        PhotoCard(
-                            card = card,
-                            mode = PhotoGridMode.Grid,
-                            onClick = { obtainEvent(UiEvent.OpenPhoto(card.id)) }
-                        )
-                    }
+                items(
+                    items = uiState.photos,
+                    key = { card -> card.id }
+                ) { card ->
+                    PhotoCard(
+                        card = card,
+                        mode = PhotoGridMode.Grid,
+                        onClick = { obtainEvent(UiEvent.OpenPhoto(card.id)) }
+                    )
                 }
             }
         }

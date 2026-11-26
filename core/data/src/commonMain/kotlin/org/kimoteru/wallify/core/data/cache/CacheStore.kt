@@ -1,5 +1,6 @@
 package org.kimoteru.wallify.core.data.cache
 
+import org.kimoteru.wallify.core.common.paging.DEFAULT_PAGE_SIZE
 import org.kimoteru.wallify.core.database.dao.CollectionDao
 import org.kimoteru.wallify.core.database.dao.ListDao
 import org.kimoteru.wallify.core.database.dao.PhotoDao
@@ -167,7 +168,14 @@ class CacheStore(
             startPosition = 0,
             isRefresh = true
         )
-        listDao.upsertState(ListStateEntity(listKey = listKey, updatedAtEpochMillis = time.nowEpochMillis()))
+        // Like ListRemoteMediator: a short list is the whole list, a full one may continue on the next page.
+        listDao.upsertState(
+            ListStateEntity(
+                listKey = listKey,
+                updatedAtEpochMillis = time.nowEpochMillis(),
+                isEnded = collections.size < DEFAULT_PAGE_SIZE
+            )
+        )
     }
 
     suspend fun saveTopics(topics: List<Topic>) {

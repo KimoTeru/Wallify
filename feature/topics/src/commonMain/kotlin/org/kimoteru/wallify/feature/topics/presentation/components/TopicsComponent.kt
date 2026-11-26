@@ -2,6 +2,7 @@ package org.kimoteru.wallify.feature.topics.presentation.components
 
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.filter
 import androidx.paging.map
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kimoteru.wallify.core.common.flow.mapDistinctBy
@@ -46,6 +48,7 @@ class TopicsLogic(
 
     val topics: Flow<PagingData<Topic>> = topicRepository
         .getTopicsFlow(order = TopicsOrder.Featured)
+        .map { paging -> paging.filter { topic -> !topic.isIllustration } }
         .cachedIn(coroutineScope)
 
     /** Ready cards for the quality of the lists; joined after `cachedIn`, which may be collected again. */

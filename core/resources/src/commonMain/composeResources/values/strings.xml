@@ -11,6 +11,8 @@
     <string name="common_reset">Reset</string>
     <!-- Message of a photo list that has nothing to show -->
     <string name="common_photos_empty">No photos here yet</string>
+    <!-- Screen reader description of the line at the top of a list while the list is refreshing -->
+    <string name="common_refreshing">Refreshing</string>
 
     <!-- Title of the dialog shown when a request fails -->
     <string name="error_dialog_title">Something went wrong</string>
@@ -300,6 +302,8 @@
     <string name="settings_requests_total">Requests</string>
     <!-- Caption of the number of requests left in the current hour -->
     <string name="settings_requests_remaining">Left this hour</string>
+    <!-- Caption of the number of requests left when it is a guess: the real one comes with the next answer -->
+    <string name="settings_requests_remaining_estimated">≈ estimate, updates on the next request</string>
     <!-- Value of the requests left: %1$s is how many are left, %2$s is the hourly limit -->
     <string name="settings_requests_remaining_value">%1$s of %2$s</string>
     <!-- Value of the requests left before the first answer of the photo service -->

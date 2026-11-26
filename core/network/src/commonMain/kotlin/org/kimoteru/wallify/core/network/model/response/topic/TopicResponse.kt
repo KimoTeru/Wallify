@@ -94,5 +94,9 @@ fun TopicResponse.toDomain(): Topic = Topic(
     title = title,
     description = description,
     totalPhotos = totalPhotos ?: 0,
-    coverPhoto = coverPhoto?.toDomain()
+    coverPhoto = coverPhoto?.toDomain(),
+    isIllustration = slug.startsWith(ILLUSTRATION_SLUG_PREFIX)
 )
+
+// The topic response has no media type field: the backend marks illustration topics by their slug.
+private const val ILLUSTRATION_SLUG_PREFIX = "illustration-"

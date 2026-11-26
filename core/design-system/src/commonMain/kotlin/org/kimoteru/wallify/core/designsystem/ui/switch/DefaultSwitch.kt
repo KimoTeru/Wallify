@@ -22,6 +22,7 @@ import org.kimoteru.wallify.core.common.extensions.half
 import org.kimoteru.wallify.core.designsystem.extensions.half
 import org.kimoteru.wallify.core.designsystem.theme.AppTheme
 import org.kimoteru.wallify.core.designsystem.ui.click.debouncedClickable
+import org.kimoteru.wallify.core.designsystem.ui.modifier.applyIfNotNull
 
 @Composable
 fun DefaultSwitch(
@@ -52,17 +53,13 @@ fun DefaultSwitch(
 
     val alpha by animateFloatAsState(targetValue = if (enabled) 1f else 0.5f)
 
-    val clickableModifier = if (onCheckedChange != null) {
-        Modifier.debouncedClickable(animateClick = false) {
-            onCheckedChange.invoke(!checked)
-        }
-    } else {
-        Modifier
-    }
-
     Box(
         modifier = modifier
-            .then(clickableModifier)
+            .applyIfNotNull {
+                onCheckedChange?.let { onChange ->
+                    debouncedClickable(animateClick = false) { onChange(!checked) }
+                }
+            }
             .width(appSize.switch.trackWidth)
             .height(appSize.switch.trackHeight)
             .clip(RoundedCornerShape(appCorner.medium))

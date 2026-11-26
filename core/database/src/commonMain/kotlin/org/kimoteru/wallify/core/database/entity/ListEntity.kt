@@ -22,9 +22,12 @@ data class ListEntryEntity(
 /**
  * When the list or the single item [listKey] was last loaded from the backend; a key without a row has never been
  * loaded (or was made stale). Items use keys that start with `item:`, so they never meet the keys of lists.
+ * [isEnded] is set once the backend answered with its last page, so a list that ends exactly on a page border is not
+ * asked for an empty page again; a refresh writes it anew.
  */
 @Entity(tableName = "list_state")
 data class ListStateEntity(
     @PrimaryKey val listKey: String,
-    val updatedAtEpochMillis: Long
+    val updatedAtEpochMillis: Long,
+    val isEnded: Boolean = false
 )

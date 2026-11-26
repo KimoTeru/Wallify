@@ -97,13 +97,20 @@ class RequestStatsRepositoryImpl(
         write(cleared)
     }
 
-    // The backend resets the limit at the start of every hour: a limit of an earlier hour is the full one since then.
+    // The backend does not document its window, so the full limit after the hour changed is a guess: it is marked
+    // as estimated until an answer brings the real headers.
     private fun RequestStats.withHourReset(): RequestStats {
         val known = rateLimit ?: return this
         val hourStart = time.nowEpochMillis().let { now -> now - now % RATE_LIMIT_WINDOW.inWholeMilliseconds }
         if (known.receivedAtMillis >= hourStart) return this
 
-        return copy(rateLimit = known.copy(remaining = known.limit, receivedAtMillis = hourStart))
+        return copy(
+            rateLimit = known.copy(
+                remaining = known.limit,
+                receivedAtMillis = hourStart,
+                isEstimated = true
+            )
+        )
     }
 
     private suspend fun write(current: RequestStats): Response<Unit> = responseOf {
